@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "태권도장 관리 시스템",
+    "slug": "maru-management",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.maru.management"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.maru.management"
+    },
+    "plugins": ["expo-asset"],
+    "scheme": "maru-management",
+    "extra": {
+      "apiUrl": "http://localhost:8080",
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}

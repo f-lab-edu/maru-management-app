@@ -1,0 +1,113 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.flywaydb.flyway' version '10.16.0'
+    // id 'com.ewerk.gradle.plugins.querydsl' version '1.0.10'  // QueryDSL 플러그인 (추후 필요시 활성화)
+}
+
+group = 'com.maru'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    // querydsl.extendsFrom compileClasspath  // QueryDSL 설정 (추후 필요시 활성화)
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // ============== Core ==============
+    // Spring Boot Starter
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // JDBC for DataSource (required for Flyway)
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // Database driver
+    runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
+
+    // Flyway for DB migrations
+    implementation 'org.flywaydb:flyway-core'
+    
+    // Spring Boot DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // ============== Database (추후 필요시 활성화) ==============
+    // JPA & Hibernate
+    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    
+    // MySQL Driver
+    // runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
+    
+    // ============== Test ==============
+    // Spring Boot Test (JUnit 5, Mockito 포함)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// ============== QueryDSL 설정 (추후 필요시 활성화) ==============
+// def querydslDir = layout.buildDirectory.dir("generated/querydsl")
+//
+// querydsl {
+//     jpa = true
+//     querydslSourcesDir = querydslDir
+// }
+//
+// sourceSets {
+//     main.java.srcDir querydslDir
+// }
+//
+// tasks.withType(JavaCompile).configureEach {
+//     options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
+// }
+//
+// clean {
+//     delete file(querydslDir)
+// }
+
+// ============== Test 설정 ==============
+tasks.named('test') {
+    useJUnitPlatform()
+    
+    // 테스트 리포트 설정
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+// ============== Flyway Gradle 설정 (CI에서 사용) ==============
+flyway {
+    // CI에서 -Dflyway.url, -Dflyway.user, -Dflyway.password 로 오버라이드하는 것을 권장합니다.
+    // 아래 값은 로컬 기본값(없으면 무시)으로 남겨둡니다.
+    url = System.getProperty('flyway.url', System.getenv('SPRING_DATASOURCE_URL') ?: '')
+    user = System.getProperty('flyway.user', System.getenv('MYSQL_USER') ?: '')
+    password = System.getProperty('flyway.password', System.getenv('MYSQL_PASSWORD') ?: '')
+    locations = ["classpath:db/migration"]
+}
+
+// ============== Jar 설정 ==============
+tasks.named('bootJar') {
+    enabled = true
+    archiveBaseName = 'maru-backend'
+    archiveFileName = 'maru-backend.jar'
+}
+
+tasks.named('jar') {
+    enabled = false
+}
+
+// ============== 컴파일 옵션 ==============
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}

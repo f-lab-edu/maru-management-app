@@ -1,0 +1,80 @@
+# ----------------------------
+# Global ignores
+# ----------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.env
+.env.*
+
+# ----------------------------
+# Markdown
+# ----------------------------
+*.md
+!DEVELOP_FLOW.md
+# ----------------------------
+# Editor/IDE
+# ----------------------------
+.idea/
+.vscode/
+*.iml
+
+# ----------------------------
+# Logs
+# ----------------------------
+*.log
+
+# ----------------------------
+# Node/JS (frontend & mobile)
+# ----------------------------
+node_modules/
+frontend/node_modules/
+mobile/node_modules/
+
+# Build artifacts (frontend)
+frontend/dist/
+frontend/.vite/
+
+# Build artifacts (mobile/Expo)
+mobile/.expo/
+mobile/.expo-shared/
+mobile/dist/
+mobile/build/
+
+# ----------------------------
+# Java/Gradle (backend)
+# ----------------------------
+.gradle/
+backend/.gradle/
+backend/build/
+backend/out/
+build/
+out/
+bin/
+
+# Java compiled artifacts
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# ----------------------------
+# Misc caches/temps
+# ----------------------------
+.tmp/
+.temp/
+.cache/
+*.tmp
+
+# ----------------------------
+# Project-local persistent data (do not commit DB files)
+# ----------------------------
+.data/
+db/init/
+
+# ----------------------------
+# Docs
+# ----------------------------
+README-Docs/
