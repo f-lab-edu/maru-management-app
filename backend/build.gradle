@@ -15,6 +15,19 @@ java {
     }
 }
 
+// ============== 의존성 버전 관리 ==============
+ext {
+    springBootVersion = '3.5.5'
+    javaVersion = '21'
+    querydslVersion = '5.0.0'
+    mapstructVersion = '1.5.5.Final'
+    lombokVersion = '1.18.30'
+    jjwtVersion = '0.12.3'
+    restAssuredVersion = '5.3.0'
+    testcontainersVersion = '1.19.3'
+    springdocVersion = '2.2.0'
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -30,25 +43,21 @@ dependencies {
     // ============== Core ==============
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    // JDBC for DataSource (required for Flyway)
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 
-    // Database driver
+    // Spring Boot DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ============== Database - Group 1 (MySQL + JPA + Flyway) ==============
+    // Spring Data JPA (includes Hibernate, HikariCP)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // MySQL Connector
     runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
 
     // Flyway for DB migrations
     implementation 'org.flywaydb:flyway-core'
-    
-    // Spring Boot DevTools
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    
-    // ============== Database (추후 필요시 활성화) ==============
-    // JPA & Hibernate
-    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.flywaydb:flyway-mysql'
 
-    // MySQL Driver
-    // runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
-    
     // ============== Test ==============
     // Spring Boot Test (JUnit 5, Mockito 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
