@@ -81,7 +81,7 @@ dependencies {
 // ============== Test 설정 ==============
 tasks.named('test') {
     useJUnitPlatform()
-    
+
     // 테스트 리포트 설정
     testLogging {
         events "passed", "skipped", "failed"
