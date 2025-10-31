@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import { Button } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,7 +9,7 @@ import type { RootStackParamList } from '../../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['mobile-test-message'],
     queryFn: async () => {
       const res = await api.get<string>('/test', { responseType: 'text' })
@@ -28,6 +29,13 @@ export default function HomeScreen({ navigation }: Props) {
         )}
         {error && <Text className="text-red-600">불러오기에 실패했습니다.</Text>}
         {!!data && <Text className="text-gray-900">{data}</Text>}
+        <Button
+          mode="contained-tonal"
+          onPress={() => refetch()}
+          style={{ marginTop: 16 }}
+        >
+          데이터 다시 불러오기
+        </Button>
       </View>
     </View>
   );

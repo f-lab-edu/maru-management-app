@@ -15,6 +15,7 @@
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.0.0",
     "@hookform/resolvers": "^3.9.0",
+    "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.10.1",
     "@tanstack/react-query": "^5.51.1",
@@ -32,7 +33,10 @@
     "react-native-screens": "~4.11.1",
     "react-native-web": "^0.20.0",
     "zod": "^3.23.8",
-    "zustand": "^4.5.4"
+    "zustand": "^4.5.4",
+    "expo-notifications": "~0.31.4",
+    "expo-device": "~7.1.4",
+    "expo-constants": "~17.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
