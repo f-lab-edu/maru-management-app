@@ -2,19 +2,27 @@ package com.maru;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.context.annotation.Configuration;
 
-@SpringBootTest
-@TestPropertySource(properties = {
-    "spring.datasource.url=",
-    "spring.datasource.driver-class-name=",
-    "spring.flyway.enabled=false"
-})
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+
+@SpringBootTest(classes = MaruBackendApplicationTests.TestConfig.class)
 class MaruBackendApplicationTests {
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        FlywayAutoConfiguration.class
+    })
+    static class TestConfig {
+    }
 
     @Test
     void contextLoads() {
-        // 기본 컨텍스트 로드 테스트 - DataSource 없이 실행
     }
 
 }
