@@ -3,7 +3,6 @@ plugins {
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.6'
     id 'org.flywaydb.flyway' version '10.16.0'
-    // id 'com.ewerk.gradle.plugins.querydsl' version '1.0.10'  // QueryDSL 플러그인 (추후 필요시 활성화)
 }
 
 group = 'com.maru'
@@ -15,11 +14,19 @@ java {
     }
 }
 
+// ============== 의존성 버전 관리 ==============
+ext {
+    springBootVersion = '3.5.5'
+    javaVersion = '21'
+    lombokVersion = '1.18.30'
+    jjwtVersion = '0.12.3'
+    springdocVersion = '2.2.0'
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
-    // querydsl.extendsFrom compileClasspath  // QueryDSL 설정 (추후 필요시 활성화)
 }
 
 repositories {
@@ -30,49 +37,46 @@ dependencies {
     // ============== Core ==============
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    // JDBC for DataSource (required for Flyway)
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 
-    // Database driver
+    // Spring Boot DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ============== Database==============
+    // Spring Data JPA (includes Hibernate, HikariCP)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // MySQL Connector
     runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
 
     // Flyway for DB migrations
     implementation 'org.flywaydb:flyway-core'
-    
-    // Spring Boot DevTools
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    
-    // ============== Database (추후 필요시 활성화) ==============
-    // JPA & Hibernate
-    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    
-    // MySQL Driver
-    // runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
-    
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // ============== Security & Authentication==============
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JWT
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+    // ============== Development Tools ==============
+    // Lombok (Entity 전용)
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // ============== API Documentation ==============
+    // SpringDoc OpenAPI (Swagger UI)
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
     // ============== Test ==============
     // Spring Boot Test (JUnit 5, Mockito 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
-
-// ============== QueryDSL 설정 (추후 필요시 활성화) ==============
-// def querydslDir = layout.buildDirectory.dir("generated/querydsl")
-//
-// querydsl {
-//     jpa = true
-//     querydslSourcesDir = querydslDir
-// }
-//
-// sourceSets {
-//     main.java.srcDir querydslDir
-// }
-//
-// tasks.withType(JavaCompile).configureEach {
-//     options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
-// }
-//
-// clean {
-//     delete file(querydslDir)
-// }
 
 // ============== Test 설정 ==============
 tasks.named('test') {
