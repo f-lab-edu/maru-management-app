@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/axios";
+import { api } from "../shared/api/client";
+import { Button } from "../shared/components/ui/button";
 
 const HomePage = () => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["test-message"],
     queryFn: async () => {
       const res = await api.get<string>("/test", { responseType: "text" });
@@ -20,6 +21,9 @@ const HomePage = () => {
           {isLoading && <p className="text-gray-600">불러오는 중...</p>}
           {error && <p className="text-red-600">불러오기에 실패했습니다.</p>}
           {data && <p className="text-gray-800">{data}</p>}
+          <Button onClick={() => refetch()} variant="secondary" className="mt-4">
+            데이터 다시 불러오기
+          </Button>
         </div>
       </div>
     </div>
