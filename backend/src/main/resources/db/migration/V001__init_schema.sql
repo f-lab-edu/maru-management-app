@@ -21,10 +21,7 @@ CREATE TABLE `USER` (
   last_login_at TIMESTAMP NULL COMMENT '마지막 로그인 시각',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-  deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_user_email (email),
-  INDEX idx_user_phone (phone),
-  INDEX idx_user_role (role)
+  deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사용자 (관장, 사범)';
 
 -- 1.2 OAUTH_ACCOUNT (OAuth 계정)
@@ -36,7 +33,6 @@ CREATE TABLE OAUTH_ACCOUNT (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_oauth_provider_account (provider, provider_account_id),
-  INDEX idx_oauth_user_id (user_id),
   CONSTRAINT fk_oauth_account_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='OAuth 계정 정보';
 
@@ -50,7 +46,6 @@ CREATE TABLE TENANT (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
   UNIQUE KEY uk_tenant_slug (slug),
-  INDEX idx_tenant_user_id (user_id),
   CONSTRAINT fk_tenant_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='테넌트 (독립적인 도장 운영 단위)';
 
@@ -67,9 +62,6 @@ CREATE TABLE DOJANG (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_dojang_tenant_id (tenant_id),
-  INDEX idx_dojang_user_id (user_id),
-  INDEX idx_dojang_plan (plan),
   CONSTRAINT fk_dojang_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_dojang_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='도장 정보';
@@ -84,8 +76,6 @@ CREATE TABLE EMPLOYMENT (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_employment_user_dojang (user_id, dojang_id),
-  INDEX idx_employment_tenant_status (tenant_id, status),
-  INDEX idx_employment_dojang_status (dojang_id, status),
   CONSTRAINT fk_employment_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE CASCADE,
   CONSTRAINT fk_employment_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_employment_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE
@@ -104,8 +94,6 @@ CREATE TABLE EMPLOYMENT_HISTORY (
   user_id BIGINT COMMENT '변경한 사용자 ID (NULL이면 시스템 변경)',
   reason VARCHAR(500) COMMENT '변경 사유',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '이력 생성 시각',
-  INDEX idx_employment_history_employment_created (employment_id, created_at),
-  INDEX idx_employment_history_to_status_created (to_status, created_at),
   CONSTRAINT fk_employment_history_employment_id FOREIGN KEY (employment_id) REFERENCES EMPLOYMENT (id) ON DELETE CASCADE,
   CONSTRAINT fk_employment_history_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='고용 상태 변경 이력';
@@ -120,7 +108,6 @@ CREATE TABLE PERMISSION (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_permission_employment_resource_action (employment_id, resource, action),
-  INDEX idx_permission_employment_id (employment_id),
   CONSTRAINT fk_permission_employment_id FOREIGN KEY (employment_id) REFERENCES EMPLOYMENT (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사범 권한';
 
@@ -142,9 +129,6 @@ CREATE TABLE STUDENT (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_student_tenant_status (tenant_id, status),
-  INDEX idx_student_dojang_status (dojang_id, status),
-  INDEX idx_student_tenant_name (tenant_id, name),
   CONSTRAINT fk_student_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_student_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 정보';
@@ -160,9 +144,7 @@ CREATE TABLE GUARDIAN (
   push_token_updated_at TIMESTAMP NULL COMMENT '푸시 토큰 갱신 시각',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-  deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_guardian_phone (phone),
-  INDEX idx_guardian_is_verified (is_verified)
+  deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='학부모 정보';
 
 -- 3.3 GUARDIANSHIP (보호자 관계)
@@ -176,8 +158,6 @@ CREATE TABLE GUARDIANSHIP (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
   UNIQUE KEY uk_guardianship_guardian_student (guardian_id, student_id),
-  INDEX idx_guardianship_guardian_id (guardian_id),
-  INDEX idx_guardianship_student_id (student_id),
   CONSTRAINT fk_guardianship_guardian_id FOREIGN KEY (guardian_id) REFERENCES GUARDIAN (id) ON DELETE CASCADE,
   CONSTRAINT fk_guardianship_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='학부모-원생 관계';
@@ -195,7 +175,6 @@ CREATE TABLE SECTION (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_section_dojang_active (dojang_id, is_active),
   CONSTRAINT fk_section_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련부 (유아부, 초등부, 성인부 등)';
 
@@ -211,8 +190,6 @@ CREATE TABLE CLASS (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  INDEX idx_class_dojang_day (dojang_id, day_of_week),
-  INDEX idx_class_section_id (section_id),
   CONSTRAINT fk_class_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_class_section_id FOREIGN KEY (section_id) REFERENCES SECTION (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련반 (요일 + 시간 기반)';
@@ -226,8 +203,6 @@ CREATE TABLE ENROLLMENT (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각 (등록 취소)',
   UNIQUE KEY uk_enrollment_student_class (student_id, class_id),
-  INDEX idx_enrollment_student_id (student_id),
-  INDEX idx_enrollment_class_id (class_id),
   CONSTRAINT fk_enrollment_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
   CONSTRAINT fk_enrollment_class_id FOREIGN KEY (class_id) REFERENCES CLASS (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 수련반 등록';
@@ -253,10 +228,6 @@ CREATE TABLE ATTENDANCE (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_attendance_tenant_student_date (tenant_id, student_id, attendance_date),
-  INDEX idx_attendance_tenant_date (tenant_id, attendance_date),
-  INDEX idx_attendance_student_date (student_id, attendance_date),
-  INDEX idx_attendance_dojang_date (dojang_id, attendance_date),
-  INDEX idx_attendance_class_date (class_id, attendance_date),
   CONSTRAINT fk_attendance_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_attendance_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_attendance_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
@@ -277,8 +248,6 @@ CREATE TABLE PROMOTION (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_promotion_student_rank_awarded (student_id, `rank`, awarded_at),
-  INDEX idx_promotion_student_awarded (student_id, awarded_at),
-  INDEX idx_promotion_dojang_awarded (dojang_id, awarded_at),
   CONSTRAINT fk_promotion_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_promotion_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
   CONSTRAINT fk_promotion_examined_by FOREIGN KEY (examined_by) REFERENCES `USER` (id) ON DELETE SET NULL
@@ -294,8 +263,6 @@ CREATE TABLE PROMOTION_HISTORY (
   changed_by BIGINT COMMENT '변경한 사용자 ID',
   reason VARCHAR(500) COMMENT '변경 사유',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '이력 생성 시각',
-  INDEX idx_promotion_history_promotion_created (promotion_id, created_at),
-  INDEX idx_promotion_history_action_created (`action`, created_at),
   CONSTRAINT fk_promotion_history_promotion_id FOREIGN KEY (promotion_id) REFERENCES PROMOTION (id) ON DELETE CASCADE,
   CONSTRAINT fk_promotion_history_changed_by FOREIGN KEY (changed_by) REFERENCES `USER` (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='승급 변경 이력';
@@ -315,9 +282,6 @@ CREATE TABLE INVOICE (
   note VARCHAR(500) COMMENT '비고',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-  INDEX idx_invoice_tenant_status_due (tenant_id, status, due_date),
-  INDEX idx_invoice_student_status (student_id, status),
-  INDEX idx_invoice_dojang_issue (dojang_id, issue_date),
   CONSTRAINT fk_invoice_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_invoice_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_invoice_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
@@ -337,9 +301,6 @@ CREATE TABLE PAYMENT (
   amount DECIMAL(10,2) NOT NULL COMMENT '수납 금액',
   received_by BIGINT COMMENT '수납 처리자 ID',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-  INDEX idx_payment_tenant_paid (tenant_id, paid_at),
-  INDEX idx_payment_invoice_id (invoice_id),
-  INDEX idx_payment_status (status),
   CONSTRAINT fk_payment_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_payment_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_payment_invoice_id FOREIGN KEY (invoice_id) REFERENCES INVOICE (id) ON DELETE CASCADE,
@@ -367,10 +328,6 @@ CREATE TABLE MESSAGE_QUEUE (
   error_message VARCHAR(1000) COMMENT '오류 메시지',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-  INDEX idx_message_queue_status_scheduled (status, scheduled_at),
-  INDEX idx_message_queue_tenant_created (tenant_id, created_at),
-  INDEX idx_message_queue_guardian_id (guardian_id),
-  INDEX idx_message_queue_student_id (student_id),
   CONSTRAINT fk_message_queue_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_message_queue_guardian_id FOREIGN KEY (guardian_id) REFERENCES GUARDIAN (id) ON DELETE CASCADE,
   CONSTRAINT fk_message_queue_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE
