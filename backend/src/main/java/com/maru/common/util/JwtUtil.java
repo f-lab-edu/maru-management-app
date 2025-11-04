@@ -108,7 +108,17 @@ public class JwtUtil {
      * @return 생성된 Refresh Token
      */
     public String generateRefreshToken(Long userId) {
-        return null;
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
+
+        return Jwts.builder()
+                .setSubject(userId.toString())
+                .setIssuer("maru-management-api")
+                .setAudience("maru-management-client")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
     }
 
     /**
