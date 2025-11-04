@@ -1,6 +1,7 @@
 package com.maru.common.util;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,8 @@ public class JwtUtil {
      * @return HMAC-SHA 알고리즘을 위한 SecretKey
      */
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     /**
@@ -43,11 +45,11 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .setSubject(userId.toString())
                 .claim("tenantId", tenantId)
                 .claim("role", role)
-                .issuedAt(now)
-                .expiration(expiryDate)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
