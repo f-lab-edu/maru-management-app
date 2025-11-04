@@ -42,7 +42,7 @@ public class JwtUtil {
      * @param tenantId 테넌트 ID
      * @param dojangId 도장 ID
      * @param role 사용자 역할
-     * @return 생성된 JWT 토큰
+     * @return JWT 토큰
      */
     public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
         Date now = new Date();
@@ -118,7 +118,7 @@ public class JwtUtil {
      * Refresh Token 생성
      *
      * @param userId 사용자 ID
-     * @return 생성된 Refresh Token
+     * @return Refresh Token
      */
     public String generateRefreshToken(Long userId) {
         Date now = new Date();
