@@ -46,7 +46,10 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .setSubject(userId.toString())
+                .setIssuer("maru-management-api")
+                .setAudience("maru-management-client")
                 .claim("tenantId", tenantId)
+                .claim("dojangId", dojangId)
                 .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -61,7 +64,23 @@ public class JwtUtil {
      * @return 토큰이 유효하면 true, 그렇지 않으면 false
      */
     public boolean validateToken(String token) {
-        return false;
+        try {
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            return false;
+        } catch (UnsupportedJwtException e) {
+            return false;
+        } catch (MalformedJwtException e) {
+            return false;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            return false;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /**
@@ -71,7 +90,15 @@ public class JwtUtil {
      * @return JWT Claims 객체
      */
     public Claims parseClaims(String token) {
-        return null;
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
     }
 
     /**
