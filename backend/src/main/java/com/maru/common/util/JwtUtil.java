@@ -7,19 +7,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
+    private static final String TOKEN_TYPE_ACCESS = "access";
+    private static final String TOKEN_TYPE_REFRESH = "refresh";
 
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.access-token-expiration}")
-    private Long accessTokenExpiration;
+    private Duration accessTokenExpiration;
 
     @Value("${jwt.refresh-token-expiration}")
-    private Long refreshTokenExpiration;
+    private Duration refreshTokenExpiration;
 
     /**
      * SecretKey 생성
@@ -42,12 +46,13 @@ public class JwtUtil {
      */
     public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
+        Date expiryDate = Date.from(Instant.now().plus(accessTokenExpiration));
 
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .setIssuer("maru-management-api")
                 .setAudience("maru-management-client")
+                .claim("type", TOKEN_TYPE_ACCESS)
                 .claim("tenantId", tenantId)
                 .claim("dojangId", dojangId)
                 .claim("role", role)
@@ -58,17 +63,25 @@ public class JwtUtil {
     }
 
     /**
-     * JWT 토큰 유효성 검증
+     * Access Token 유효성 검증
      *
-     * @param token 검증할 JWT 토큰
+     * @param token 검증할 Access Token
      * @return 토큰이 유효하면 true, 그렇지 않으면 false
      */
-    public boolean validateToken(String token) {
+    public boolean validateAccessToken(String token) {
         try {
-            Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
-                    .parseSignedClaims(token);
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            // 토큰 타입 검증
+            String tokenType = claims.get("type", String.class);
+            if (!TOKEN_TYPE_ACCESS.equals(tokenType)) {
+                return false;
+            }
+
             return true;
         } catch (ExpiredJwtException e) {
             return false;
@@ -109,12 +122,13 @@ public class JwtUtil {
      */
     public String generateRefreshToken(Long userId) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
+        Date expiryDate = Date.from(Instant.now().plus(refreshTokenExpiration));
 
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .setIssuer("maru-management-api")
                 .setAudience("maru-management-client")
+                .claim("type", TOKEN_TYPE_REFRESH)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey())
@@ -128,6 +142,30 @@ public class JwtUtil {
      * @return 토큰이 유효하면 true, 그렇지 않으면 false
      */
     public boolean validateRefreshToken(String token) {
-        return false;
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            // 토큰 타입 검증
+            String tokenType = claims.get("type", String.class);
+            if (!TOKEN_TYPE_REFRESH.equals(tokenType)) {
+                return false;
+            }
+
+            return true;
+        } catch (ExpiredJwtException e) {
+            return false;
+        } catch (UnsupportedJwtException e) {
+            return false;
+        } catch (MalformedJwtException e) {
+            return false;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            return false;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
