@@ -38,8 +38,18 @@ public class JwtUtil {
      * @param role 사용자 역할
      * @return 생성된 JWT 토큰
      */
-    public String generateAccessToken(Long userId, Long tenantId, String role) {
-        return null;
+    public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("tenantId", tenantId)
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
     }
 
     /**
