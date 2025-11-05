@@ -68,11 +68,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long dojangId = claims.get("dojangId", Long.class);
             String role = claims.get("role", String.class);
 
+            // 테넌트 컨텍스트 설정
+            TenantContextHolder.setTenantId(tenantId);
+
             // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
             List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + role)
             );
 
+            // TODO : UsernamePasswordAuthenticationToken -> Oauth2 의존성을 추가해서 JwtAuthenticationToken 등으로 리팩토링 고민
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userId,
                 null,
@@ -89,6 +93,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
+        } finally {
+            // ThreadLocal 정리
+            // TODO : try with resource 로 리팩토링 고민
+            TenantContextHolder.clear();
         }
 
         filterChain.doFilter(request, response);
