@@ -18,7 +18,9 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
 
     /**
      * 도메인 객체에 대한 권한 평가
-     * JWT Claims에서 userId, tenantId를 추출하여 PermissionCache로 권한 검증
+     * JWT Claims에서 userId, tenantId, role을 추출하여 권한 검증
+     * - 관장(OWNER) 역할: 모든 권한 자동 부여
+     * - 일반 역할: PermissionCache로 권한 검증
      *
      * @param authentication 인증 정보 (principal에 Claims Map 포함)
      * @param targetDomainObject 대상 도메인 객체 (미사용)
@@ -44,6 +46,7 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
 
             Long userId = (Long) claims.get("userId");
             Long tenantId = (Long) claims.get("tenantId");
+            String role = (String) claims.get("role");
 
             if (userId == null || tenantId == null) {
                 log.warn("Claims에 userId 또는 tenantId가 없습니다");
@@ -61,11 +64,18 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
             String resource = parts[0];
             String action = parts[1];
 
+            // 관장 역할(OWNER)은 모든 권한 자동 부여
+            if ("OWNER".equals(role)) {
+                log.debug("관장 역할 무제한 접근 - userId: {}, tenantId: {}, resource: {}, action: {}",
+                        userId, tenantId, resource, action);
+                return true;
+            }
+
             // PermissionCache로 권한 확인
             boolean hasPermission = permissionCache.hasPermission(userId, tenantId, resource, action);
 
             if (!hasPermission) {
-                log.debug("권한 거부 - userId: {}, tenantId: {}, resource: {}, action: {}",
+                log.warn("권한 거부 - userId: {}, tenantId: {}, resource: {}, action: {}",
                         userId, tenantId, resource, action);
             }
 
