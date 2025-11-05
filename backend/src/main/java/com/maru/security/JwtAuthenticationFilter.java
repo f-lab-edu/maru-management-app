@@ -16,7 +16,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -71,6 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 테넌트 컨텍스트 설정
             TenantContextHolder.setTenantId(tenantId);
 
+            // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
+            Map<String, Object> claimsMap = new HashMap<>();
+            claimsMap.put("userId", userId);
+            claimsMap.put("tenantId", tenantId);
+            claimsMap.put("dojangId", dojangId);
+            claimsMap.put("role", role);
+
             // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
             List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + role)
@@ -78,7 +87,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // TODO : UsernamePasswordAuthenticationToken -> Oauth2 의존성을 추가해서 JwtAuthenticationToken 등으로 리팩토링 고민
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userId,
+                claimsMap,
                 null,
                 authorities
             );
