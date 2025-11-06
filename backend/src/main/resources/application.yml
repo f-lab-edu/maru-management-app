@@ -4,6 +4,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
   flyway:
     enabled: true
     locations: classpath:/db/migration
