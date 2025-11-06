@@ -2,7 +2,7 @@ spring:
   profiles:
     active: local
 
-# Global CORS (configurable via env CORS_ALLOWED_ORIGINS)
+# Global CORS
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
 
@@ -30,6 +30,10 @@ spring:
     locations: classpath:/db/migration
     baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
     validate-on-migrate: ${FLYWAY_VALIDATE_ON_MIGRATE:true}
+
+# 개발 환경: 프론트엔드와 모바일 Origin 명시 (httpOnly Cookie 지원)
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:19006}
 
 ---
 spring:

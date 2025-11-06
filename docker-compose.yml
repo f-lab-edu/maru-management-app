@@ -2,6 +2,8 @@ services:
   mysql:
     image: mysql:8.0
     container_name: maru-mysql
+    env_file:
+      - .env.local
     ports:
       - "3306:3306"
     stop_grace_period: 30s
@@ -37,6 +39,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: maru-backend
+    env_file:
+      - .env.local
     ports:
       - "8080:8080"
     stop_grace_period: 30s
@@ -64,6 +68,8 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: maru-frontend
+    env_file:
+      - .env.local
     ports:
       - "3000:3000"
     stop_grace_period: 10s
