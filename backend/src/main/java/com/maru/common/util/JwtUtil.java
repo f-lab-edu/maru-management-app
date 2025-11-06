@@ -45,8 +45,8 @@ public class JwtUtil {
      * @return JWT 토큰
      */
     public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
-        Date now = new Date();
-        Date expiryDate = Date.from(Instant.now().plus(accessTokenExpiration));
+        Instant now = Instant.now();
+        Instant expiryDate = now.plus(accessTokenExpiration);
 
         return Jwts.builder()
                 .setSubject(userId.toString())
@@ -56,8 +56,8 @@ public class JwtUtil {
                 .claim("tenantId", tenantId)
                 .claim("dojangId", dojangId)
                 .claim("role", role)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -121,16 +121,16 @@ public class JwtUtil {
      * @return Refresh Token
      */
     public String generateRefreshToken(Long userId) {
-        Date now = new Date();
-        Date expiryDate = Date.from(Instant.now().plus(refreshTokenExpiration));
+        Instant now = Instant.now();
+        Instant expiryDate = now.plus(refreshTokenExpiration);
 
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .setIssuer("maru-management-api")
                 .setAudience("maru-management-client")
                 .claim("type", TOKEN_TYPE_REFRESH)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
