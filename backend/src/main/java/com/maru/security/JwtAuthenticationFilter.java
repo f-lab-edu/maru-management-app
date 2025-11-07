@@ -4,6 +4,7 @@ import com.maru.common.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         try {
-            // Authorization 헤더에서 Bearer 토큰 추출
+            // Cookie에서 JWT 토큰 추출
             String token = extractToken(request);
 
             // 토큰이 없으면 필터 체인 계속
@@ -95,10 +96,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             // 인증 성공 로깅
-            log.info("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, ip={}, endpoint={}",
-                     userId, tenantId, dojangId, role,
-                     request.getRemoteAddr(),
-                     request.getRequestURI());
+            log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
+                     userId, tenantId, dojangId, role, request.getRequestURI());
 
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
@@ -112,16 +111,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Authorization 헤더에서 Bearer 토큰 추출
+     * Cookie에서 JWT 토큰 추출
      *
      * @param request HTTP 요청
      * @return JWT 토큰 (없으면 null)
      */
     private String extractToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
+        Cookie[] cookies = request.getCookies();
 
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
 
         return null;
