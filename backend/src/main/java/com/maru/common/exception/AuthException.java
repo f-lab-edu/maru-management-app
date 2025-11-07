@@ -3,10 +3,6 @@ package com.maru.common.exception;
 import lombok.Getter;
 import org.springframework.security.core.AuthenticationException;
 
-/**
- * 인증 관련 예외
- * ErrorCode를 포함하여 메시지 중복을 제거
- */
 @Getter
 public class AuthException extends AuthenticationException {
 
