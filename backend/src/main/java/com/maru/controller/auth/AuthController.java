@@ -1,8 +1,6 @@
-package com.maru.controller;
+package com.maru.controller.auth;
 
 import com.maru.common.util.JwtUtil;
-import com.maru.dto.req.LoginReq;
-import com.maru.dto.res.LoginRes;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
