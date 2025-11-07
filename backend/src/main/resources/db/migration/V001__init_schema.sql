@@ -1,5 +1,5 @@
 -- ========================================
--- MARU 태권도 도장 관리 시스템 - 초기 스키마
+-- 초기 스키마 생성
 -- ========================================
 -- Version: V001
 -- Description: 18개 테이블 생성 (PK, FK, UNIQUE 제약조건 포함)
@@ -10,8 +10,8 @@
 -- 1. 인증 및 테넌트 관련 테이블 (5개)
 -- ========================================
 
--- 1.1 USER (사용자)
-CREATE TABLE `USER` (
+-- 1.1 USERS (사용자)
+CREATE TABLE USERS (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL COMMENT '사용자 이름',
   email VARCHAR(255) COMMENT '이메일 (선택)',
@@ -33,7 +33,7 @@ CREATE TABLE OAUTH_ACCOUNT (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_oauth_provider_account (provider, provider_account_id),
-  CONSTRAINT fk_oauth_account_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE CASCADE
+  CONSTRAINT fk_oauth_account_user_id FOREIGN KEY (user_id) REFERENCES USERS (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='OAuth 계정 정보';
 
 -- 1.3 TENANT (테넌트)
@@ -46,7 +46,7 @@ CREATE TABLE TENANT (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
   UNIQUE KEY uk_tenant_slug (slug),
-  CONSTRAINT fk_tenant_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id)
+  CONSTRAINT fk_tenant_user_id FOREIGN KEY (user_id) REFERENCES USERS (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='테넌트 (독립적인 도장 운영 단위)';
 
 -- 1.4 DOJANG (도장)
@@ -63,7 +63,7 @@ CREATE TABLE DOJANG (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
   CONSTRAINT fk_dojang_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_dojang_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id)
+  CONSTRAINT fk_dojang_user_id FOREIGN KEY (user_id) REFERENCES USERS (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='도장 정보';
 
 -- 1.5 EMPLOYMENT (고용)
@@ -76,7 +76,7 @@ CREATE TABLE EMPLOYMENT (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   UNIQUE KEY uk_employment_user_dojang (user_id, dojang_id),
-  CONSTRAINT fk_employment_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE CASCADE,
+  CONSTRAINT fk_employment_user_id FOREIGN KEY (user_id) REFERENCES USERS (id) ON DELETE CASCADE,
   CONSTRAINT fk_employment_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_employment_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사범 고용 관계';
@@ -95,7 +95,7 @@ CREATE TABLE EMPLOYMENT_HISTORY (
   reason VARCHAR(500) COMMENT '변경 사유',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '이력 생성 시각',
   CONSTRAINT fk_employment_history_employment_id FOREIGN KEY (employment_id) REFERENCES EMPLOYMENT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_employment_history_user_id FOREIGN KEY (user_id) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_employment_history_user_id FOREIGN KEY (user_id) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='고용 상태 변경 이력';
 
 -- 2.2 PERMISSION (권한)
@@ -178,8 +178,8 @@ CREATE TABLE SECTION (
   CONSTRAINT fk_section_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련부 (유아부, 초등부, 성인부 등)';
 
--- 4.2 CLASS (수련반)
-CREATE TABLE CLASS (
+-- 4.2 CLASSES (수련반)
+CREATE TABLE CLASSES (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   dojang_id BIGINT NOT NULL COMMENT '도장 ID',
   section_id BIGINT COMMENT '수련부 ID (NULL 가능)',
@@ -204,7 +204,7 @@ CREATE TABLE ENROLLMENT (
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각 (등록 취소)',
   UNIQUE KEY uk_enrollment_student_class (student_id, class_id),
   CONSTRAINT fk_enrollment_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_enrollment_class_id FOREIGN KEY (class_id) REFERENCES CLASS (id) ON DELETE CASCADE
+  CONSTRAINT fk_enrollment_class_id FOREIGN KEY (class_id) REFERENCES CLASSES (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 수련반 등록';
 
 -- ========================================
@@ -231,8 +231,8 @@ CREATE TABLE ATTENDANCE (
   CONSTRAINT fk_attendance_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_attendance_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_attendance_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_attendance_class_id FOREIGN KEY (class_id) REFERENCES CLASS (id) ON DELETE SET NULL,
-  CONSTRAINT fk_attendance_checked_by FOREIGN KEY (checked_by) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_attendance_class_id FOREIGN KEY (class_id) REFERENCES CLASSES (id) ON DELETE SET NULL,
+  CONSTRAINT fk_attendance_checked_by FOREIGN KEY (checked_by) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 출결 기록';
 
 -- 5.2 PROMOTION (승급)
@@ -250,7 +250,7 @@ CREATE TABLE PROMOTION (
   UNIQUE KEY uk_promotion_student_rank_awarded (student_id, `rank`, awarded_at),
   CONSTRAINT fk_promotion_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_promotion_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_promotion_examined_by FOREIGN KEY (examined_by) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_promotion_examined_by FOREIGN KEY (examined_by) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 승급 이력';
 
 -- 5.3 PROMOTION_HISTORY (승급 변경 이력)
@@ -264,7 +264,7 @@ CREATE TABLE PROMOTION_HISTORY (
   reason VARCHAR(500) COMMENT '변경 사유',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '이력 생성 시각',
   CONSTRAINT fk_promotion_history_promotion_id FOREIGN KEY (promotion_id) REFERENCES PROMOTION (id) ON DELETE CASCADE,
-  CONSTRAINT fk_promotion_history_changed_by FOREIGN KEY (changed_by) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_promotion_history_changed_by FOREIGN KEY (changed_by) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='승급 변경 이력';
 
 -- 5.4 INVOICE (청구서)
@@ -285,7 +285,7 @@ CREATE TABLE INVOICE (
   CONSTRAINT fk_invoice_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_invoice_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_invoice_student_id FOREIGN KEY (student_id) REFERENCES STUDENT (id) ON DELETE CASCADE,
-  CONSTRAINT fk_invoice_issued_by FOREIGN KEY (issued_by) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_invoice_issued_by FOREIGN KEY (issued_by) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 수납 청구서';
 
 -- 5.5 PAYMENT (수납)
@@ -304,7 +304,7 @@ CREATE TABLE PAYMENT (
   CONSTRAINT fk_payment_tenant_id FOREIGN KEY (tenant_id) REFERENCES TENANT (id) ON DELETE CASCADE,
   CONSTRAINT fk_payment_dojang_id FOREIGN KEY (dojang_id) REFERENCES DOJANG (id) ON DELETE CASCADE,
   CONSTRAINT fk_payment_invoice_id FOREIGN KEY (invoice_id) REFERENCES INVOICE (id) ON DELETE CASCADE,
-  CONSTRAINT fk_payment_received_by FOREIGN KEY (received_by) REFERENCES `USER` (id) ON DELETE SET NULL
+  CONSTRAINT fk_payment_received_by FOREIGN KEY (received_by) REFERENCES USERS (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='청구서 수납 내역';
 
 -- ========================================
