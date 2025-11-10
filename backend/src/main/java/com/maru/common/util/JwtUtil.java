@@ -16,6 +16,12 @@ public class JwtUtil {
     private static final String TOKEN_TYPE_ACCESS = "access";
     private static final String TOKEN_TYPE_REFRESH = "refresh";
 
+    public enum TokenValidationResult {
+        VALID,
+        EXPIRED,
+        INVALID
+    }
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -45,8 +51,8 @@ public class JwtUtil {
      * @return JWT 토큰
      */
     public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
-        Date now = new Date();
-        Date expiryDate = Date.from(Instant.now().plus(accessTokenExpiration));
+        Instant now = Instant.now();
+        Instant expiryDate = now.plus(accessTokenExpiration);
 
         return Jwts.builder()
                 .setSubject(userId.toString())
@@ -56,19 +62,19 @@ public class JwtUtil {
                 .claim("tenantId", tenantId)
                 .claim("dojangId", dojangId)
                 .claim("role", role)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
 
     /**
-     * Access Token 유효성 검증
+     * Access Token 유효성 검증 (상태 구분)
      *
      * @param token 검증할 Access Token
-     * @return 토큰이 유효하면 true, 그렇지 않으면 false
+     * @return 토큰 검증 결과 (VALID/EXPIRED/INVALID)
      */
-    public boolean validateAccessToken(String token) {
+    public TokenValidationResult validateAccessToken(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
@@ -79,20 +85,16 @@ public class JwtUtil {
             // 토큰 타입 검증
             String tokenType = claims.get("type", String.class);
             if (!TOKEN_TYPE_ACCESS.equals(tokenType)) {
-                return false;
+                return TokenValidationResult.INVALID;
             }
 
-            return true;
+            return TokenValidationResult.VALID;
         } catch (ExpiredJwtException e) {
-            return false;
-        } catch (UnsupportedJwtException e) {
-            return false;
-        } catch (MalformedJwtException e) {
-            return false;
-        } catch (io.jsonwebtoken.security.SignatureException e) {
-            return false;
-        } catch (IllegalArgumentException e) {
-            return false;
+            return TokenValidationResult.EXPIRED;
+        } catch (UnsupportedJwtException | MalformedJwtException |
+                 io.jsonwebtoken.security.SignatureException |
+                 IllegalArgumentException e) {
+            return TokenValidationResult.INVALID;
         }
     }
 
@@ -121,27 +123,27 @@ public class JwtUtil {
      * @return Refresh Token
      */
     public String generateRefreshToken(Long userId) {
-        Date now = new Date();
-        Date expiryDate = Date.from(Instant.now().plus(refreshTokenExpiration));
+        Instant now = Instant.now();
+        Instant expiryDate = now.plus(refreshTokenExpiration);
 
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .setIssuer("maru-management-api")
                 .setAudience("maru-management-client")
                 .claim("type", TOKEN_TYPE_REFRESH)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
 
     /**
-     * Refresh Token 유효성 검증
+     * Refresh Token 유효성 검증 (상태 구분)
      *
      * @param token 검증할 Refresh Token
-     * @return 토큰이 유효하면 true, 그렇지 않으면 false
+     * @return 토큰 검증 결과 (VALID/EXPIRED/INVALID)
      */
-    public boolean validateRefreshToken(String token) {
+    public TokenValidationResult validateRefreshToken(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
@@ -149,23 +151,29 @@ public class JwtUtil {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            // 토큰 타입 검증
             String tokenType = claims.get("type", String.class);
             if (!TOKEN_TYPE_REFRESH.equals(tokenType)) {
-                return false;
+                return TokenValidationResult.INVALID;
             }
 
-            return true;
+            return TokenValidationResult.VALID;
         } catch (ExpiredJwtException e) {
-            return false;
-        } catch (UnsupportedJwtException e) {
-            return false;
-        } catch (MalformedJwtException e) {
-            return false;
-        } catch (io.jsonwebtoken.security.SignatureException e) {
-            return false;
-        } catch (IllegalArgumentException e) {
-            return false;
+            return TokenValidationResult.EXPIRED;
+        } catch (UnsupportedJwtException | MalformedJwtException |
+                 io.jsonwebtoken.security.SignatureException |
+                 IllegalArgumentException e) {
+            return TokenValidationResult.INVALID;
         }
+    }
+
+    /**
+     * JWT 토큰에서 사용자 ID 추출
+     *
+     * @param token JWT 토큰
+     * @return 사용자 ID
+     */
+    public Long extractUserId(String token) {
+        Claims claims = parseClaims(token);
+        return Long.parseLong(claims.getSubject());
     }
 }

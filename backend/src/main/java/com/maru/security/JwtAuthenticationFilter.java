@@ -58,8 +58,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             // JwtUtil을 사용한 토큰 검증
-            if (!jwtUtil.validateAccessToken(token)) {
-                log.warn("유효하지 않은 JWT 토큰: {}", request.getRequestURI());
+            JwtUtil.TokenValidationResult validationResult = jwtUtil.validateAccessToken(token);
+            if (validationResult != JwtUtil.TokenValidationResult.VALID) {
+                log.warn("유효하지 않은 JWT 토큰: {}, 상태: {}", request.getRequestURI(), validationResult);
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -99,15 +100,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
                      userId, tenantId, dojangId, role, request.getRequestURI());
 
+            // 필터 체인 계속
+            filterChain.doFilter(request, response);
+
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
+            filterChain.doFilter(request, response);
         } finally {
-            // ThreadLocal 정리
-            // TODO : try with resource 로 리팩토링 고민
+            // 모든 요청 처리 완료 후 ThreadLocal 정리
             TenantContextHolder.clear();
         }
-
-        filterChain.doFilter(request, response);
     }
 
     /**
@@ -128,5 +130,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    /**
+     * 헬스체크 엔드포인트를 필터에서 제외
+     *
+     * @param request HttpServletRequest
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/actuator/health");
     }
 }
