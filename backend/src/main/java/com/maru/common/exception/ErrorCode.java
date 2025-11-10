@@ -12,7 +12,12 @@ public enum ErrorCode {
     AUTH_TOKEN_EXPIRED("AUTH_004", "토큰이 만료되었습니다"),
     AUTH_REFRESH_TOKEN_EXPIRED("AUTH_005", "리프레시 토큰이 만료되었습니다. 다시 로그인해주세요"),
     AUTH_REFRESH_TOKEN_INVALID("AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
-    AUTH_REFRESH_TOKEN_REQUIRED("AUTH_007", "리프레시 토큰이 필요합니다");
+    AUTH_REFRESH_TOKEN_REQUIRED("AUTH_007", "리프레시 토큰이 필요합니다"),
+
+    // 일반 에러 (COMMON_XXX)
+    BAD_REQUEST("COMMON_001", "잘못된 요청입니다"),
+    NOT_FOUND("COMMON_002", "요청한 리소스를 찾을 수 없습니다"),
+    INTERNAL_SERVER_ERROR("COMMON_003", "서버 내부 오류가 발생했습니다");
 
     private final String code;
     private final String message;
