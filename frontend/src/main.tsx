@@ -1,29 +1,10 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import App from './App.tsx'
-import HomePage from './pages/HomePage.tsx'
-import './shared/styles/globals.css'
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-})
-
-const router = createBrowserRouter([
-  {
-    element: <App />,
-    children: [
-      { path: '/', element: <HomePage /> },
-    ],
-  },
-])
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from 'react-router-dom';
+import { queryClient } from './lib/queryClient';
+import { router } from './router';
+import './shared/styles/globals.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -31,4 +12,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <RouterProvider router={router} />
     </QueryClientProvider>
   </React.StrictMode>,
-)
+);
