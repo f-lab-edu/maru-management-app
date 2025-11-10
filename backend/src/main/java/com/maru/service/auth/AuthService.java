@@ -1,13 +1,14 @@
 package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
-import com.maru.common.exception.ErrorCode;
 import com.maru.common.util.JwtUtil;
 import com.maru.controller.auth.LoginReq;
 import com.maru.service.auth.dto.TokenPair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -51,7 +52,7 @@ public class AuthService {
      */
     public TokenPair refreshAccessToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new AuthException(ErrorCode.AUTH_REFRESH_TOKEN_REQUIRED);
+            throw new AuthException(AUTH_REFRESH_TOKEN_REQUIRED);
         }
 
         // Refresh Token 검증
@@ -61,11 +62,11 @@ public class AuthService {
         switch (validationResult) {
             case EXPIRED -> {
                 log.warn("만료된 리프레시 토큰 사용 시도");
-                throw new AuthException(ErrorCode.AUTH_REFRESH_TOKEN_EXPIRED);
+                throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
             }
             case INVALID -> {
                 log.warn("유효하지 않은 리프레시 토큰 사용 시도");
-                throw new AuthException(ErrorCode.AUTH_REFRESH_TOKEN_INVALID);
+                throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
             }
         }
 
