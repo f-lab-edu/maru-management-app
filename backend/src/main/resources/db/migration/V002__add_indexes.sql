@@ -1,17 +1,21 @@
--- V002__add_indexes.sql
+-- ========================================
+-- 인덱스 생성
+-- ========================================
+-- Version: V002
 -- Description: 성능 최적화를 위한 인덱스 생성
 -- Created: 2025-11-03
--- Author: Maru Management System
+-- ========================================
+
 
 -- ===================================
 -- 1. 인증 및 테넌트 인덱스
 -- ===================================
 
--- INDEX-001: USER 테이블 인덱스
+-- INDEX-001: USERS 테이블 인덱스
 -- 용도: 이메일 검색, 전화번호 검색, 역할별 조회
-CREATE INDEX idx_user_email ON USER (email);
-CREATE INDEX idx_user_phone ON USER (phone);
-CREATE INDEX idx_user_role ON USER (role);
+CREATE INDEX idx_user_email ON USERS (email);
+CREATE INDEX idx_user_phone ON USERS (phone);
+CREATE INDEX idx_user_role ON USERS (role);
 
 -- INDEX-002: OAUTH_ACCOUNT 테이블 인덱스
 -- 용도: OAuth 계정 조회 시 사용자 ID로 검색
@@ -73,10 +77,10 @@ CREATE INDEX idx_guardianship_student_id ON GUARDIANSHIP (student_id);
 -- 용도: 도장별 활성 수련부 조회
 CREATE INDEX idx_section_dojang_id_is_active ON SECTION (dojang_id, is_active);
 
--- INDEX-012: CLASS 테이블 인덱스
+-- INDEX-012: CLASSES 테이블 인덱스
 -- 용도: 도장별 요일별 수련반 조회, 수련부별 수련반 조회
-CREATE INDEX idx_class_dojang_id_day_of_week ON CLASS (dojang_id, day_of_week);
-CREATE INDEX idx_class_section_id ON CLASS (section_id);
+CREATE INDEX idx_class_dojang_id_day_of_week ON CLASSES (dojang_id, day_of_week);
+CREATE INDEX idx_class_section_id ON CLASSES (section_id);
 
 -- INDEX-013: ENROLLMENT 테이블 인덱스
 -- 용도: 원생별 등록 수련반 조회, 수련반별 등록 원생 조회
