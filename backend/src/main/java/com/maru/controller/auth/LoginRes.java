@@ -1,4 +1,4 @@
-package com.maru.dto.res;
+package com.maru.controller.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

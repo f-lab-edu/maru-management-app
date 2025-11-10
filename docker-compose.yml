@@ -45,6 +45,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/maru_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: maru_user
       SPRING_DATASOURCE_PASSWORD: maru_password
+      JWT_SECRET: ZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS1mb3ItbG9jYWwtZGV2ZWxvcG1lbnQtb25seS1kb25vdC11c2UtaW4tcHJvZHVjdGlvbi0xMjM0NTY3ODkw
+      JWT_ACCESS_TOKEN_EXPIRATION: 1h
+      JWT_REFRESH_TOKEN_EXPIRATION: 14d
     depends_on:
       mysql:
         condition: service_healthy

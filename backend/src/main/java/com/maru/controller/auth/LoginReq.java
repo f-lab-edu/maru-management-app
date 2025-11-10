@@ -1,4 +1,4 @@
-package com.maru.dto.req;
+package com.maru.controller.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
