@@ -26,4 +26,10 @@ cors:
 
 logging:
   level:
+    root: INFO
     com.maru: DEBUG
+    org.springframework: INFO
+    org.hibernate: WARN
+    org.hibernate.SQL: DEBUG
+  file:
+    name: logs/application.log

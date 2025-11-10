@@ -23,5 +23,10 @@ cors:
 
 logging:
   level:
-    org.flywaydb: ${FLYWAY_LOG_LEVEL:INFO}
+    root: INFO
     com.maru: INFO
+    org.springframework: INFO
+    org.hibernate: WARN
+    org.flywaydb: ${FLYWAY_LOG_LEVEL:INFO}
+  file:
+    name: logs/application.log

@@ -24,6 +24,8 @@ Thumbs.db
 # Logs
 # ----------------------------
 *.log
+logs/
+backend/logs/
 
 # ----------------------------
 # Node/JS (frontend & mobile)
