@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(
-    name = "tenants",
+    name = "tenant",
     indexes = {
         @Index(name = "idx_tenant_user_id", columnList = "user_id"),
         @Index(name = "idx_tenant_slug", columnList = "slug")

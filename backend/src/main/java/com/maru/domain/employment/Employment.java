@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-    name = "employments",
+    name = "employment",
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_employment_user_dojang",

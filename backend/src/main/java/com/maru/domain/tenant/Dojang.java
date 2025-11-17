@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-    name = "dojangs",
+    name = "dojang",
     indexes = {
         @Index(name = "idx_dojang_tenant_id", columnList = "tenant_id"),
         @Index(name = "idx_dojang_user_id", columnList = "user_id"),
