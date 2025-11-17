@@ -31,11 +31,11 @@ public class User extends SoftDeletableEntity {
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 30)
+    @Column(nullable = false, length = 30)
     private OnboardingStep onboardingStep;
 
     @Column
@@ -49,12 +49,18 @@ public class User extends SoftDeletableEntity {
         this.onboardingStep = initialStep;
     }
 
-    public static User createOwner(String name, String email, String phone) {
-        return new User(name, email, phone, UserRole.OWNER, OnboardingStep.DOJO_INFO);
+    public static User createWithoutRole(String name, String email, String phone) {
+        return new User(name, email, phone, null, OnboardingStep.ROLE_SELECT);
     }
 
-    public static User createInstructor(String name, String email, String phone) {
-        return new User(name, email, phone, UserRole.INSTRUCTOR, OnboardingStep.APPROVAL_WAIT);
+    public void selectOwnerRole() {
+        this.role = UserRole.OWNER;
+        this.onboardingStep = OnboardingStep.DOJO_INFO;
+    }
+
+    public void selectInstructorRole() {
+        this.role = UserRole.INSTRUCTOR;
+        this.onboardingStep = OnboardingStep.APPROVAL_WAIT;
     }
 
     public void updateOnboardingStep(OnboardingStep step) {
