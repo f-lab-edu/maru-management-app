@@ -1,6 +1,7 @@
-package com.maru.domain.user;
+package com.maru.domain.employment;
 
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
