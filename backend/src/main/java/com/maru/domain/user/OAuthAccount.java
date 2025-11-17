@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-    name = "oauth_accounts",
+    name = "oauth_account",
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_oauth_provider_account",

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-    name = "permissions",
+    name = "permission",
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_permission_employment_resource_action",
