@@ -1,3 +1,13 @@
 spring:
   profiles:
     active: local
+
+oauth:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: ${OAUTH_REDIRECT_URI:http://localhost:3000/oauth/callback}
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${OAUTH_REDIRECT_URI:http://localhost:3000/oauth/callback}

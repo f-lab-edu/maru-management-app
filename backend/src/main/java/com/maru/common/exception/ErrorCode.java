@@ -13,6 +13,9 @@ public enum ErrorCode {
     AUTH_REFRESH_TOKEN_EXPIRED("AUTH_005", "리프레시 토큰이 만료되었습니다. 다시 로그인해주세요"),
     AUTH_REFRESH_TOKEN_INVALID("AUTH_006", "유효하지 않은 리프레시 토큰입니다"),
     AUTH_REFRESH_TOKEN_REQUIRED("AUTH_007", "리프레시 토큰이 필요합니다"),
+    AUTH_OAUTH_FAILED("AUTH_008", "OAuth 인증에 실패했습니다"),
+    AUTH_OAUTH_INVALID_CODE("AUTH_009", "유효하지 않은 인가 코드입니다"),
+    AUTH_OAUTH_USER_INFO_FAILED("AUTH_010", "사용자 정보 조회에 실패했습니다"),
 
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST("COMMON_001", "잘못된 요청입니다"),
