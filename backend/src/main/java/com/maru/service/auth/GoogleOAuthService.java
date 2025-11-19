@@ -36,6 +36,8 @@ public class GoogleOAuthService {
 
     /**
      * Google OAuth Authorization URL 생성
+     *
+     * @return Google OAuth 인증 URL
      */
     public String getAuthorizationUrl() {
         return UriComponentsBuilder.fromUriString(AUTHORIZATION_URI)
@@ -48,6 +50,9 @@ public class GoogleOAuthService {
 
     /**
      * Authorization Code를 Access Token으로 교환
+     *
+     * @param code Authorization Code
+     * @return Google 토큰 정보
      */
     public GoogleTokenRes exchangeCodeForToken(String code) {
         HttpHeaders headers = new HttpHeaders();
@@ -77,6 +82,9 @@ public class GoogleOAuthService {
 
     /**
      * Access Token으로 사용자 정보 조회
+     *
+     * @param accessToken Google Access Token
+     * @return Google 사용자 정보
      */
     public GoogleUserInfoRes getUserInfo(String accessToken) {
         HttpHeaders headers = new HttpHeaders();

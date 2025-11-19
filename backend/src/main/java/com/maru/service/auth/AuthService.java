@@ -31,20 +31,52 @@ public class AuthService {
 
     /**
      * 로그인
+     *
+     * @return 토큰 정보
      */
     public TokenRes login() {
         throw new UnsupportedOperationException("아직 구현되지 않음");
     }
 
     /**
-     * Access Token 갱신
+     * Refresh Token으로 Access Token 갱신
+     *
+     * @param refreshToken Refresh Token
+     * @return 갱신된 토큰 정보
      */
+    @Transactional(readOnly = true)
     public TokenRes refreshAccessToken(String refreshToken) {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+        JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
+
+        if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
+            throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
+        } else if (validationResult != JwtUtil.TokenValidationResult.VALID) {
+            throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
+        }
+
+        Long userId = jwtUtil.extractUserId(refreshToken);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
+
+        String newAccessToken = jwtUtil.generateAccessToken(
+            user.getId(),
+            null,
+            null,
+            user.getRole() != null ? user.getRole().name() : "PENDING"
+        );
+
+        return TokenRes.builder()
+            .accessToken(newAccessToken)
+            .refreshToken(refreshToken)
+            .userId(user.getId())
+            .role(user.getRole() != null ? user.getRole().name() : "PENDING")
+            .build();
     }
 
     /**
      * Google OAuth Authorization URL 조회
+     *
+     * @return Google OAuth 인증 URL
      */
     public String getGoogleAuthorizationUrl() {
         return googleOAuthService.getAuthorizationUrl();
@@ -52,6 +84,8 @@ public class AuthService {
 
     /**
      * Kakao OAuth Authorization URL 조회
+     *
+     * @return Kakao OAuth 인증 URL
      */
     public String getKakaoAuthorizationUrl() {
         throw new UnsupportedOperationException("아직 구현되지 않음");
@@ -96,12 +130,21 @@ public class AuthService {
      * Kakao OAuth 로그인 처리
      *
      * @param code Authorization Code
-     * @return 인증 결과
+     * @return 토큰 정보
      */
     public TokenRes loginWithKakao(String code) {
         throw new UnsupportedOperationException("아직 구현되지 않음");
     }
 
+    /**
+     * OAuth 정보로 사용자 생성 또는 업데이트
+     *
+     * @param provider OAuth 제공자
+     * @param providerId OAuth 제공자의 사용자 ID
+     * @param email 이메일
+     * @param name 이름
+     * @return 생성 또는 업데이트된 사용자
+     */
     @Transactional
     private User createOrUpdateUserFromOAuth(
         OAuthProvider provider,

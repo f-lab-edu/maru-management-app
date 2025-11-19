@@ -26,6 +26,8 @@ public class AuthController {
 
     /**
      * 로그인 API
+     *
+     * @return 응답
      */
     @PostMapping("/login")
     public ResponseEntity<?> login() {
@@ -34,14 +36,26 @@ public class AuthController {
 
     /**
      * Access Token 갱신 API
+     *
+     * @param refreshToken Refresh Token (쿠키)
+     * @param response HTTP 응답
+     * @return 응답
      */
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public ResponseEntity<Void> refresh(
+        @CookieValue("refreshToken") String refreshToken,
+        HttpServletResponse response) {
+
+        TokenRes tokenRes = authService.refreshAccessToken(refreshToken);
+        cookieUtil.setAuthCookies(response, tokenRes);
+
+        return ResponseEntity.ok().build();
     }
 
     /**
      * Google OAuth Authorization URL 조회
+     *
+     * @return Google OAuth 인증 URL
      */
     @GetMapping("/oauth/google")
     public ResponseEntity<OAuthUrlRes> getGoogleAuthorizationUrl() {
@@ -52,6 +66,10 @@ public class AuthController {
 
     /**
      * Google OAuth Callback 처리
+     *
+     * @param request Authorization Code가 포함된 요청
+     * @param response HTTP 응답
+     * @return 응답
      */
     @PostMapping("/oauth/google/callback")
     public ResponseEntity<Void> handleGoogleCallback(
@@ -66,6 +84,8 @@ public class AuthController {
 
     /**
      * Kakao OAuth Authorization URL 조회
+     *
+     * @return Kakao OAuth 인증 URL
      */
     @GetMapping("/oauth/kakao")
     public ResponseEntity<?> getKakaoAuthorizationUrl() {
@@ -74,6 +94,9 @@ public class AuthController {
 
     /**
      * Kakao OAuth Callback 처리
+     *
+     * @param request Authorization Code가 포함된 요청
+     * @return 응답
      */
     @PostMapping("/oauth/kakao/callback")
     public ResponseEntity<?> handleKakaoCallback(@RequestBody Map<String, String> request) {
