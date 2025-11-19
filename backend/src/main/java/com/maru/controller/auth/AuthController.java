@@ -46,9 +46,7 @@ public class AuthController {
     @GetMapping("/oauth/google")
     public ResponseEntity<OAuthUrlRes> getGoogleAuthorizationUrl() {
         String authUrl = authService.getGoogleAuthorizationUrl();
-        OAuthUrlRes response = OAuthUrlRes.builder()
-            .authorizationUrl(authUrl)
-            .build();
+        OAuthUrlRes response = new OAuthUrlRes(authUrl);
         return ResponseEntity.ok(response);
     }
 
