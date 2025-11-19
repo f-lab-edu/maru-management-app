@@ -2,12 +2,20 @@ package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
+import com.maru.domain.user.OAuthAccount;
+import com.maru.domain.user.OAuthProvider;
+import com.maru.domain.user.User;
+import com.maru.repository.user.OAuthAccountRepository;
+import com.maru.repository.user.UserRepository;
 import com.maru.service.auth.dto.GoogleTokenRes;
 import com.maru.service.auth.dto.GoogleUserInfoRes;
 import com.maru.service.auth.dto.TokenRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 import static com.maru.common.exception.ErrorCode.*;
 
@@ -18,6 +26,8 @@ public class AuthService {
 
     private final JwtUtil jwtUtil;
     private final GoogleOAuthService googleOAuthService;
+    private final UserRepository userRepository;
+    private final OAuthAccountRepository oauthAccountRepository;
 
     /**
      * 로그인
@@ -53,11 +63,33 @@ public class AuthService {
      * @param code Authorization Code
      * @return 인증 결과
      */
+    @Transactional
     public TokenRes loginWithGoogle(String code) {
         GoogleTokenRes tokenRes = googleOAuthService.exchangeCodeForToken(code);
         GoogleUserInfoRes userInfo = googleOAuthService.getUserInfo(tokenRes.accessToken());
 
-        throw new UnsupportedOperationException("Repository 연동 필요");
+        User user = createOrUpdateUserFromOAuth(
+            OAuthProvider.GOOGLE,
+            userInfo.id(),
+            userInfo.email(),
+            userInfo.name()
+        );
+
+        String accessToken = jwtUtil.generateAccessToken(
+            user.getId(),
+            null,
+            null,
+            user.getRole() != null ? user.getRole().name() : "PENDING"
+        );
+
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+
+        return TokenRes.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .userId(user.getId())
+            .role(user.getRole() != null ? user.getRole().name() : "PENDING")
+            .build();
     }
 
     /**
@@ -68,5 +100,30 @@ public class AuthService {
      */
     public TokenRes loginWithKakao(String code) {
         throw new UnsupportedOperationException("아직 구현되지 않음");
+    }
+
+    @Transactional
+    private User createOrUpdateUserFromOAuth(
+        OAuthProvider provider,
+        String providerId,
+        String email,
+        String name
+    ) {
+        Optional<OAuthAccount> existingAccount = oauthAccountRepository
+            .findByProviderAndProviderAccountId(provider, providerId);
+
+        if (existingAccount.isPresent()) {
+            User user = existingAccount.get().getUser();
+            user.updateLastLoginAt();
+            return userRepository.save(user);
+        } else {
+            User newUser = User.createWithoutRole(name, email, null);
+            User savedUser = userRepository.save(newUser);
+
+            OAuthAccount newAccount = new OAuthAccount(savedUser, provider, providerId);
+            oauthAccountRepository.save(newAccount);
+
+            return savedUser;
+        }
     }
 }
