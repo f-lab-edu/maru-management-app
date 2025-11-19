@@ -2,7 +2,9 @@ package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
-import com.maru.service.auth.dto.TokenPair;
+import com.maru.service.auth.dto.GoogleTokenRes;
+import com.maru.service.auth.dto.GoogleUserInfoRes;
+import com.maru.service.auth.dto.TokenRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,18 +17,19 @@ import static com.maru.common.exception.ErrorCode.*;
 public class AuthService {
 
     private final JwtUtil jwtUtil;
+    private final GoogleOAuthService googleOAuthService;
 
     /**
      * 로그인
      */
-    public TokenPair login() {
+    public TokenRes login() {
         throw new UnsupportedOperationException("아직 구현되지 않음");
     }
 
     /**
      * Access Token 갱신
      */
-    public TokenPair refreshAccessToken(String refreshToken) {
+    public TokenRes refreshAccessToken(String refreshToken) {
         throw new UnsupportedOperationException("아직 구현되지 않음");
     }
 
@@ -34,7 +37,7 @@ public class AuthService {
      * Google OAuth Authorization URL 조회
      */
     public String getGoogleAuthorizationUrl() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+        return googleOAuthService.getAuthorizationUrl();
     }
 
     /**
@@ -50,8 +53,11 @@ public class AuthService {
      * @param code Authorization Code
      * @return 인증 결과
      */
-    public Object loginWithGoogle(String code) {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public TokenRes loginWithGoogle(String code) {
+        GoogleTokenRes tokenRes = googleOAuthService.exchangeCodeForToken(code);
+        GoogleUserInfoRes userInfo = googleOAuthService.getUserInfo(tokenRes.accessToken());
+
+        throw new UnsupportedOperationException("Repository 연동 필요");
     }
 
     /**
@@ -60,7 +66,7 @@ public class AuthService {
      * @param code Authorization Code
      * @return 인증 결과
      */
-    public Object loginWithKakao(String code) {
+    public TokenRes loginWithKakao(String code) {
         throw new UnsupportedOperationException("아직 구현되지 않음");
     }
 }

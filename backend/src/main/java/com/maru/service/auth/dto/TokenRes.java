@@ -1,14 +1,13 @@
 package com.maru.service.auth.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
-/**
- * 토큰 쌍 (Access Token + Refresh Token)
- */
 @Getter
 @AllArgsConstructor
-public class TokenPair {
+@Builder
+public class TokenRes {
     private String accessToken;
     private String refreshToken;
     private Long userId;

@@ -2,7 +2,7 @@ package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
 import com.maru.service.auth.dto.GoogleTokenRes;
-import com.maru.service.auth.dto.GoogleUserInfo;
+import com.maru.service.auth.dto.GoogleUserInfoRes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -78,18 +78,18 @@ public class GoogleOAuthService {
     /**
      * Access Token으로 사용자 정보 조회
      */
-    public GoogleUserInfo getUserInfo(String accessToken) {
+    public GoogleUserInfoRes getUserInfo(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<GoogleUserInfo> response = restTemplate.exchange(
+            ResponseEntity<GoogleUserInfoRes> response = restTemplate.exchange(
                     USER_INFO_URI,
                     HttpMethod.GET,
                     request,
-                    GoogleUserInfo.class
+                    GoogleUserInfoRes.class
             );
             return response.getBody();
         } catch (Exception e) {

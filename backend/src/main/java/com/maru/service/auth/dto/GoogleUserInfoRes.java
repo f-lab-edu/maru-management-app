@@ -1,6 +1,6 @@
 package com.maru.service.auth.dto;
 
-public record GoogleUserInfo(
+public record GoogleUserInfoRes(
     String id,
     String email,
     String name,
