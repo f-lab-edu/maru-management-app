@@ -22,7 +22,6 @@ public class GlobalExceptionHandler {
 
     /**
      * AuthException 처리 (401 Unauthorized)
-     * ErrorCode를 포함한 인증 예외 - 메시지 중복 없음
      *
      * @param ex AuthException 인스턴스
      * @param request HTTP 요청 정보
@@ -54,7 +53,6 @@ public class GlobalExceptionHandler {
 
     /**
      * AuthenticationException 처리 (401 Unauthorized)
-     * Spring Security 기본 예외 처리 (fallback)
      *
      * @param ex AuthenticationException 인스턴스
      * @param request HTTP 요청 정보
@@ -199,6 +197,36 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(errorResponse);
+    }
+
+
+    /**
+     * UnsupportedOperationException 처리 (501 Not Implemented)
+     *
+     * @param ex UnsupportedOperationException 인스턴스
+     * @param request HTTP 요청 정보
+     * @return 501 상태 코드와 ErrorRes 응답
+     */
+    @ExceptionHandler(UnsupportedOperationException.class)
+    public ResponseEntity<ErrorRes> handleUnsupportedOperationException(
+            UnsupportedOperationException ex,
+            HttpServletRequest request) {
+
+        log.warn("구현되지 않은 기능 접근: path={}, error={}",
+                request.getRequestURI(), ex.getMessage());
+
+        ErrorRes errorResponse = ErrorRes.of(
+                HttpStatus.NOT_IMPLEMENTED.value(),
+                HttpStatus.NOT_IMPLEMENTED.getReasonPhrase(),
+                "NOT_IMPLEMENTED",
+                "구현되지 않은 기능입니다",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_IMPLEMENTED)
                 .body(errorResponse);
     }
 }
