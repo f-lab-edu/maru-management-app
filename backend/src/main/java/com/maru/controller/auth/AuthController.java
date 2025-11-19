@@ -1,5 +1,12 @@
 package com.maru.controller.auth;
 
+import com.maru.common.util.CookieUtil;
+import com.maru.controller.auth.dto.OAuthCallbackReq;
+import com.maru.controller.auth.dto.OAuthUrlRes;
+import com.maru.service.auth.AuthService;
+import com.maru.service.auth.dto.TokenRes;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +20,9 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    private final AuthService authService;
+    private final CookieUtil cookieUtil;
 
     /**
      * 로그인 API
@@ -34,16 +44,26 @@ public class AuthController {
      * Google OAuth Authorization URL 조회
      */
     @GetMapping("/oauth/google")
-    public ResponseEntity<?> getGoogleAuthorizationUrl() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public ResponseEntity<OAuthUrlRes> getGoogleAuthorizationUrl() {
+        String authUrl = authService.getGoogleAuthorizationUrl();
+        OAuthUrlRes response = OAuthUrlRes.builder()
+            .authorizationUrl(authUrl)
+            .build();
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Google OAuth Callback 처리
      */
     @PostMapping("/oauth/google/callback")
-    public ResponseEntity<?> handleGoogleCallback(@RequestBody Map<String, String> request) {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public ResponseEntity<Void> handleGoogleCallback(
+        @Valid @RequestBody OAuthCallbackReq request,
+        HttpServletResponse response) {
+
+        TokenRes tokenRes = authService.loginWithGoogle(request.code());
+        cookieUtil.setAuthCookies(response, tokenRes);
+
+        return ResponseEntity.ok().build();
     }
 
     /**

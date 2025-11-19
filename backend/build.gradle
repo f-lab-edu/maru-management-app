@@ -41,6 +41,9 @@ dependencies {
     // Spring Boot DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
+    // .env 파일 로더
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
     // ============== Database==============
     // Spring Data JPA (includes Hibernate, HikariCP)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
