@@ -46,17 +46,9 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public TokenRes refreshAccessToken(String refreshToken) {
-        JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
-
-        if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
-        } else if (validationResult != JwtUtil.TokenValidationResult.VALID) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
-        }
-
+        validateRefreshToken(refreshToken);
         Long userId = jwtUtil.extractUserId(refreshToken);
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
+        User user = findUserById(userId);
 
         String newAccessToken = jwtUtil.generateAccessToken(
             user.getId(),
@@ -71,6 +63,32 @@ public class AuthService {
             .userId(user.getId())
             .role(user.getRole() != null ? user.getRole().name() : "PENDING")
             .build();
+    }
+
+    /**
+     * Refresh Token 유효성 검증
+     *
+     * @param refreshToken Refresh Token
+     */
+    private void validateRefreshToken(String refreshToken) {
+        JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
+
+        if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
+            throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
+        } else if (validationResult != JwtUtil.TokenValidationResult.VALID) {
+            throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
+        }
+    }
+
+    /**
+     * 사용자 ID로 사용자 조회
+     *
+     * @param userId 사용자 ID
+     * @return 사용자
+     */
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
     }
 
     /**
@@ -99,16 +117,34 @@ public class AuthService {
      */
     @Transactional
     public TokenRes loginWithGoogle(String code) {
-        GoogleTokenRes tokenRes = googleOAuthService.exchangeCodeForToken(code);
-        GoogleUserInfoRes userInfo = googleOAuthService.getUserInfo(tokenRes.accessToken());
-
+        GoogleUserInfoRes userInfo = fetchGoogleUserInfo(code);
         User user = createOrUpdateUserFromOAuth(
             OAuthProvider.GOOGLE,
             userInfo.id(),
             userInfo.email(),
             userInfo.name()
         );
+        return generateTokenResponse(user);
+    }
 
+    /**
+     * Google 사용자 정보 조회
+     *
+     * @param code Authorization Code
+     * @return Google 사용자 정보
+     */
+    private GoogleUserInfoRes fetchGoogleUserInfo(String code) {
+        GoogleTokenRes tokenRes = googleOAuthService.exchangeCodeForToken(code);
+        return googleOAuthService.getUserInfo(tokenRes.accessToken());
+    }
+
+    /**
+     * 토큰 응답 생성
+     *
+     * @param user 사용자
+     * @return 토큰 정보
+     */
+    private TokenRes generateTokenResponse(User user) {
         String accessToken = jwtUtil.generateAccessToken(
             user.getId(),
             null,
