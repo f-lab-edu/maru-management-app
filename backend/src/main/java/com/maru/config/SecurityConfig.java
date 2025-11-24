@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity // Spring Security 활성화
@@ -23,11 +24,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final EmploymentAwarePermissionEvaluator permissionEvaluator;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // CSRF 보호 비활성화
+            // CORS 설정
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+
+            // CSRF 보호 비활성화 (JWT + Stateless 방식이므로 불필요)
             .csrf(AbstractHttpConfigurer::disable)
 
             // 세션을 생성하거나 사용하지 않음
