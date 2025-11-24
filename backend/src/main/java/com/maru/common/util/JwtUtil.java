@@ -12,12 +12,18 @@ import java.time.Instant;
 import java.util.Date;
 
 @Component
-@RequiredArgsConstructor
 public class JwtUtil {
     private static final String TOKEN_TYPE_ACCESS = "access";
     private static final String TOKEN_TYPE_REFRESH = "refresh";
 
     private final JwtProperties jwtProperties;
+    private final SecretKey key;
+
+    public JwtUtil(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public enum TokenValidationResult {
         VALID,
@@ -26,13 +32,12 @@ public class JwtUtil {
     }
 
     /**
-     * SecretKey 생성
+     * SecretKey 조회
      *
      * @return HMAC-SHA 알고리즘을 위한 SecretKey
      */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
-        return Keys.hmacShaKeyFor(keyBytes);
+        return this.key;
     }
 
     /**
@@ -69,27 +74,7 @@ public class JwtUtil {
      * @return 토큰 검증 결과 (VALID/EXPIRED/INVALID)
      */
     public TokenValidationResult validateAccessToken(String token) {
-        try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-
-            // 토큰 타입 검증
-            String tokenType = claims.get("type", String.class);
-            if (!TOKEN_TYPE_ACCESS.equals(tokenType)) {
-                return TokenValidationResult.INVALID;
-            }
-
-            return TokenValidationResult.VALID;
-        } catch (ExpiredJwtException e) {
-            return TokenValidationResult.EXPIRED;
-        } catch (UnsupportedJwtException | MalformedJwtException |
-                 io.jsonwebtoken.security.SignatureException |
-                 IllegalArgumentException e) {
-            return TokenValidationResult.INVALID;
-        }
+        return validateToken(token, TOKEN_TYPE_ACCESS);
     }
 
     /**
@@ -138,6 +123,17 @@ public class JwtUtil {
      * @return 토큰 검증 결과 (VALID/EXPIRED/INVALID)
      */
     public TokenValidationResult validateRefreshToken(String token) {
+        return validateToken(token, TOKEN_TYPE_REFRESH);
+    }
+
+    /**
+     * JWT 토큰 유효성 검증 (공통 로직)
+     *
+     * @param token 검증할 토큰
+     * @param expectedType 기대하는 토큰 타입
+     * @return 토큰 검증 결과 (VALID/EXPIRED/INVALID)
+     */
+    private TokenValidationResult validateToken(String token, String expectedType) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
@@ -146,16 +142,14 @@ public class JwtUtil {
                     .getPayload();
 
             String tokenType = claims.get("type", String.class);
-            if (!TOKEN_TYPE_REFRESH.equals(tokenType)) {
+            if (!expectedType.equals(tokenType)) {
                 return TokenValidationResult.INVALID;
             }
 
             return TokenValidationResult.VALID;
         } catch (ExpiredJwtException e) {
             return TokenValidationResult.EXPIRED;
-        } catch (UnsupportedJwtException | MalformedJwtException |
-                 io.jsonwebtoken.security.SignatureException |
-                 IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return TokenValidationResult.INVALID;
         }
     }
