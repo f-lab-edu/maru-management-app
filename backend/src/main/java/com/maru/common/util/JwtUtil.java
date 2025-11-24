@@ -1,20 +1,23 @@
 package com.maru.common.util;
 
+import com.maru.config.properties.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
     private static final String TOKEN_TYPE_ACCESS = "access";
     private static final String TOKEN_TYPE_REFRESH = "refresh";
+
+    private final JwtProperties jwtProperties;
 
     public enum TokenValidationResult {
         VALID,
@@ -22,22 +25,13 @@ public class JwtUtil {
         INVALID
     }
 
-    @Value("${jwt.secret}")
-    private String secret;
-
-    @Value("${jwt.access-token-expiration}")
-    private Duration accessTokenExpiration;
-
-    @Value("${jwt.refresh-token-expiration}")
-    private Duration refreshTokenExpiration;
-
     /**
      * SecretKey 생성
      *
      * @return HMAC-SHA 알고리즘을 위한 SecretKey
      */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -52,7 +46,7 @@ public class JwtUtil {
      */
     public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
         Instant now = Instant.now();
-        Instant expiryDate = now.plus(accessTokenExpiration);
+        Instant expiryDate = now.plus(jwtProperties.accessTokenExpiration());
 
         return Jwts.builder()
                 .setSubject(userId.toString())
@@ -124,7 +118,7 @@ public class JwtUtil {
      */
     public String generateRefreshToken(Long userId) {
         Instant now = Instant.now();
-        Instant expiryDate = now.plus(refreshTokenExpiration);
+        Instant expiryDate = now.plus(jwtProperties.refreshTokenExpiration());
 
         return Jwts.builder()
                 .setSubject(userId.toString())

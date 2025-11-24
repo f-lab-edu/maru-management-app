@@ -1,12 +1,12 @@
 package com.maru.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.maru.config.properties.CorsProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.time.Duration;
 import java.util.Arrays;
 
 /**
@@ -17,22 +17,19 @@ import java.util.Arrays;
  * - allowedOrigins: 명시적 Origin 목록 (wildcard 사용 불가)
  */
 @Configuration
+@RequiredArgsConstructor
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Value("${cors.allowed-origins:*}")
-    private String allowedOrigins;
-
-    @Value("${cors.max-age:1h}")
-    private Duration maxAge;
+    private final CorsProperties corsProperties;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         CorsRegistration reg = registry.addMapping("/**")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .maxAge(maxAge.toSeconds());
+                .maxAge(corsProperties.maxAge().toSeconds());
 
-        String[] origins = Arrays.stream(allowedOrigins.split(","))
+        String[] origins = Arrays.stream(corsProperties.allowedOrigins().split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toArray(String[]::new);
