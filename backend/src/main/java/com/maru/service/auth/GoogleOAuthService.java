@@ -1,10 +1,11 @@
 package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
+import com.maru.config.properties.GoogleOauthProperties;
 import com.maru.service.auth.dto.GoogleTokenRes;
 import com.maru.service.auth.dto.GoogleUserInfoRes;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -16,23 +17,11 @@ import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GoogleOAuthService {
 
-    private static final String AUTHORIZATION_URI = "https://accounts.google.com/o/oauth2/v2/auth";
-    private static final String TOKEN_URI = "https://oauth2.googleapis.com/token";
-    private static final String USER_INFO_URI = "https://www.googleapis.com/oauth2/v2/userinfo";
-    private static final String SCOPE = "openid email profile";
-
-    @Value("${oauth.google.client-id}")
-    private String clientId;
-
-    @Value("${oauth.google.client-secret}")
-    private String clientSecret;
-
-    @Value("${oauth.google.redirect-uri}")
-    private String redirectUri;
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final GoogleOauthProperties googleConfig;
+    private final RestTemplate restTemplate;
 
     /**
      * Google OAuth Authorization URL 생성
@@ -40,11 +29,21 @@ public class GoogleOAuthService {
      * @return Google OAuth 인증 URL
      */
     public String getAuthorizationUrl() {
-        return UriComponentsBuilder.fromUriString(AUTHORIZATION_URI)
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirectUri)
+        return buildOAuthUrl(googleConfig.urls().authorization());
+    }
+
+    /**
+     * OAuth Authorization URL 생성
+     *
+     * @param baseUrl OAuth Provider의 authorization endpoint
+     * @return 생성된 OAuth URL
+     */
+    private String buildOAuthUrl(String baseUrl) {
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .queryParam("client_id", googleConfig.clientId())
+                .queryParam("redirect_uri", googleConfig.redirectUri())
                 .queryParam("response_type", "code")
-                .queryParam("scope", SCOPE)
+                .queryParam("scope", googleConfig.scope())
                 .toUriString();
     }
 
@@ -55,21 +54,11 @@ public class GoogleOAuthService {
      * @return Google 토큰 정보
      */
     public GoogleTokenRes exchangeCodeForToken(String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("code", code);
-        params.add("client_id", clientId);
-        params.add("client_secret", clientSecret);
-        params.add("redirect_uri", redirectUri);
-        params.add("grant_type", "authorization_code");
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+        HttpEntity<MultiValueMap<String, String>> request = buildTokenRequest(code);
 
         try {
             ResponseEntity<GoogleTokenRes> response = restTemplate.postForEntity(
-                    TOKEN_URI,
+                    googleConfig.urls().token(),
                     request,
                     GoogleTokenRes.class
             );
@@ -81,20 +70,37 @@ public class GoogleOAuthService {
     }
 
     /**
+     * 토큰 교환 요청 생성
+     *
+     * @param code Authorization Code
+     * @return HTTP 요청 엔티티
+     */
+    private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("code", code);
+        params.add("client_id", googleConfig.clientId());
+        params.add("client_secret", googleConfig.clientSecret());
+        params.add("redirect_uri", googleConfig.redirectUri());
+        params.add("grant_type", "authorization_code");
+
+        return new HttpEntity<>(params, headers);
+    }
+
+    /**
      * Access Token으로 사용자 정보 조회
      *
      * @param accessToken Google Access Token
      * @return Google 사용자 정보
      */
     public GoogleUserInfoRes getUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> request = new HttpEntity<>(headers);
+        HttpEntity<Void> request = buildBearerRequest(accessToken);
 
         try {
             ResponseEntity<GoogleUserInfoRes> response = restTemplate.exchange(
-                    USER_INFO_URI,
+                    googleConfig.urls().userInfo(),
                     HttpMethod.GET,
                     request,
                     GoogleUserInfoRes.class
@@ -104,5 +110,17 @@ public class GoogleOAuthService {
             log.error("Google 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
         }
+    }
+
+    /**
+     * Bearer Token 인증 요청 생성
+     *
+     * @param accessToken Access Token
+     * @return HTTP 요청 엔티티
+     */
+    private HttpEntity<Void> buildBearerRequest(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        return new HttpEntity<>(headers);
     }
 }

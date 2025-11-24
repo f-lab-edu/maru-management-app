@@ -1,10 +1,11 @@
 package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
+import com.maru.config.properties.KakaoOauthProperties;
 import com.maru.service.auth.dto.KakaoTokenRes;
 import com.maru.service.auth.dto.KakaoUserInfoRes;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -19,22 +20,11 @@ import static com.maru.common.exception.ErrorCode.*;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class KakaoOAuthService {
 
-    private static final String AUTHORIZATION_URI = "https://kauth.kakao.com/oauth/authorize";
-    private static final String TOKEN_URI = "https://kauth.kakao.com/oauth/token";
-    private static final String USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
-
-    @Value("${oauth.kakao.client-id}")
-    private String clientId;
-
-    @Value("${oauth.kakao.client-secret}")
-    private String clientSecret;
-
-    @Value("${oauth.kakao.redirect-uri}")
-    private String redirectUri;
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final KakaoOauthProperties kakaoConfig;
+    private final RestTemplate restTemplate;
 
     /**
      * Kakao OAuth Authorization URL 생성
@@ -42,11 +32,7 @@ public class KakaoOAuthService {
      * @return Kakao OAuth 인증 URL
      */
     public String getAuthorizationUrl() {
-        return UriComponentsBuilder.fromUriString(AUTHORIZATION_URI)
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirectUri)
-                .queryParam("response_type", "code")
-                .toUriString();
+        return buildOAuthUrl(kakaoConfig.urls().authorization());
     }
 
     /**
@@ -56,21 +42,11 @@ public class KakaoOAuthService {
      * @return Kakao 토큰 정보
      */
     public KakaoTokenRes exchangeCodeForToken(String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("code", code);
-        params.add("client_id", clientId);
-        params.add("client_secret", clientSecret);
-        params.add("redirect_uri", redirectUri);
-        params.add("grant_type", "authorization_code");
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+        HttpEntity<MultiValueMap<String, String>> request = buildTokenRequest(code);
 
         try {
             ResponseEntity<KakaoTokenRes> response = restTemplate.postForEntity(
-                    TOKEN_URI,
+                    kakaoConfig.urls().token(),
                     request,
                     KakaoTokenRes.class
             );
@@ -88,14 +64,11 @@ public class KakaoOAuthService {
      * @return Kakao 사용자 정보
      */
     public KakaoUserInfoRes getUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> request = new HttpEntity<>(headers);
+        HttpEntity<Void> request = buildBearerRequest(accessToken);
 
         try {
             ResponseEntity<KakaoUserInfoRes> response = restTemplate.exchange(
-                    USER_INFO_URI,
+                    kakaoConfig.urls().userInfo(),
                     HttpMethod.GET,
                     request,
                     KakaoUserInfoRes.class
@@ -105,5 +78,52 @@ public class KakaoOAuthService {
             log.error("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
         }
+    }
+
+
+    /**
+     * OAuth Authorization URL 생성
+     *
+     * @param baseUrl OAuth Provider의 authorization endpoint
+     * @return 생성된 OAuth URL
+     */
+    private String buildOAuthUrl(String baseUrl) {
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .queryParam("client_id", kakaoConfig.clientId())
+                .queryParam("redirect_uri", kakaoConfig.redirectUri())
+                .queryParam("response_type", "code")
+                .toUriString();
+    }
+
+    /**
+     * 토큰 교환 요청 생성
+     *
+     * @param code Authorization Code
+     * @return HTTP 요청 엔티티
+     */
+    private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("code", code);
+        params.add("client_id", kakaoConfig.clientId());
+        params.add("client_secret", kakaoConfig.clientSecret());
+        params.add("redirect_uri", kakaoConfig.redirectUri());
+        params.add("grant_type", "authorization_code");
+
+        return new HttpEntity<>(params, headers);
+    }
+
+    /**
+     * Bearer Token 인증 요청 생성
+     *
+     * @param accessToken Access Token
+     * @return HTTP 요청 엔티티
+     */
+    private HttpEntity<Void> buildBearerRequest(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        return new HttpEntity<>(headers);
     }
 }
