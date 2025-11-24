@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
 @RequiredArgsConstructor
 public class CookieUtil {
@@ -26,16 +28,14 @@ public class CookieUtil {
     public void setAuthCookies(HttpServletResponse response, TokenRes tokenRes) {
         ResponseCookie accessTokenCookie = createCookie(
                 COOKIE_TYPE_ACCESS,
-            tokenRes.accessToken(),
-            jwtProperties.accessTokenExpiration().toSeconds()
+            tokenRes.accessToken()
         );
         response.addHeader("Set-Cookie", accessTokenCookie.toString());
 
         if (tokenRes.refreshToken() != null) {
             ResponseCookie refreshTokenCookie = createCookie(
                     COOKIE_TYPE_REFRESH,
-                tokenRes.refreshToken(),
-                jwtProperties.refreshTokenExpiration().toSeconds()
+                tokenRes.refreshToken()
             );
             response.addHeader("Set-Cookie", refreshTokenCookie.toString());
         }
@@ -46,16 +46,15 @@ public class CookieUtil {
      *
      * @param name Cookie 이름
      * @param value Cookie 값
-     * @param maxAge Cookie 만료 시간 (초 단위)
      * @return 생성된 ResponseCookie 객체
      */
-    private ResponseCookie createCookie(String name, String value, long maxAge) {
+    private ResponseCookie createCookie(String name, String value) {
         return ResponseCookie.from(name, value)
             .httpOnly(cookieProperties.httpOnly())
             .secure(cookieProperties.secure())
             .path(cookieProperties.path())
-            .maxAge(maxAge)
-            .sameSite("Strict")
+            .maxAge(cookieProperties.maxAge())
+            .sameSite(cookieProperties.sameSite())
             .build();
     }
 }
