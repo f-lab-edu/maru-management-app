@@ -2,26 +2,23 @@ package com.maru.controller.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
-import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 /**
  * API 에러 응답 DTO
  */
-@Getter
 @Builder
-public class ErrorRes {
-
+public record ErrorRes(
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private final LocalDateTime timestamp;
-    private final Integer status;
-    private final String error;
-    private final String code;
-    private final String message;
-    private final String detail;
-    private final String path;
-
+    LocalDateTime timestamp,
+    Integer status,
+    String error,
+    String code,
+    String message,
+    String detail,
+    String path
+) {
     /**
      * ErrorRes 생성 (detail 없음)
      *

@@ -38,15 +38,15 @@ public class CookieUtil {
     public void setAuthCookies(HttpServletResponse response, TokenRes tokenRes) {
         Cookie accessTokenCookie = createCookie(
                 COOKIE_TYPE_ACCESS,
-            tokenRes.getAccessToken(),
+            tokenRes.accessToken(),
             (int) accessTokenExpiration.toSeconds()
         );
         response.addCookie(accessTokenCookie);
 
-        if (tokenRes.getRefreshToken() != null) {
+        if (tokenRes.refreshToken() != null) {
             Cookie refreshTokenCookie = createCookie(
                     COOKIE_TYPE_REFRESH,
-                tokenRes.getRefreshToken(),
+                tokenRes.refreshToken(),
                 (int) refreshTokenExpiration.toSeconds()
             );
             response.addCookie(refreshTokenCookie);
