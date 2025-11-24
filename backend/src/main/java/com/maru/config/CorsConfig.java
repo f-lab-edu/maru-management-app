@@ -34,20 +34,32 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedOrigins(parseList(corsProperties.allowedOrigins()));
+        config.setAllowedMethods(parseList(corsProperties.allowedMethods()));
+        config.setAllowedHeaders(parseList(corsProperties.allowedHeaders()));
+
         config.setMaxAge(corsProperties.maxAge().toSeconds());
         config.setAllowCredentials(true);
-
-        String[] origins = Arrays.stream(corsProperties.allowedOrigins().split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        config.setAllowedOrigins(Arrays.asList(origins));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    /**
+     * 콤마(,) 로 구분된 corsProperties 문자열을 파싱해서 리스트로 반환
+     *
+     * @param value corsProperties 값
+     * @return corsProperties 값이 파싱된 리스트(요소가 없으면 빈 리스트 반환)
+     */
+    private List<String> parseList(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 }

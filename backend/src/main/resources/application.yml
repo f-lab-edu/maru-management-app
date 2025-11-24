@@ -2,6 +2,10 @@ spring:
   profiles:
     active: local
 
+cors:
+  allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+  max-age: 1h
+
 oauth:
   google:
     client-id: ${GOOGLE_CLIENT_ID}
