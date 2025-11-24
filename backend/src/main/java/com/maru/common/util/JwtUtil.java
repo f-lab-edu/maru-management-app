@@ -49,15 +49,15 @@ public class JwtUtil {
         Instant expiryDate = now.plus(jwtProperties.accessTokenExpiration());
 
         return Jwts.builder()
-                .setSubject(userId.toString())
-                .setIssuer("maru-management-api")
-                .setAudience("maru-management-client")
+                .subject(userId.toString())
+                .issuer("maru-management-api")
+                .audience().add("maru-management-client").and()
                 .claim("type", TOKEN_TYPE_ACCESS)
                 .claim("tenantId", tenantId)
                 .claim("dojangId", dojangId)
                 .claim("role", role)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiryDate))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -121,12 +121,12 @@ public class JwtUtil {
         Instant expiryDate = now.plus(jwtProperties.refreshTokenExpiration());
 
         return Jwts.builder()
-                .setSubject(userId.toString())
-                .setIssuer("maru-management-api")
-                .setAudience("maru-management-client")
+                .subject(userId.toString())
+                .issuer("maru-management-api")
+                .audience().add("maru-management-client").and()
                 .claim("type", TOKEN_TYPE_REFRESH)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiryDate))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
                 .compact();
     }
