@@ -3,6 +3,7 @@ package com.maru.controller.auth;
 import com.maru.common.util.CookieUtil;
 import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
+import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.AuthService;
 import com.maru.service.auth.dto.TokenRes;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 
 @Slf4j
@@ -23,16 +22,6 @@ public class AuthController {
 
     private final AuthService authService;
     private final CookieUtil cookieUtil;
-
-    /**
-     * 로그인 API
-     *
-     * @return 응답
-     */
-    @PostMapping("/login")
-    public ResponseEntity<?> login() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
-    }
 
     /**
      * Access Token 갱신 API
@@ -59,9 +48,8 @@ public class AuthController {
      */
     @GetMapping("/oauth/google")
     public ResponseEntity<OAuthUrlRes> getGoogleAuthorizationUrl() {
-        String authUrl = authService.getGoogleAuthorizationUrl();
-        OAuthUrlRes response = new OAuthUrlRes(authUrl);
-        return ResponseEntity.ok(response);
+        String authUrl = authService.getAuthorizationUrl(OAuthProvider.GOOGLE);
+        return ResponseEntity.ok(new OAuthUrlRes(authUrl));
     }
 
     /**
@@ -76,7 +64,7 @@ public class AuthController {
         @Valid @RequestBody OAuthCallbackReq request,
         HttpServletResponse response) {
 
-        TokenRes tokenRes = authService.loginWithGoogle(request.code());
+        TokenRes tokenRes = authService.loginWithOAuth(OAuthProvider.GOOGLE, request.code());
         cookieUtil.setAuthCookies(response, tokenRes);
 
         return ResponseEntity.ok().build();
@@ -88,18 +76,26 @@ public class AuthController {
      * @return Kakao OAuth 인증 URL
      */
     @GetMapping("/oauth/kakao")
-    public ResponseEntity<?> getKakaoAuthorizationUrl() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public ResponseEntity<OAuthUrlRes> getKakaoAuthorizationUrl() {
+        String authUrl = authService.getAuthorizationUrl(OAuthProvider.KAKAO);
+        return ResponseEntity.ok(new OAuthUrlRes(authUrl));
     }
 
     /**
      * Kakao OAuth Callback 처리
      *
      * @param request Authorization Code가 포함된 요청
+     * @param response HTTP 응답
      * @return 응답
      */
     @PostMapping("/oauth/kakao/callback")
-    public ResponseEntity<?> handleKakaoCallback(@RequestBody Map<String, String> request) {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public ResponseEntity<Void> handleKakaoCallback(
+        @Valid @RequestBody OAuthCallbackReq request,
+        HttpServletResponse response) {
+
+        TokenRes tokenRes = authService.loginWithOAuth(OAuthProvider.KAKAO, request.code());
+        cookieUtil.setAuthCookies(response, tokenRes);
+
+        return ResponseEntity.ok().build();
     }
 }

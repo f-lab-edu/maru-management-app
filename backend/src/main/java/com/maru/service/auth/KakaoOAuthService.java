@@ -2,8 +2,10 @@ package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
 import com.maru.config.properties.KakaoOauthProperties;
+import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.dto.KakaoTokenRes;
 import com.maru.service.auth.dto.KakaoUserInfoRes;
+import com.maru.service.auth.dto.OAuthUserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -15,22 +17,20 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import static com.maru.common.exception.ErrorCode.*;
 
-/**
- * Kakao OAuth 인증 처리 서비스
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KakaoOAuthService {
+public class KakaoOAuthService implements OAuthService {
 
     private final KakaoOauthProperties kakaoConfig;
     private final RestTemplate restTemplate;
 
-    /**
-     * Kakao OAuth Authorization URL 생성
-     *
-     * @return Kakao OAuth 인증 URL
-     */
+    @Override
+    public OAuthProvider getProviderType() {
+        return OAuthProvider.KAKAO;
+    }
+
+    @Override
     public String getAuthorizationUrl() {
         return buildOAuthUrl(kakaoConfig.urls().authorization());
     }
@@ -73,7 +73,13 @@ public class KakaoOAuthService {
                     request,
                     KakaoUserInfoRes.class
             );
-            return response.getBody();
+
+            KakaoUserInfoRes userInfo = response.getBody();
+            log.debug("Kakao 사용자 정보 응답: id={}, kakaoAccount={}",
+                userInfo != null ? userInfo.id() : null,
+                userInfo != null ? userInfo.kakaoAccount() : null);
+
+            return userInfo;
         } catch (Exception e) {
             log.error("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
@@ -92,6 +98,7 @@ public class KakaoOAuthService {
                 .queryParam("client_id", kakaoConfig.clientId())
                 .queryParam("redirect_uri", kakaoConfig.redirectUri())
                 .queryParam("response_type", "code")
+                .queryParam("scope", kakaoConfig.scope())
                 .toUriString();
     }
 
@@ -125,5 +132,24 @@ public class KakaoOAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         return new HttpEntity<>(headers);
+    }
+
+    @Override
+    public OAuthUserInfo authenticate(String code) {
+        KakaoTokenRes tokenRes = exchangeCodeForToken(code);
+        KakaoUserInfoRes userInfo = getUserInfo(tokenRes.accessToken());
+
+        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
+        String email = account != null ? account.email() : null;
+        String nickname = (account != null && account.profile() != null)
+            ? account.profile().nickname()
+            : "카카오 사용자";
+
+        return new OAuthUserInfo(
+            OAuthProvider.KAKAO,
+            String.valueOf(userInfo.id()),
+            email,
+            nickname
+        );
     }
 }
