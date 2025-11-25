@@ -17,6 +17,13 @@ public enum ErrorCode {
     AUTH_OAUTH_INVALID_CODE("AUTH_009", "유효하지 않은 인가 코드입니다"),
     AUTH_OAUTH_USER_INFO_FAILED("AUTH_010", "사용자 정보 조회에 실패했습니다"),
 
+    // 사용자 관련 에러 (USER_XXX)
+    USER_NOT_FOUND("USER_001", "사용자를 찾을 수 없습니다"),
+    USER_INVALID_ROLE("USER_002", "유효하지 않은 역할입니다"),
+
+    // 온보딩 관련 에러 (ONBOARDING_XXX)
+    ONBOARDING_STAGE_INVALID("ONBOARDING_001", "현재 온보딩 단계에서 수행할 수 없는 작업입니다"),
+
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST("COMMON_001", "잘못된 요청입니다"),
     NOT_FOUND("COMMON_002", "요청한 리소스를 찾을 수 없습니다"),

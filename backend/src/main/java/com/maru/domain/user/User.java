@@ -55,7 +55,7 @@ public class User extends SoftDeletableEntity {
 
     public void selectOwnerRole() {
         this.role = UserRole.OWNER;
-        this.onboardingStep = OnboardingStep.DOJO_INFO;
+        this.onboardingStep = OnboardingStep.DOJANG_INFO;
     }
 
     public void selectInstructorRole() {

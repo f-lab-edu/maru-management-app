@@ -1,8 +1,9 @@
 package com.maru.domain.user;
 
 public enum OnboardingStep {
+    PROFILE_INPUT,
     ROLE_SELECT,
-    DOJO_INFO,
+    DOJANG_INFO,
     APPROVAL_WAIT,
     COMPLETED
 }
