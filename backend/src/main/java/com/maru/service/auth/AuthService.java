@@ -8,7 +8,7 @@ import com.maru.domain.user.User;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
 import com.maru.service.auth.dto.OAuthUserInfo;
-import com.maru.service.auth.dto.TokenRes;
+import com.maru.controller.auth.dto.TokenRes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +24,7 @@ import static com.maru.common.exception.ErrorCode.*;
 @Slf4j
 @Service
 public class AuthService {
+    private static final String ROLE_PENDING = "PENDING";
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
@@ -137,7 +138,7 @@ public class AuthService {
     }
 
     private String extractRoleString(User user) {
-        return user.getRole() != null ? user.getRole().name() : "PENDING";
+        return user.getRole() != null ? user.getRole().name() : ROLE_PENDING;
     }
 
     private User createOrUpdateUserFromOAuth(OAuthUserInfo userInfo) {
