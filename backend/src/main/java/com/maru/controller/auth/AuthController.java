@@ -1,6 +1,9 @@
 package com.maru.controller.auth;
 
+import com.maru.common.exception.AuthException;
 import com.maru.common.util.CookieUtil;
+
+import static com.maru.common.exception.ErrorCode.*;
 import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
 import com.maru.domain.user.OAuthProvider;
@@ -32,8 +35,12 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(
-        @CookieValue("refreshToken") String refreshToken,
+        @CookieValue(value = "refreshToken", required = false) String refreshToken,
         HttpServletResponse response) {
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new AuthException(AUTH_REFRESH_TOKEN_REQUIRED);
+        }
 
         TokenRes tokenRes = authService.refreshAccessToken(refreshToken);
         cookieUtil.setAuthCookies(response, tokenRes);

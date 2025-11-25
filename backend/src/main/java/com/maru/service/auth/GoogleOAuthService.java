@@ -12,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -75,6 +76,9 @@ public class GoogleOAuthService implements OAuthService {
                     GoogleTokenRes.class
             );
             return response.getBody();
+        } catch (HttpClientErrorException e) {
+            log.error("Google 토큰 교환 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new AuthException(AUTH_OAUTH_INVALID_CODE);
         } catch (Exception e) {
             log.error("Google 토큰 교환 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_FAILED);

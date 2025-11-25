@@ -1,5 +1,6 @@
 package com.maru.security;
 
+import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -8,27 +9,36 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.maru.common.exception.ErrorCode.*;
+
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final HandlerExceptionResolver exceptionResolver;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver
+    ) {
         this.jwtUtil = jwtUtil;
+        this.exceptionResolver = exceptionResolver;
     }
 
     /**
@@ -42,9 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         try {
@@ -59,6 +69,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // JwtUtil을 사용한 토큰 검증
             JwtUtil.TokenValidationResult validationResult = jwtUtil.validateAccessToken(token);
+            if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
+                log.warn("만료된 JWT 토큰: {}", request.getRequestURI());
+                exceptionResolver.resolveException(request, response, null, new AuthException(AUTH_TOKEN_EXPIRED));
+                return;
+            }
             if (validationResult != JwtUtil.TokenValidationResult.VALID) {
                 log.warn("유효하지 않은 JWT 토큰: {}, 상태: {}", request.getRequestURI(), validationResult);
                 filterChain.doFilter(request, response);
@@ -138,7 +153,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @param request HttpServletRequest
      */
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.startsWith("/actuator/health");
     }
