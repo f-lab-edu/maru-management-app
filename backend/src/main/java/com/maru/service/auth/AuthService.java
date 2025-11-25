@@ -59,14 +59,14 @@ public class AuthService {
             user.getId(),
             null,
             null,
-            user.getRole() != null ? user.getRole().name() : "PENDING"
+            extractRoleString(user)
         );
 
         return TokenRes.builder()
             .accessToken(newAccessToken)
             .refreshToken(refreshToken)
             .userId(user.getId())
-            .role(user.getRole() != null ? user.getRole().name() : "PENDING")
+            .role(extractRoleString(user))
             .build();
     }
 
@@ -94,12 +94,6 @@ public class AuthService {
         return generateTokenResponse(user);
     }
 
-    /**
-     * OAuth Provider에 해당하는 서비스 조회
-     *
-     * @param provider OAuth 제공자
-     * @return OAuthService 구현체
-     */
     private OAuthService getOAuthService(OAuthProvider provider) {
         OAuthService service = oauthServices.get(provider);
         if (service == null) {
@@ -109,11 +103,6 @@ public class AuthService {
         return service;
     }
 
-    /**
-     * Refresh Token 유효성 검증
-     *
-     * @param refreshToken Refresh Token
-     */
     private void validateRefreshToken(String refreshToken) {
         JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
 
@@ -124,29 +113,17 @@ public class AuthService {
         }
     }
 
-    /**
-     * 사용자 ID로 사용자 조회
-     *
-     * @param userId 사용자 ID
-     * @return 사용자
-     */
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
     }
 
-    /**
-     * 토큰 응답 생성
-     *
-     * @param user 사용자
-     * @return 토큰 정보
-     */
     private TokenRes generateTokenResponse(User user) {
         String accessToken = jwtUtil.generateAccessToken(
             user.getId(),
             null,
             null,
-            user.getRole() != null ? user.getRole().name() : "PENDING"
+            extractRoleString(user)
         );
 
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
@@ -155,16 +132,14 @@ public class AuthService {
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .userId(user.getId())
-            .role(user.getRole() != null ? user.getRole().name() : "PENDING")
+            .role(extractRoleString(user))
             .build();
     }
 
-    /**
-     * OAuth 정보로 사용자 생성 또는 업데이트
-     *
-     * @param userInfo OAuth 사용자 정보
-     * @return 생성 또는 업데이트된 사용자
-     */
+    private String extractRoleString(User user) {
+        return user.getRole() != null ? user.getRole().name() : "PENDING";
+    }
+
     private User createOrUpdateUserFromOAuth(OAuthUserInfo userInfo) {
         Optional<OAuthAccount> existingAccount = oauthAccountRepository
             .findByProviderAndProviderAccountId(userInfo.provider(), userInfo.providerId());

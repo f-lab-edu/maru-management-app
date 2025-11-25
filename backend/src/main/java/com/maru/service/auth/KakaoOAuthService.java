@@ -22,6 +22,8 @@ import static com.maru.common.exception.ErrorCode.*;
 @RequiredArgsConstructor
 public class KakaoOAuthService implements OAuthService {
 
+    private static final String DEFAULT_NICKNAME = "카카오 사용자";
+
     private final KakaoOauthProperties kakaoConfig;
     private final RestTemplate restTemplate;
 
@@ -36,12 +38,36 @@ public class KakaoOAuthService implements OAuthService {
     }
 
     /**
-     * Authorization Code를 Access Token으로 교환
+     * Authorization Code로 Kakao 인증 및 사용자 정보 조회
      *
      * @param code Authorization Code
-     * @return Kakao 토큰 정보
+     * @return OAuth 사용자 정보
+     * @throws AuthException AUTH_OAUTH_FAILED - 토큰 교환 실패
+     * @throws AuthException AUTH_OAUTH_USER_INFO_FAILED - 사용자 정보 조회 실패
      */
-    public KakaoTokenRes exchangeCodeForToken(String code) {
+    @Override
+    public OAuthUserInfo authenticate(String code) {
+        KakaoTokenRes tokenRes = exchangeCodeForToken(code);
+        KakaoUserInfoRes userInfo = fetchUserInfo(tokenRes.accessToken());
+
+        return new OAuthUserInfo(
+            OAuthProvider.KAKAO,
+            String.valueOf(userInfo.id()),
+            extractEmail(userInfo),
+            extractNickname(userInfo)
+        );
+    }
+
+    private String buildOAuthUrl(String baseUrl) {
+        return UriComponentsBuilder.fromUriString(baseUrl)
+                .queryParam("client_id", kakaoConfig.clientId())
+                .queryParam("redirect_uri", kakaoConfig.redirectUri())
+                .queryParam("response_type", "code")
+                .queryParam("scope", kakaoConfig.scope())
+                .toUriString();
+    }
+
+    private KakaoTokenRes exchangeCodeForToken(String code) {
         HttpEntity<MultiValueMap<String, String>> request = buildTokenRequest(code);
 
         try {
@@ -57,13 +83,7 @@ public class KakaoOAuthService implements OAuthService {
         }
     }
 
-    /**
-     * Access Token으로 사용자 정보 조회
-     *
-     * @param accessToken Kakao Access Token
-     * @return Kakao 사용자 정보
-     */
-    public KakaoUserInfoRes getUserInfo(String accessToken) {
+    private KakaoUserInfoRes fetchUserInfo(String accessToken) {
         HttpEntity<Void> request = buildBearerRequest(accessToken);
 
         try {
@@ -73,41 +93,26 @@ public class KakaoOAuthService implements OAuthService {
                     request,
                     KakaoUserInfoRes.class
             );
-
-            KakaoUserInfoRes userInfo = response.getBody();
-            log.debug("Kakao 사용자 정보 응답: id={}, kakaoAccount={}",
-                userInfo != null ? userInfo.id() : null,
-                userInfo != null ? userInfo.kakaoAccount() : null);
-
-            return userInfo;
+            return response.getBody();
         } catch (Exception e) {
             log.error("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
         }
     }
 
-
-    /**
-     * OAuth Authorization URL 생성
-     *
-     * @param baseUrl OAuth Provider의 authorization endpoint
-     * @return 생성된 OAuth URL
-     */
-    private String buildOAuthUrl(String baseUrl) {
-        return UriComponentsBuilder.fromUriString(baseUrl)
-                .queryParam("client_id", kakaoConfig.clientId())
-                .queryParam("redirect_uri", kakaoConfig.redirectUri())
-                .queryParam("response_type", "code")
-                .queryParam("scope", kakaoConfig.scope())
-                .toUriString();
+    private String extractEmail(KakaoUserInfoRes userInfo) {
+        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
+        return account != null ? account.email() : null;
     }
 
-    /**
-     * 토큰 교환 요청 생성
-     *
-     * @param code Authorization Code
-     * @return HTTP 요청 엔티티
-     */
+    private String extractNickname(KakaoUserInfoRes userInfo) {
+        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
+        if (account != null && account.profile() != null) {
+            return account.profile().nickname();
+        }
+        return DEFAULT_NICKNAME;
+    }
+
     private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -122,34 +127,9 @@ public class KakaoOAuthService implements OAuthService {
         return new HttpEntity<>(params, headers);
     }
 
-    /**
-     * Bearer Token 인증 요청 생성
-     *
-     * @param accessToken Access Token
-     * @return HTTP 요청 엔티티
-     */
     private HttpEntity<Void> buildBearerRequest(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         return new HttpEntity<>(headers);
-    }
-
-    @Override
-    public OAuthUserInfo authenticate(String code) {
-        KakaoTokenRes tokenRes = exchangeCodeForToken(code);
-        KakaoUserInfoRes userInfo = getUserInfo(tokenRes.accessToken());
-
-        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
-        String email = account != null ? account.email() : null;
-        String nickname = (account != null && account.profile() != null)
-            ? account.profile().nickname()
-            : "카카오 사용자";
-
-        return new OAuthUserInfo(
-            OAuthProvider.KAKAO,
-            String.valueOf(userInfo.id()),
-            email,
-            nickname
-        );
     }
 }

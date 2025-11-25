@@ -36,11 +36,26 @@ public class GoogleOAuthService implements OAuthService {
     }
 
     /**
-     * OAuth Authorization URL 생성
+     * Authorization Code로 Google 인증 및 사용자 정보 조회
      *
-     * @param baseUrl OAuth Provider의 authorization endpoint
-     * @return 생성된 OAuth URL
+     * @param code Authorization Code
+     * @return OAuth 사용자 정보
+     * @throws AuthException AUTH_OAUTH_FAILED - 토큰 교환 실패
+     * @throws AuthException AUTH_OAUTH_USER_INFO_FAILED - 사용자 정보 조회 실패
      */
+    @Override
+    public OAuthUserInfo authenticate(String code) {
+        GoogleTokenRes tokenRes = exchangeCodeForToken(code);
+        GoogleUserInfoRes userInfo = fetchUserInfo(tokenRes.accessToken());
+
+        return new OAuthUserInfo(
+            OAuthProvider.GOOGLE,
+            userInfo.id(),
+            userInfo.email(),
+            userInfo.name()
+        );
+    }
+
     private String buildOAuthUrl(String baseUrl) {
         return UriComponentsBuilder.fromUriString(baseUrl)
                 .queryParam("client_id", googleConfig.clientId())
@@ -50,13 +65,7 @@ public class GoogleOAuthService implements OAuthService {
                 .toUriString();
     }
 
-    /**
-     * Authorization Code를 Access Token으로 교환
-     *
-     * @param code Authorization Code
-     * @return Google 토큰 정보
-     */
-    public GoogleTokenRes exchangeCodeForToken(String code) {
+    private GoogleTokenRes exchangeCodeForToken(String code) {
         HttpEntity<MultiValueMap<String, String>> request = buildTokenRequest(code);
 
         try {
@@ -72,33 +81,7 @@ public class GoogleOAuthService implements OAuthService {
         }
     }
 
-    /**
-     * 토큰 교환 요청 생성
-     *
-     * @param code Authorization Code
-     * @return HTTP 요청 엔티티
-     */
-    private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("code", code);
-        params.add("client_id", googleConfig.clientId());
-        params.add("client_secret", googleConfig.clientSecret());
-        params.add("redirect_uri", googleConfig.redirectUri());
-        params.add("grant_type", "authorization_code");
-
-        return new HttpEntity<>(params, headers);
-    }
-
-    /**
-     * Access Token으로 사용자 정보 조회
-     *
-     * @param accessToken Google Access Token
-     * @return Google 사용자 정보
-     */
-    public GoogleUserInfoRes getUserInfo(String accessToken) {
+    private GoogleUserInfoRes fetchUserInfo(String accessToken) {
         HttpEntity<Void> request = buildBearerRequest(accessToken);
 
         try {
@@ -115,28 +98,23 @@ public class GoogleOAuthService implements OAuthService {
         }
     }
 
-    /**
-     * Bearer Token 인증 요청 생성
-     *
-     * @param accessToken Access Token
-     * @return HTTP 요청 엔티티
-     */
+    private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("code", code);
+        params.add("client_id", googleConfig.clientId());
+        params.add("client_secret", googleConfig.clientSecret());
+        params.add("redirect_uri", googleConfig.redirectUri());
+        params.add("grant_type", "authorization_code");
+
+        return new HttpEntity<>(params, headers);
+    }
+
     private HttpEntity<Void> buildBearerRequest(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         return new HttpEntity<>(headers);
-    }
-
-    @Override
-    public OAuthUserInfo authenticate(String code) {
-        GoogleTokenRes tokenRes = exchangeCodeForToken(code);
-        GoogleUserInfoRes userInfo = getUserInfo(tokenRes.accessToken());
-
-        return new OAuthUserInfo(
-            OAuthProvider.GOOGLE,
-            userInfo.id(),
-            userInfo.email(),
-            userInfo.name()
-        );
     }
 }

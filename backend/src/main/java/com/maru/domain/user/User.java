@@ -70,4 +70,14 @@ public class User extends SoftDeletableEntity {
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
     }
+
+    public void updateProfile(String name, String email, String phone) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+    }
+
+    public void updateRole(UserRole role) {
+        this.role = role;
+    }
 }
