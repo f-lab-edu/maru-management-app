@@ -17,4 +17,6 @@ public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, Long
         OAuthProvider provider,
         String providerAccountId
     );
+
+    Optional<OAuthAccount> findByUserId(Long userId);
 }

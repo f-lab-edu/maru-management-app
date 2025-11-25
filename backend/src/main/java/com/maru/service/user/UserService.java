@@ -1,9 +1,8 @@
 package com.maru.service.user;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.domain.user.OnboardingStep;
-import com.maru.domain.user.User;
-import com.maru.domain.user.UserRole;
+import com.maru.domain.user.*;
+import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +17,7 @@ import static com.maru.common.exception.ErrorCode.*;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final OAuthAccountRepository oAuthAccountRepository;
 
     /**
      * 사용자 ID로 사용자 조회
@@ -41,6 +41,19 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getCurrentUser(Long userId) {
         return getUserById(userId);
+    }
+
+    /**
+     * 사용자의 OAuth 프로바이더 조회
+     *
+     * @param userId 사용자 ID
+     * @return OAuth 프로바이더 (없으면 null)
+     */
+    @Transactional(readOnly = true)
+    public OAuthProvider getOAuthProvider(Long userId) {
+        return oAuthAccountRepository.findByUserId(userId)
+            .map(OAuthAccount::getProvider)
+            .orElse(null);
     }
 
     /**
