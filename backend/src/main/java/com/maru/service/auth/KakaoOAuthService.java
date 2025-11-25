@@ -22,7 +22,7 @@ import static com.maru.common.exception.ErrorCode.*;
 @RequiredArgsConstructor
 public class KakaoOAuthService implements OAuthService {
 
-    private static final String DEFAULT_NICKNAME = "카카오 사용자";
+    private static final String DEFAULT_KAKAO_NICKNAME = "카카오 사용자";
 
     private final KakaoOauthProperties kakaoConfig;
     private final RestTemplate restTemplate;
@@ -50,12 +50,25 @@ public class KakaoOAuthService implements OAuthService {
         KakaoTokenRes tokenRes = exchangeCodeForToken(code);
         KakaoUserInfoRes userInfo = fetchUserInfo(tokenRes.accessToken());
 
-        return new OAuthUserInfo(
-            OAuthProvider.KAKAO,
-            String.valueOf(userInfo.id()),
-            extractEmail(userInfo),
-            extractNickname(userInfo)
-        );
+        return OAuthUserInfo.builder()
+                .provider(OAuthProvider.KAKAO)
+                .providerId(String.valueOf(userInfo.id()))
+                .email(extractEmail(userInfo))
+                .name(extractNickname(userInfo))
+                .build();
+    }
+
+    private String extractEmail(KakaoUserInfoRes userInfo) {
+        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
+        return account != null ? account.email() : null;
+    }
+
+    private String extractNickname(KakaoUserInfoRes userInfo) {
+        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
+        if (account != null && account.profile() != null) {
+            return account.profile().nickname();
+        }
+        return DEFAULT_KAKAO_NICKNAME;
     }
 
     private String buildOAuthUrl(String baseUrl) {
@@ -98,19 +111,6 @@ public class KakaoOAuthService implements OAuthService {
             log.error("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
         }
-    }
-
-    private String extractEmail(KakaoUserInfoRes userInfo) {
-        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
-        return account != null ? account.email() : null;
-    }
-
-    private String extractNickname(KakaoUserInfoRes userInfo) {
-        KakaoUserInfoRes.KakaoAccount account = userInfo.kakaoAccount();
-        if (account != null && account.profile() != null) {
-            return account.profile().nickname();
-        }
-        return DEFAULT_NICKNAME;
     }
 
     private HttpEntity<MultiValueMap<String, String>> buildTokenRequest(String code) {

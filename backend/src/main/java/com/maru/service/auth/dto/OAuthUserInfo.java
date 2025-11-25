@@ -1,6 +1,7 @@
 package com.maru.service.auth.dto;
 
 import com.maru.domain.user.OAuthProvider;
+import lombok.Builder;
 
 /**
  * OAuth 사용자 정보 (Provider 공통)
@@ -10,6 +11,7 @@ import com.maru.domain.user.OAuthProvider;
  * @param email 이메일 (nullable - Kakao 비즈앱 아닌 경우 null)
  * @param name 이름/닉네임
  */
+@Builder
 public record OAuthUserInfo(
     OAuthProvider provider,
     String providerId,

@@ -1,4 +1,4 @@
-package com.maru.service.auth.dto;
+package com.maru.controller.auth.dto;
 
 import lombok.Builder;
 

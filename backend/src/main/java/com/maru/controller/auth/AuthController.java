@@ -5,7 +5,7 @@ import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.AuthService;
-import com.maru.service.auth.dto.TokenRes;
+import com.maru.controller.auth.dto.TokenRes;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

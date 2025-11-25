@@ -48,12 +48,12 @@ public class GoogleOAuthService implements OAuthService {
         GoogleTokenRes tokenRes = exchangeCodeForToken(code);
         GoogleUserInfoRes userInfo = fetchUserInfo(tokenRes.accessToken());
 
-        return new OAuthUserInfo(
-            OAuthProvider.GOOGLE,
-            userInfo.id(),
-            userInfo.email(),
-            userInfo.name()
-        );
+        return OAuthUserInfo.builder()
+                .provider(OAuthProvider.GOOGLE)
+                .providerId(userInfo.id())
+                .email(userInfo.email())
+                .name(userInfo.name())
+                .build();
     }
 
     private String buildOAuthUrl(String baseUrl) {

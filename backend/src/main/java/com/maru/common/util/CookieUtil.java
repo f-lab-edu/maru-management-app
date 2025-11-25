@@ -2,7 +2,7 @@ package com.maru.common.util;
 
 import com.maru.config.properties.CookieProperties;
 import com.maru.config.properties.JwtProperties;
-import com.maru.service.auth.dto.TokenRes;
+import com.maru.controller.auth.dto.TokenRes;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
