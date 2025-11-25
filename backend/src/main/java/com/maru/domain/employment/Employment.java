@@ -54,6 +54,12 @@ public class Employment extends BaseEntity {
         return new Employment(user, tenant, dojang);
     }
 
+    public static Employment createForOwner(User owner, Tenant tenant, Dojang dojang) {
+        Employment employment = new Employment(owner, tenant, dojang);
+        employment.status = EmploymentStatus.ACTIVE;
+        return employment;
+    }
+
     public void approve() {
         if (this.status != EmploymentStatus.PENDING) {
             throw new IllegalStateException("대기 상태의 고용만 승인할 수 있습니다");
