@@ -7,35 +7,40 @@ import com.maru.domain.user.OAuthProvider;
 import com.maru.domain.user.User;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
-import com.maru.service.auth.dto.GoogleTokenRes;
-import com.maru.service.auth.dto.GoogleUserInfoRes;
+import com.maru.service.auth.dto.OAuthUserInfo;
 import com.maru.service.auth.dto.TokenRes;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final JwtUtil jwtUtil;
-    private final GoogleOAuthService googleOAuthService;
     private final UserRepository userRepository;
     private final OAuthAccountRepository oauthAccountRepository;
+    private final Map<OAuthProvider, OAuthService> oauthServices;
 
-    /**
-     * 로그인
-     *
-     * @return 토큰 정보
-     */
-    public TokenRes login() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
+    public AuthService(
+        JwtUtil jwtUtil,
+        UserRepository userRepository,
+        OAuthAccountRepository oauthAccountRepository,
+        List<OAuthService> oauthServiceList
+    ) {
+        this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
+        this.oauthAccountRepository = oauthAccountRepository;
+        this.oauthServices = oauthServiceList.stream()
+            .collect(Collectors.toMap(OAuthService::getProviderType, Function.identity()));
     }
 
     /**
@@ -66,6 +71,45 @@ public class AuthService {
     }
 
     /**
+     * OAuth Authorization URL 조회
+     *
+     * @param provider OAuth 제공자
+     * @return OAuth 인증 URL
+     */
+    public String getAuthorizationUrl(OAuthProvider provider) {
+        return getOAuthService(provider).getAuthorizationUrl();
+    }
+
+    /**
+     * OAuth 로그인 처리
+     *
+     * @param provider OAuth 제공자
+     * @param code Authorization Code
+     * @return 토큰 정보
+     */
+    @Transactional
+    public TokenRes loginWithOAuth(OAuthProvider provider, String code) {
+        OAuthUserInfo userInfo = getOAuthService(provider).authenticate(code);
+        User user = createOrUpdateUserFromOAuth(userInfo);
+        return generateTokenResponse(user);
+    }
+
+    /**
+     * OAuth Provider에 해당하는 서비스 조회
+     *
+     * @param provider OAuth 제공자
+     * @return OAuthService 구현체
+     */
+    private OAuthService getOAuthService(OAuthProvider provider) {
+        OAuthService service = oauthServices.get(provider);
+        if (service == null) {
+            log.error("지원하지 않는 OAuth Provider: {}", provider);
+            throw new AuthException(AUTH_OAUTH_FAILED);
+        }
+        return service;
+    }
+
+    /**
      * Refresh Token 유효성 검증
      *
      * @param refreshToken Refresh Token
@@ -89,53 +133,6 @@ public class AuthService {
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
-    }
-
-    /**
-     * Google OAuth Authorization URL 조회
-     *
-     * @return Google OAuth 인증 URL
-     */
-    public String getGoogleAuthorizationUrl() {
-        return googleOAuthService.getAuthorizationUrl();
-    }
-
-    /**
-     * Kakao OAuth Authorization URL 조회
-     *
-     * @return Kakao OAuth 인증 URL
-     */
-    public String getKakaoAuthorizationUrl() {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
-    }
-
-    /**
-     * Google OAuth 로그인 처리
-     *
-     * @param code Authorization Code
-     * @return 인증 결과
-     */
-    @Transactional
-    public TokenRes loginWithGoogle(String code) {
-        GoogleUserInfoRes userInfo = fetchGoogleUserInfo(code);
-        User user = createOrUpdateUserFromOAuth(
-            OAuthProvider.GOOGLE,
-            userInfo.id(),
-            userInfo.email(),
-            userInfo.name()
-        );
-        return generateTokenResponse(user);
-    }
-
-    /**
-     * Google 사용자 정보 조회
-     *
-     * @param code Authorization Code
-     * @return Google 사용자 정보
-     */
-    private GoogleUserInfoRes fetchGoogleUserInfo(String code) {
-        GoogleTokenRes tokenRes = googleOAuthService.exchangeCodeForToken(code);
-        return googleOAuthService.getUserInfo(tokenRes.accessToken());
     }
 
     /**
@@ -163,43 +160,24 @@ public class AuthService {
     }
 
     /**
-     * Kakao OAuth 로그인 처리
-     *
-     * @param code Authorization Code
-     * @return 토큰 정보
-     */
-    public TokenRes loginWithKakao(String code) {
-        throw new UnsupportedOperationException("아직 구현되지 않음");
-    }
-
-    /**
      * OAuth 정보로 사용자 생성 또는 업데이트
      *
-     * @param provider OAuth 제공자
-     * @param providerId OAuth 제공자의 사용자 ID
-     * @param email 이메일
-     * @param name 이름
+     * @param userInfo OAuth 사용자 정보
      * @return 생성 또는 업데이트된 사용자
      */
-    @Transactional
-    private User createOrUpdateUserFromOAuth(
-        OAuthProvider provider,
-        String providerId,
-        String email,
-        String name
-    ) {
+    private User createOrUpdateUserFromOAuth(OAuthUserInfo userInfo) {
         Optional<OAuthAccount> existingAccount = oauthAccountRepository
-            .findByProviderAndProviderAccountId(provider, providerId);
+            .findByProviderAndProviderAccountId(userInfo.provider(), userInfo.providerId());
 
         if (existingAccount.isPresent()) {
             User user = existingAccount.get().getUser();
             user.updateLastLoginAt();
             return userRepository.save(user);
         } else {
-            User newUser = User.createWithoutRole(name, email, null);
+            User newUser = User.createWithoutRole(userInfo.name(), userInfo.email(), null);
             User savedUser = userRepository.save(newUser);
 
-            OAuthAccount newAccount = new OAuthAccount(savedUser, provider, providerId);
+            OAuthAccount newAccount = new OAuthAccount(savedUser, userInfo.provider(), userInfo.providerId());
             oauthAccountRepository.save(newAccount);
 
             return savedUser;

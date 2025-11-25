@@ -2,8 +2,10 @@ package com.maru.service.auth;
 
 import com.maru.common.exception.AuthException;
 import com.maru.config.properties.GoogleOauthProperties;
+import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.dto.GoogleTokenRes;
 import com.maru.service.auth.dto.GoogleUserInfoRes;
+import com.maru.service.auth.dto.OAuthUserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -18,16 +20,17 @@ import static com.maru.common.exception.ErrorCode.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GoogleOAuthService {
+public class GoogleOAuthService implements OAuthService {
 
     private final GoogleOauthProperties googleConfig;
     private final RestTemplate restTemplate;
 
-    /**
-     * Google OAuth Authorization URL 생성
-     *
-     * @return Google OAuth 인증 URL
-     */
+    @Override
+    public OAuthProvider getProviderType() {
+        return OAuthProvider.GOOGLE;
+    }
+
+    @Override
     public String getAuthorizationUrl() {
         return buildOAuthUrl(googleConfig.urls().authorization());
     }
@@ -122,5 +125,18 @@ public class GoogleOAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         return new HttpEntity<>(headers);
+    }
+
+    @Override
+    public OAuthUserInfo authenticate(String code) {
+        GoogleTokenRes tokenRes = exchangeCodeForToken(code);
+        GoogleUserInfoRes userInfo = getUserInfo(tokenRes.accessToken());
+
+        return new OAuthUserInfo(
+            OAuthProvider.GOOGLE,
+            userInfo.id(),
+            userInfo.email(),
+            userInfo.name()
+        );
     }
 }
