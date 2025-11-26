@@ -1,6 +1,7 @@
 package com.maru.domain.employment;
 
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.common.BaseTimeEntity;
 import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class EmploymentHistory extends BaseEntity {
+public class EmploymentHistory extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employment_id", nullable = false)
