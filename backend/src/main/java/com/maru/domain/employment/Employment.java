@@ -8,6 +8,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.cglib.core.Local;
+import org.springframework.util.Assert;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -43,11 +47,21 @@ public class Employment extends BaseEntity {
     @Column(nullable = false, length = 20)
     private EmploymentStatus status = EmploymentStatus.PENDING;
 
+    @Column(nullable = false)
+    private LocalDateTime joinedAt;
+
+    @Column
+    private LocalDateTime endedAt;
+
     private Employment(User user, Tenant tenant, Dojang dojang) {
+        validateNotNull(user, tenant, dojang);
+        validateTenantIntegrity(tenant, dojang);
+
         this.user = user;
         this.tenant = tenant;
         this.dojang = dojang;
         this.status = EmploymentStatus.PENDING;
+        this.joinedAt = LocalDateTime.now();
     }
 
     public static Employment create(User user, Tenant tenant, Dojang dojang) {
@@ -93,5 +107,29 @@ public class Employment extends BaseEntity {
             throw new IllegalStateException("활성 또는 정지 상태의 고용만 퇴사 처리할 수 있습니다");
         }
         this.status = EmploymentStatus.LEFT;
+        this.endedAt = LocalDateTime.now();
+    }
+
+    public void rejoin() {
+        if (this.status != EmploymentStatus.LEFT && this.status != EmploymentStatus.REJECTED) {
+            throw new IllegalStateException("퇴사 또는 거절 상태의 고용만 재입사 처리할 수 있습니다");
+        }
+
+        this.status = EmploymentStatus.PENDING;
+        this.joinedAt = LocalDateTime.now();
+        this.endedAt = null;
+    }
+
+    // TODO : 다른 엔티티도 도메인 차원에서 검증 로직을 확인할 것. 지금 단계에서는 전부 수정하지 않음. (11/26)
+    private void validateNotNull(User user, Tenant tenant, Dojang dojang){
+        Assert.notNull(user, "user 는 필수입니다.");
+        Assert.notNull(tenant, "tenant 는 필수입니다.");
+        Assert.notNull(dojang, "dojang 은 필수입니다.");
+    }
+
+    private void validateTenantIntegrity(Tenant tenant, Dojang dojang){
+        if(!dojang.getTenant().getId().equals(tenant.getId())){
+            throw new IllegalStateException("도장의 Tenant와 입력된 Tenant가 일치하지 않습니다.");
+        }
     }
 }
