@@ -1,17 +1,31 @@
+export type UserRole = 'OWNER' | 'INSTRUCTOR';
+
+export type OnboardingStep =
+  | 'PROFILE_INPUT'
+  | 'ROLE_SELECT'
+  | 'DOJANG_INFO'
+  | 'APPROVAL_WAIT'
+  | 'COMPLETED';
+
+export type OAuthProvider = 'GOOGLE' | 'KAKAO';
+
 export interface User {
-  id: string;
-  email: string;
+  id: number;
   name: string;
+  email: string;
   phone?: string;
-  role: 'OWNER' | 'INSTRUCTOR';
-  onboardingStep?: 'ROLE_SELECT' | 'DOJO_INFO' | 'APPROVAL_WAIT' | 'COMPLETED';
+  profileImageUrl?: string;
+  role?: UserRole;
+  onboardingStep: OnboardingStep;
+  oauthProvider: OAuthProvider;
+  createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
