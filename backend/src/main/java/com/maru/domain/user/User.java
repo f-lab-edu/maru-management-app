@@ -50,7 +50,7 @@ public class User extends SoftDeletableEntity {
     }
 
     public static User createWithoutRole(String name, String email, String phone) {
-        return new User(name, email, phone, null, OnboardingStep.ROLE_SELECT);
+        return new User(name, email, phone, null, OnboardingStep.PROFILE_INPUT);
     }
 
     public void selectOwnerRole() {

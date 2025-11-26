@@ -66,7 +66,7 @@ public class AuthController {
      * @param response HTTP 응답
      * @return 응답
      */
-    @PostMapping("/oauth/google/callback")
+    @PostMapping("/oauth/callback/google")
     public ResponseEntity<Void> handleGoogleCallback(
         @Valid @RequestBody OAuthCallbackReq request,
         HttpServletResponse response) {
@@ -95,7 +95,7 @@ public class AuthController {
      * @param response HTTP 응답
      * @return 응답
      */
-    @PostMapping("/oauth/kakao/callback")
+    @PostMapping("/oauth/callback/kakao")
     public ResponseEntity<Void> handleKakaoCallback(
         @Valid @RequestBody OAuthCallbackReq request,
         HttpServletResponse response) {
