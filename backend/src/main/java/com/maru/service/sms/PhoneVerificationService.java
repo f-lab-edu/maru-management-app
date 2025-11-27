@@ -1,11 +1,14 @@
 package com.maru.service.sms;
 
+import com.maru.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+
+import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -14,7 +17,6 @@ public class PhoneVerificationService {
 
     private static final int CODE_LENGTH = 6;
     private static final Duration CODE_TTL = Duration.ofMinutes(3);
-    private static final Duration RESEND_LIMIT = Duration.ofSeconds(60);
 
     private final SmsService smsService;
     private final VerificationCodeStore verificationCodeStore;
@@ -28,7 +30,7 @@ public class PhoneVerificationService {
      */
     public int sendVerificationCode(String phone) {
         if (verificationCodeStore.exists(phone)) {
-            throw new IllegalStateException("중복요청");
+            throw new BusinessException(SMS_RESEND_TOO_FAST);
         }
 
         String code = generateCode();
@@ -50,10 +52,10 @@ public class PhoneVerificationService {
      */
     public boolean verifyCode(String phone, String code) {
         String storedCode = verificationCodeStore.get(phone)
-                .orElseThrow(() -> new IllegalStateException("인증 요청 내역이 없음"));
+                .orElseThrow(() -> new BusinessException(SMS_CODE_NOT_FOUND));
 
         if (!storedCode.equals(code)) {
-            throw new IllegalStateException("인증번호가 일치하지 않음");
+            throw new BusinessException(SMS_CODE_INVALID);
         }
 
         verificationCodeStore.delete(phone);
