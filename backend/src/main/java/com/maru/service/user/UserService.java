@@ -4,10 +4,14 @@ import com.maru.common.exception.BusinessException;
 import com.maru.domain.user.*;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
+import com.maru.service.sms.PhoneVerificationService;
+import com.maru.service.user.dto.PhoneVerificationRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 import static com.maru.common.exception.ErrorCode.*;
 
@@ -18,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final OAuthAccountRepository oAuthAccountRepository;
+    private final PhoneVerificationService phoneVerificationService;
 
     /**
      * 사용자 ID로 사용자 조회
@@ -62,20 +67,28 @@ public class UserService {
      * @param userId 사용자 ID
      * @param name 이름
      * @param email 이메일
-     * @param phone 전화번호
+     * @param phone 전화번호 (SMS 인증 완료된 번호와 일치해야 함)
      * @return 업데이트된 사용자 엔티티
      * @throws BusinessException ONBOARDING_STAGE_INVALID - PROFILE_INPUT 단계가 아닐 경우
+     * @throws BusinessException ONBOARDING_PHONE_NOT_VERIFIED - 전화번호 인증 미완료
      */
     @Transactional
     public User updateOnboardingProfile(Long userId, String name, String email, String phone) {
         User user = getUserById(userId);
         validateOnboardingStep(user, OnboardingStep.PROFILE_INPUT);
+        validatePhoneVerified(user, phone);
 
-        user.updateProfile(name, email, phone);
+        user.updateProfile(name, email, user.getPhone());
         user.updateOnboardingStep(OnboardingStep.ROLE_SELECT);
 
         log.info("온보딩 프로필 업데이트 완료: userId={}", userId);
         return user;
+    }
+
+    private void validatePhoneVerified(User user, String requestPhone) {
+        if (user.getPhone() == null || !user.getPhone().equals(requestPhone)) {
+            throw new BusinessException(ONBOARDING_PHONE_NOT_VERIFIED);
+        }
     }
 
     /**
@@ -117,5 +130,77 @@ public class UserService {
             case OWNER -> OnboardingStep.DOJANG_INFO;
             case INSTRUCTOR -> OnboardingStep.APPROVAL_WAIT;
         };
+    }
+
+    /**
+     * 전화번호로 사용자 조회
+     *
+     * @param phone 전화번호
+     * @return Optional<User>
+     */
+    @Transactional(readOnly = true)
+    public Optional<User> findByPhone(String phone) {
+        return userRepository.findByPhone(phone);
+    }
+
+    /**
+     * OAuth 계정을 다른 사용자로 이동 (계정 통합)
+     *
+     * @param currentUserId 현재 사용자 ID (OAuthAccount를 가진 사용자)
+     * @param existingUserId 기존 사용자 ID (OAuthAccount를 받을 사용자)
+     */
+    @Transactional
+    public void mergeOAuthAccount(Long currentUserId, Long existingUserId) {
+        moveOAuthAccountToExistingUser(currentUserId, existingUserId);
+        deleteCurrentUser(currentUserId);
+    }
+
+    /**
+     * 인증번호 검증 및 계정 통합 처리
+     *
+     * @param userId 현재 사용자 ID
+     * @param phone 전화번호
+     * @param code 인증번호
+     * @return 인증 결과 (userId, isExistingUser)
+     */
+    @Transactional
+    public PhoneVerificationRes verifyPhoneAndMerge(Long userId, String phone, String code) {
+        phoneVerificationService.verifyCode(phone, code, userId);
+
+        return findExistingUserByPhone(phone, userId)
+            .map(existingUser -> mergeAndReturnResult(userId, existingUser))
+            .orElseGet(() -> assignPhoneAndReturnResult(userId, phone));
+    }
+
+    private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
+        OAuthAccount oAuthAccount = oAuthAccountRepository.findByUserId(currentUserId)
+            .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+        User existingUser = getUserById(existingUserId);
+        oAuthAccount.changeUser(existingUser);
+        oAuthAccountRepository.flush();
+        log.info("OAuth 계정 이동: userId {} → {}", currentUserId, existingUserId);
+    }
+
+    private void deleteCurrentUser(Long userId) {
+        userRepository.deleteById(userId);
+        log.info("사용자 삭제: userId={}", userId);
+    }
+
+    private Optional<User> findExistingUserByPhone(String phone, Long currentUserId) {
+        return findByPhone(phone)
+            .filter(user -> !user.getId().equals(currentUserId));
+    }
+
+    private PhoneVerificationRes mergeAndReturnResult(Long currentUserId, User existingUser) {
+        mergeOAuthAccount(currentUserId, existingUser.getId());
+        log.info("계정 통합 완료: currentUserId={} → existingUserId={}", currentUserId, existingUser.getId());
+        return new PhoneVerificationRes(existingUser.getId(), true);
+    }
+
+    private PhoneVerificationRes assignPhoneAndReturnResult(Long userId, String phone) {
+        User user = getUserById(userId);
+        user.updateProfile(user.getName(), user.getEmail(), phone);
+        log.info("전화번호 설정: userId={}, phone={}", userId, phone);
+        return new PhoneVerificationRes(userId, false);
     }
 }

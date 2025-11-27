@@ -39,4 +39,8 @@ public class OAuthAccount extends BaseEntity {
         this.provider = provider;
         this.providerAccountId = providerAccountId;
     }
+
+    public void changeUser(User newUser) {
+        this.user = newUser;
+    }
 }

@@ -26,6 +26,7 @@ public enum ErrorCode {
 
     // 온보딩 관련 에러 (ONBOARDING_XXX)
     ONBOARDING_STAGE_INVALID(HttpStatus.BAD_REQUEST, "ONBOARDING_001", "현재 온보딩 단계에서 수행할 수 없는 작업입니다"),
+    ONBOARDING_PHONE_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "ONBOARDING_002", "전화번호 인증이 완료되지 않았습니다"),
 
     // SMS 인증 관련 에러 (SMS_XXX)
     SMS_CODE_INVALID(HttpStatus.BAD_REQUEST, "SMS_001", "인증번호가 일치하지 않습니다"),
