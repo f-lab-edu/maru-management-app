@@ -1,9 +1,11 @@
 package com.maru.controller.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * API 에러 응답 DTO
@@ -17,7 +19,9 @@ public record ErrorRes(
     String code,
     String message,
     String detail,
-    String path
+    String path,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    Map<String, Object> data
 ) {
     /**
      * ErrorRes 생성 (detail 없음)

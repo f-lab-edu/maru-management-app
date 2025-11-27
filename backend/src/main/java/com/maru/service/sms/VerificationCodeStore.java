@@ -15,7 +15,15 @@ public interface VerificationCodeStore {
     void save(String phone, String code, Duration ttl);
 
     /**
-     * 인증번호 조회
+     * 인증번호 상태 조회
+     *
+     * @param phone 전화번호
+     * @return 인증번호 상태 (NOT_FOUND, EXPIRED, VALID)
+     */
+    VerificationCodeStatus getStatus(String phone);
+
+    /**
+     * 인증번호 조회 (만료 시 자동 삭제)
      *
      * @param phone 전화번호
      * @return 인증번호 (만료되었거나 없으면 empty)
@@ -30,12 +38,12 @@ public interface VerificationCodeStore {
     void delete(String phone);
 
     /**
-     * 인증번호 존재 여부 확인 (재발송 제한용)
+     * 재발송 제한 여부 확인
      *
      * @param phone 전화번호
      * @return 재발송 제한 중이면 true
      */
-    boolean exists(String phone);
+    boolean isResendLimited(String phone);
 
     /**
      * 인증 실패 횟수 증가

@@ -1,6 +1,7 @@
 package com.maru.service.sms.store;
 
 import com.maru.config.properties.SmsVerificationProperties;
+import com.maru.service.sms.VerificationCodeStatus;
 import com.maru.service.sms.VerificationCodeStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,24 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
         store.put(phone, new VerificationEntry(code, now, expiresAt));
+    }
+
+    /**
+     * 인증번호 상태 조회
+     *
+     * @param phone 전화번호
+     * @return 인증번호 상태 (NOT_FOUND, EXPIRED, VALID)
+     */
+    @Override
+    public VerificationCodeStatus getStatus(String phone) {
+        VerificationEntry entry = store.get(phone);
+        if (entry == null) {
+            return VerificationCodeStatus.NOT_FOUND;
+        }
+        if (entry.isExpired()) {
+            return VerificationCodeStatus.EXPIRED;
+        }
+        return VerificationCodeStatus.VALID;
     }
 
     /**
@@ -70,7 +89,7 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
      * @return 재발송 제한 중이면 true
      */
     @Override
-    public boolean exists(String phone) {
+    public boolean isResendLimited(String phone) {
         VerificationEntry entry = store.get(phone);
         if (entry == null) {
             return false;

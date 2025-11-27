@@ -41,11 +41,24 @@ public class SolapiSmsService implements SmsService {
      */
     @Override
     public void send(String phone, String message) {
+        Message smsMessage = buildMessage(phone, message);
+        sendWithErrorHandling(smsMessage, phone);
+    }
+
+    @Override
+    public String getProviderName() {
+        return PROVIDER;
+    }
+
+    private Message buildMessage(String phone, String message) {
         Message smsMessage = new Message();
         smsMessage.setFrom(normalizePhoneNumber(smsProperties.senderNumber()));
         smsMessage.setTo(normalizePhoneNumber(phone));
         smsMessage.setText(message);
+        return smsMessage;
+    }
 
+    private void sendWithErrorHandling(Message smsMessage, String phone) {
         try {
             messageService.send(smsMessage);
             log.info("SMS 발송 완료: to={}", phone);
@@ -53,11 +66,6 @@ public class SolapiSmsService implements SmsService {
             log.error("SMS 발송 실패: to={}, error={}", phone, e.getMessage());
             throw new BusinessException(SMS_SEND_FAILED);
         }
-    }
-
-    @Override
-    public String getProviderName() {
-        return PROVIDER;
     }
 
     private String normalizePhoneNumber(String phone) {

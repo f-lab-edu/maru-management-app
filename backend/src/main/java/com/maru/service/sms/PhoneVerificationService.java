@@ -29,19 +29,10 @@ public class PhoneVerificationService {
      * @return 만료 시간(초)
      */
     public int sendVerificationCode(String phone) {
-        if (verificationCodeStore.exists(phone)) {
-            throw new BusinessException(SMS_RESEND_TOO_FAST);
-        }
-
-        String code = generateCode();
-        Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
-        verificationCodeStore.save(phone, code, ttl);
-
-        String message = String.format("[마루] 인증번호는 %s입니다.", code);
-        smsService.send(phone, message);
-
-        log.info("인증번호 발송 완료: phone={}, provider={}", phone, smsService.getProviderName());
-        return (int) ttl.toSeconds();
+        validateResendLimit(phone);
+        String code = generateAndSaveCode(phone);
+        sendSmsWithRollback(phone, code);
+        return getExpirationSeconds();
     }
 
     /**
@@ -52,23 +43,78 @@ public class PhoneVerificationService {
      * @return 검증 결과 (성공 여부, 남은 시도 횟수)
      */
     public VerificationResult verifyCode(String phone, String code) {
-        String storedCode = verificationCodeStore.get(phone)
-                .orElseThrow(() -> new BusinessException(SMS_CODE_NOT_FOUND));
+        String storedCode = getStoredCodeOrThrow(phone);
 
         if (!storedCode.equals(code)) {
-            int failCount = verificationCodeStore.incrementFailCount(phone);
-            int remainingAttempts = properties.maxAttempts() - failCount;
+            return handleVerificationFailure(phone);
+        }
+        return handleVerificationSuccess(phone);
+    }
 
-            if (remainingAttempts <= 0) {
+    private void validateResendLimit(String phone) {
+        if (verificationCodeStore.isResendLimited(phone)) {
+            throw new BusinessException(SMS_RESEND_TOO_FAST);
+        }
+    }
+
+    private String generateAndSaveCode(String phone) {
+        String code = generateCode();
+        Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
+        verificationCodeStore.save(phone, code, ttl);
+        return code;
+    }
+
+    private void sendSmsWithRollback(String phone, String code) {
+        String message = buildVerificationMessage(code);
+        try {
+            smsService.send(phone, message);
+            log.info("인증번호 발송 완료: phone={}, provider={}", phone, smsService.getProviderName());
+        } catch (BusinessException e) {
+            verificationCodeStore.delete(phone);
+            throw e;
+        }
+    }
+
+    private String buildVerificationMessage(String code) {
+        return String.format("[마루] 인증번호는 %s입니다.", code);
+    }
+
+    private int getExpirationSeconds() {
+        return (int) Duration.ofMinutes(properties.ttlMinutes()).toSeconds();
+    }
+
+    private String getStoredCodeOrThrow(String phone) {
+        VerificationCodeStatus status = verificationCodeStore.getStatus(phone);
+
+        return switch (status) {
+            case NOT_FOUND -> throw new BusinessException(SMS_CODE_NOT_FOUND);
+            case EXPIRED -> {
                 verificationCodeStore.delete(phone);
-                log.warn("인증 시도 횟수 초과: phone={}", phone);
                 throw new BusinessException(SMS_CODE_EXPIRED);
             }
+            case VALID -> verificationCodeStore.get(phone).orElseThrow();
+        };
+    }
 
-            log.info("인증번호 불일치: phone={}, 남은 시도={}", phone, remainingAttempts);
-            return VerificationResult.fail(remainingAttempts);
+    private VerificationResult handleVerificationFailure(String phone) {
+        int remainingAttempts = calculateRemainingAttempts(phone);
+
+        if (remainingAttempts <= 0) {
+            verificationCodeStore.delete(phone);
+            log.warn("인증 시도 횟수 초과: phone={}", phone);
+            throw new BusinessException(SMS_MAX_ATTEMPTS_EXCEEDED);
         }
 
+        log.info("인증번호 불일치: phone={}, 남은 시도={}", phone, remainingAttempts);
+        return VerificationResult.fail(remainingAttempts);
+    }
+
+    private int calculateRemainingAttempts(String phone) {
+        int failCount = verificationCodeStore.incrementFailCount(phone);
+        return properties.maxAttempts() - failCount;
+    }
+
+    private VerificationResult handleVerificationSuccess(String phone) {
         verificationCodeStore.delete(phone);
         log.info("인증번호 검증 완료: phone={}", phone);
         return VerificationResult.success();
