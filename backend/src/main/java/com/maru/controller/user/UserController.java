@@ -95,4 +95,18 @@ public class UserController {
 
         return ResponseEntity.ok(OnboardingDojangRes.from(user, dojang));
     }
+
+    /**
+     * 온보딩 스텝 롤백 (이전 단계로 자동 이동)
+     *
+     * @param userId 현재 인증된 사용자 ID
+     * @return 업데이트된 사용자 정보
+     */
+    @PostMapping("/onboarding/step/previous")
+    public ResponseEntity<UserMeRes> rollbackOnboardingStep(@CurrentUserId Long userId) {
+        User user = userService.rollbackOnboardingStep(userId);
+        OAuthProvider provider = userService.getOAuthProvider(userId);
+
+        return ResponseEntity.ok(UserMeRes.from(user, provider));
+    }
 }
