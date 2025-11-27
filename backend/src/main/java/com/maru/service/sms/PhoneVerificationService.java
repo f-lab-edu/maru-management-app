@@ -1,6 +1,7 @@
 package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.config.properties.SmsVerificationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,11 +16,9 @@ import static com.maru.common.exception.ErrorCode.*;
 @RequiredArgsConstructor
 public class PhoneVerificationService {
 
-    private static final int CODE_LENGTH = 6;
-    private static final Duration CODE_TTL = Duration.ofMinutes(3);
-
     private final SmsService smsService;
     private final VerificationCodeStore verificationCodeStore;
+    private final SmsVerificationProperties properties;
     private final SecureRandom secureRandom = new SecureRandom();
 
     /**
@@ -34,13 +33,14 @@ public class PhoneVerificationService {
         }
 
         String code = generateCode();
-        verificationCodeStore.save(phone, code, CODE_TTL);
+        Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
+        verificationCodeStore.save(phone, code, ttl);
 
         String message = String.format("[마루] 인증번호는 %s입니다.", code);
         smsService.send(phone, message);
 
         log.info("인증번호 발송 완료: phone={}, provider={}", phone, smsService.getProviderName());
-        return (int) CODE_TTL.toSeconds();
+        return (int) ttl.toSeconds();
     }
 
     /**
@@ -65,7 +65,7 @@ public class PhoneVerificationService {
 
     private String generateCode() {
         StringBuilder code = new StringBuilder();
-        for (int i = 0; i < CODE_LENGTH; i++) {
+        for (int i = 0; i < properties.codeLength(); i++) {
             code.append(secureRandom.nextInt(10));
         }
         return code.toString();

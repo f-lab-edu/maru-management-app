@@ -1,7 +1,10 @@
 package com.maru.controller.sms;
 
 import com.maru.controller.sms.dto.SmsSendReq;
+import com.maru.controller.sms.dto.SmsSendRes;
 import com.maru.controller.sms.dto.SmsVerifyReq;
+import com.maru.controller.sms.dto.SmsVerifyRes;
+import com.maru.service.sms.PhoneVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SmsController {
 
+    private final PhoneVerificationService phoneVerificationService;
+
     /**
      * SMS 인증번호 발송 요청
      *
@@ -21,9 +26,15 @@ public class SmsController {
      * @return 발송 결과
      */
     @PostMapping("/send")
-    public ResponseEntity<?> sendVerificationCode(
-        @Valid @RequestBody SmsSendReq request) {
-        throw new UnsupportedOperationException("구현 예정");
+    public ResponseEntity<SmsSendRes> sendVerificationCode(
+            @Valid @RequestBody SmsSendReq request) {
+        int expiresIn = phoneVerificationService.sendVerificationCode(request.phone());
+
+        return ResponseEntity.ok(SmsSendRes.builder()
+                .phone(request.phone())
+                .expiresIn(expiresIn)
+                .message("인증번호가 발송되었습니다")
+                .build());
     }
 
     /**
@@ -33,8 +44,14 @@ public class SmsController {
      * @return 검증 결과
      */
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyCode(
-        @Valid @RequestBody SmsVerifyReq request) {
-        throw new UnsupportedOperationException("구현 예정");
+    public ResponseEntity<SmsVerifyRes> verifyCode(
+            @Valid @RequestBody SmsVerifyReq request) {
+        boolean verified = phoneVerificationService.verifyCode(request.phone(), request.code());
+
+        return ResponseEntity.ok(SmsVerifyRes.builder()
+                .verified(verified)
+                .userId(null)
+                .isExistingUser(false)
+                .build());
     }
 }
