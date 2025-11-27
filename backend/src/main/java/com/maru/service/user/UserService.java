@@ -56,7 +56,7 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public OAuthProvider getOAuthProvider(Long userId) {
-        return oAuthAccountRepository.findByUserId(userId)
+        return oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
             .map(OAuthAccount::getProvider)
             .orElse(null);
     }
@@ -173,7 +173,7 @@ public class UserService {
     }
 
     private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
-        OAuthAccount oAuthAccount = oAuthAccountRepository.findByUserId(currentUserId)
+        OAuthAccount oAuthAccount = oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(currentUserId)
             .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
         User existingUser = getUserById(existingUserId);
         oAuthAccount.changeUser(existingUser);
@@ -202,5 +202,31 @@ public class UserService {
         user.updateProfile(user.getName(), user.getEmail(), phone);
         log.info("전화번호 설정: userId={}, phone={}", userId, phone);
         return new PhoneVerificationRes(userId, false);
+    }
+
+    /**
+     * 온보딩 스텝 롤백 (이전 단계로 자동 이동)
+     *
+     * @param userId 사용자 ID
+     * @return 업데이트된 사용자 엔티티
+     * @throws BusinessException ONBOARDING_STAGE_INVALID - 롤백 불가능한 단계
+     */
+    @Transactional
+    public User rollbackOnboardingStep(Long userId) {
+        User user = getUserById(userId);
+        OnboardingStep currentStep = user.getOnboardingStep();
+        OnboardingStep previousStep = getPreviousStep(currentStep);
+
+        user.updateOnboardingStep(previousStep);
+        log.info("온보딩 스텝 롤백: userId={}, {} → {}", userId, currentStep, previousStep);
+        return user;
+    }
+
+    private OnboardingStep getPreviousStep(OnboardingStep currentStep) {
+        return switch (currentStep) {
+            case ROLE_SELECT -> OnboardingStep.PROFILE_INPUT;
+            case DOJANG_INFO, APPROVAL_WAIT -> OnboardingStep.ROLE_SELECT;
+            case PROFILE_INPUT, COMPLETED -> throw new BusinessException(ONBOARDING_STAGE_INVALID);
+        };
     }
 }
