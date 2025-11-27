@@ -34,6 +34,7 @@ public enum ErrorCode {
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS_004", "SMS 발송에 실패했습니다"),
     SMS_RESEND_TOO_FAST(HttpStatus.TOO_MANY_REQUESTS, "SMS_005", "재발송 요청은 1분에 한번씩 할 수 있습니다"),
     SMS_MAX_ATTEMPTS_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "SMS_006", "인증 시도 횟수를 초과했습니다"),
+    SMS_USER_MISMATCH(HttpStatus.FORBIDDEN, "SMS_007", "인증 요청자와 검증 요청자가 일치하지 않습니다"),
 
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),

@@ -24,13 +24,29 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
      *
      * @param phone 전화번호
      * @param code 인증번호
+     * @param userId 요청자 ID
      * @param ttl 유효 기간
      */
     @Override
-    public void save(String phone, String code, Duration ttl) {
+    public void save(String phone, String code, Long userId, Duration ttl) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
-        store.put(phone, new VerificationEntry(code, now, expiresAt));
+        store.put(phone, new VerificationEntry(code, userId, now, expiresAt));
+    }
+
+    /**
+     * 요청자 ID 조회
+     *
+     * @param phone 전화번호
+     * @return 요청자 ID (만료되었거나 없으면 empty)
+     */
+    @Override
+    public Optional<Long> getUserId(String phone) {
+        VerificationEntry entry = store.get(phone);
+        if (entry == null || entry.isExpired()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(entry.userId);
     }
 
     /**
@@ -135,12 +151,14 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
 
     private static class VerificationEntry {
         private final String code;
+        private final Long userId;
         private final Instant createdAt;
         private final Instant expiresAt;
         private final AtomicInteger failCount;
 
-        VerificationEntry(String code, Instant createdAt, Instant expiresAt) {
+        VerificationEntry(String code, Long userId, Instant createdAt, Instant expiresAt) {
             this.code = code;
+            this.userId = userId;
             this.createdAt = createdAt;
             this.expiresAt = expiresAt;
             this.failCount = new AtomicInteger(0);

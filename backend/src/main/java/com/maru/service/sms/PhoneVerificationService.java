@@ -26,11 +26,12 @@ public class PhoneVerificationService {
      * 인증번호 발송
      *
      * @param phone 전화번호
+     * @param userId 요청자 ID
      * @return 만료 시간(초)
      */
-    public int sendVerificationCode(String phone) {
+    public int sendVerificationCode(String phone, Long userId) {
         validateResendLimit(phone);
-        String code = generateAndSaveCode(phone);
+        String code = generateAndSaveCode(phone, userId);
         sendSmsWithRollback(phone, code);
         return getExpirationSeconds();
     }
@@ -40,11 +41,13 @@ public class PhoneVerificationService {
      *
      * @param phone 전화번호
      * @param code 인증번호
-     * @throws BusinessException SMS_CODE_NOT_FOUND, SMS_CODE_EXPIRED, SMS_MAX_ATTEMPTS_EXCEEDED
+     * @param userId 검증 요청자 ID
+     * @throws BusinessException SMS_CODE_NOT_FOUND, SMS_CODE_EXPIRED, SMS_MAX_ATTEMPTS_EXCEEDED, SMS_USER_MISMATCH
      * @throws SmsVerificationException SMS_CODE_INVALID (남은 시도 횟수 포함)
      */
-    public void verifyCode(String phone, String code) {
+    public void verifyCode(String phone, String code, Long userId) {
         String storedCode = getStoredCodeOrThrow(phone);
+        validateUserMatch(phone, userId);
 
         if (!storedCode.equals(code)) {
             handleVerificationFailure(phone);
@@ -59,10 +62,10 @@ public class PhoneVerificationService {
         }
     }
 
-    private String generateAndSaveCode(String phone) {
+    private String generateAndSaveCode(String phone, Long userId) {
         String code = generateCode();
         Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
-        verificationCodeStore.save(phone, code, ttl);
+        verificationCodeStore.save(phone, code, userId, ttl);
         return code;
     }
 
@@ -96,6 +99,14 @@ public class PhoneVerificationService {
             }
             case VALID -> verificationCodeStore.get(phone).orElseThrow();
         };
+    }
+
+    private void validateUserMatch(String phone, Long userId) {
+        Long storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
+        if (storedUserId != null && !storedUserId.equals(userId)) {
+            log.warn("인증 요청자 불일치: phone={}, storedUserId={}, requestUserId={}", phone, storedUserId, userId);
+            throw new BusinessException(SMS_USER_MISMATCH);
+        }
     }
 
     private void handleVerificationFailure(String phone) {

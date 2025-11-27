@@ -4,6 +4,7 @@ import com.maru.controller.sms.dto.SmsSendReq;
 import com.maru.controller.sms.dto.SmsSendRes;
 import com.maru.controller.sms.dto.SmsVerifyReq;
 import com.maru.controller.sms.dto.SmsVerifyRes;
+import com.maru.security.CurrentUserId;
 import com.maru.service.sms.PhoneVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +23,15 @@ public class SmsController {
     /**
      * SMS 인증번호 발송 요청
      *
+     * @param userId 요청자 ID
      * @param request 전화번호가 포함된 요청
      * @return 발송 결과
      */
     @PostMapping("/send")
     public ResponseEntity<SmsSendRes> sendVerificationCode(
+            @CurrentUserId Long userId,
             @Valid @RequestBody SmsSendReq request) {
-        int expiresIn = phoneVerificationService.sendVerificationCode(request.phone());
+        int expiresIn = phoneVerificationService.sendVerificationCode(request.phone(), userId);
 
         return ResponseEntity.ok(SmsSendRes.builder()
                 .phone(request.phone())
@@ -40,13 +43,15 @@ public class SmsController {
     /**
      * SMS 인증번호 검증
      *
+     * @param userId 요청자 ID
      * @param request 전화번호와 인증번호가 포함된 요청
      * @return 검증 결과
      */
     @PostMapping("/verify")
     public ResponseEntity<SmsVerifyRes> verifyCode(
+            @CurrentUserId Long userId,
             @Valid @RequestBody SmsVerifyReq request) {
-        phoneVerificationService.verifyCode(request.phone(), request.code());
+        phoneVerificationService.verifyCode(request.phone(), request.code(), userId);
 
         return ResponseEntity.ok(SmsVerifyRes.builder()
                 .verified(true)
