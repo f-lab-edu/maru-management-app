@@ -48,8 +48,12 @@ public class SecurityConfig {
 
             // URL별 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
-                // 인증 없이 접근 가능한 URL (로그인, 회원가입, 헬스체크)
-                .requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll()
+                // 인증 없이 접근 가능한 URL (로그인, 회원가입, 헬스체크, SMS 인증)
+                .requestMatchers(
+                        "/api/v1/auth/**",
+                        "/api/v1/sms/**",
+                        "/actuator/health"
+                ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
