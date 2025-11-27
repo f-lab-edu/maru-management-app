@@ -42,9 +42,18 @@ export default function CreateDojangPage() {
     }
   };
 
+  const handlePrevious = async () => {
+    try {
+      await userService.rollbackOnboardingStep();
+      await refreshUser();
+    } catch (error) {
+      console.error('이전 단계 이동 실패:', error);
+    }
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500 relative">
-      <OnboardingBackButton onClick={() => navigate('/onboarding/role')} />
+      <OnboardingBackButton onClick={handlePrevious} />
       <CardHeader className="pb-8 pt-10">
         <CardTitle className="text-3xl font-bold text-slate-900">도장 개설하기</CardTitle>
         <CardDescription className="text-lg mt-2">

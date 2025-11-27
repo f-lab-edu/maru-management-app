@@ -35,8 +35,13 @@ export default function RoleSelectionPage() {
     }
   };
 
-  const handlePrevious = () => {
-    navigate('/onboarding/user-info');
+  const handlePrevious = async () => {
+    try {
+      await userService.rollbackOnboardingStep();
+      await refreshUser();
+    } catch (error) {
+      console.error('이전 단계 이동 실패:', error);
+    }
   };
 
   return (

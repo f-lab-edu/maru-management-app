@@ -77,6 +77,11 @@ export function OnboardingRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const correctPath = getOnboardingPath(user.onboardingStep);
+  if (location.pathname !== correctPath) {
+    return <Navigate to={correctPath} replace />;
+  }
+
   return <>{children}</>;
 }
 

@@ -63,4 +63,9 @@ export const userService = {
     const response = await apiClient.post<OnboardingDojangRes>('/users/onboarding/dojang', data);
     return response.data;
   },
+
+  rollbackOnboardingStep: async (): Promise<User> => {
+    const response = await apiClient.post<User>('/users/onboarding/step/previous');
+    return response.data;
+  },
 };
