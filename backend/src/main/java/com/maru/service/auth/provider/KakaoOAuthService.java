@@ -1,8 +1,9 @@
-package com.maru.service.auth;
+package com.maru.service.auth.provider;
 
 import com.maru.common.exception.AuthException;
 import com.maru.config.properties.KakaoOauthProperties;
 import com.maru.domain.user.OAuthProvider;
+import com.maru.service.auth.OAuthService;
 import com.maru.service.auth.dto.KakaoTokenRes;
 import com.maru.service.auth.dto.KakaoUserInfoRes;
 import com.maru.service.auth.dto.OAuthUserInfo;

@@ -1,8 +1,9 @@
-package com.maru.service.auth;
+package com.maru.service.auth.provider;
 
 import com.maru.common.exception.AuthException;
 import com.maru.config.properties.GoogleOauthProperties;
 import com.maru.domain.user.OAuthProvider;
+import com.maru.service.auth.OAuthService;
 import com.maru.service.auth.dto.GoogleTokenRes;
 import com.maru.service.auth.dto.GoogleUserInfoRes;
 import com.maru.service.auth.dto.OAuthUserInfo;
