@@ -76,6 +76,10 @@ dependencies {
     // SpringDoc OpenAPI (Swagger UI)
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
+    // ============== External Services ==============
+    // Solapi SMS SDK
+    implementation 'com.solapi:sdk:1.0.3'
+
     // ============== Test ==============
     // Spring Boot Test (JUnit 5, Mockito 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
