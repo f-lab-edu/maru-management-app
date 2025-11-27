@@ -32,6 +32,13 @@ public class SolapiSmsService implements SmsService {
         log.info("Solapi SMS 서비스 초기화 완료");
     }
 
+    /**
+     * Solapi를 통해 SMS 메시지 발송
+     *
+     * @param phone 수신자 전화번호
+     * @param message 발송할 메시지
+     * @throws BusinessException SMS_SEND_FAILED - 발송 실패 시
+     */
     @Override
     public void send(String phone, String message) {
         Message smsMessage = new Message();

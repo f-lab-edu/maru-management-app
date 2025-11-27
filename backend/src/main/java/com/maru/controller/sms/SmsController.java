@@ -5,6 +5,7 @@ import com.maru.controller.sms.dto.SmsSendRes;
 import com.maru.controller.sms.dto.SmsVerifyReq;
 import com.maru.controller.sms.dto.SmsVerifyRes;
 import com.maru.service.sms.PhoneVerificationService;
+import com.maru.service.sms.dto.VerificationResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,12 +47,13 @@ public class SmsController {
     @PostMapping("/verify")
     public ResponseEntity<SmsVerifyRes> verifyCode(
             @Valid @RequestBody SmsVerifyReq request) {
-        boolean verified = phoneVerificationService.verifyCode(request.phone(), request.code());
+        VerificationResult result = phoneVerificationService.verifyCode(request.phone(), request.code());
 
         return ResponseEntity.ok(SmsVerifyRes.builder()
-                .verified(verified)
+                .verified(result.verified())
                 .userId(null)
                 .isExistingUser(false)
+                .remainingAttempts(result.verified() ? null : result.remainingAttempts())
                 .build());
     }
 }

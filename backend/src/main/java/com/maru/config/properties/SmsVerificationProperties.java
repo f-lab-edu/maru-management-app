@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record SmsVerificationProperties(
         int codeLength,
         int ttlMinutes,
-        int resendLimitSeconds
+        int resendLimitSeconds,
+        int maxAttempts
 ) {
 }

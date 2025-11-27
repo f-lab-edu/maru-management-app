@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +18,13 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
     private final SmsVerificationProperties properties;
     private final ConcurrentHashMap<String, VerificationEntry> store = new ConcurrentHashMap<>();
 
+    /**
+     * 인증번호 저장
+     *
+     * @param phone 전화번호
+     * @param code 인증번호
+     * @param ttl 유효 기간
+     */
     @Override
     public void save(String phone, String code, Duration ttl) {
         Instant now = Instant.now();
@@ -24,6 +32,12 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
         store.put(phone, new VerificationEntry(code, now, expiresAt));
     }
 
+    /**
+     * 인증번호 조회 (만료 시 자동 삭제)
+     *
+     * @param phone 전화번호
+     * @return 인증번호 (만료되었거나 없으면 empty)
+     */
     @Override
     public Optional<String> get(String phone) {
         VerificationEntry entry = store.get(phone);
@@ -36,14 +50,25 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
             return Optional.empty();
         }
 
-        return Optional.of(entry.code());
+        return Optional.of(entry.code);
     }
 
+    /**
+     * 인증번호 삭제
+     *
+     * @param phone 전화번호
+     */
     @Override
     public void delete(String phone) {
         store.remove(phone);
     }
 
+    /**
+     * 재발송 제한 여부 확인 (만료 시 자동 삭제)
+     *
+     * @param phone 전화번호
+     * @return 재발송 제한 중이면 true
+     */
     @Override
     public boolean exists(String phone) {
         VerificationEntry entry = store.get(phone);
@@ -59,7 +84,49 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
         return entry.isWithinResendLimit(properties.resendLimitSeconds());
     }
 
-    private record VerificationEntry(String code, Instant createdAt, Instant expiresAt) {
+    /**
+     * 인증 실패 횟수 증가
+     *
+     * @param phone 전화번호
+     * @return 증가 후 실패 횟수 (만료되었거나 없으면 0)
+     */
+    @Override
+    public int incrementFailCount(String phone) {
+        VerificationEntry entry = store.get(phone);
+        if (entry == null || entry.isExpired()) {
+            return 0;
+        }
+        return entry.failCount.incrementAndGet();
+    }
+
+    /**
+     * 인증 실패 횟수 조회
+     *
+     * @param phone 전화번호
+     * @return 실패 횟수 (만료되었거나 없으면 0)
+     */
+    @Override
+    public int getFailCount(String phone) {
+        VerificationEntry entry = store.get(phone);
+        if (entry == null || entry.isExpired()) {
+            return 0;
+        }
+        return entry.failCount.get();
+    }
+
+    private static class VerificationEntry {
+        private final String code;
+        private final Instant createdAt;
+        private final Instant expiresAt;
+        private final AtomicInteger failCount;
+
+        VerificationEntry(String code, Instant createdAt, Instant expiresAt) {
+            this.code = code;
+            this.createdAt = createdAt;
+            this.expiresAt = expiresAt;
+            this.failCount = new AtomicInteger(0);
+        }
+
         boolean isExpired() {
             return Instant.now().isAfter(expiresAt);
         }

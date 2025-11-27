@@ -33,7 +33,23 @@ public interface VerificationCodeStore {
      * 인증번호 존재 여부 확인 (재발송 제한용)
      *
      * @param phone 전화번호
-     * @return 존재하면 true
+     * @return 재발송 제한 중이면 true
      */
     boolean exists(String phone);
+
+    /**
+     * 인증 실패 횟수 증가
+     *
+     * @param phone 전화번호
+     * @return 증가 후 실패 횟수
+     */
+    int incrementFailCount(String phone);
+
+    /**
+     * 인증 실패 횟수 조회
+     *
+     * @param phone 전화번호
+     * @return 실패 횟수 (없으면 0)
+     */
+    int getFailCount(String phone);
 }

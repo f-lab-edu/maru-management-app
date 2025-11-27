@@ -2,6 +2,7 @@ package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.config.properties.SmsVerificationProperties;
+import com.maru.service.sms.dto.VerificationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,19 +49,29 @@ public class PhoneVerificationService {
      *
      * @param phone 전화번호
      * @param code 인증번호
-     * @return 검증 성공 여부
+     * @return 검증 결과 (성공 여부, 남은 시도 횟수)
      */
-    public boolean verifyCode(String phone, String code) {
+    public VerificationResult verifyCode(String phone, String code) {
         String storedCode = verificationCodeStore.get(phone)
                 .orElseThrow(() -> new BusinessException(SMS_CODE_NOT_FOUND));
 
         if (!storedCode.equals(code)) {
-            throw new BusinessException(SMS_CODE_INVALID);
+            int failCount = verificationCodeStore.incrementFailCount(phone);
+            int remainingAttempts = properties.maxAttempts() - failCount;
+
+            if (remainingAttempts <= 0) {
+                verificationCodeStore.delete(phone);
+                log.warn("인증 시도 횟수 초과: phone={}", phone);
+                throw new BusinessException(SMS_CODE_EXPIRED);
+            }
+
+            log.info("인증번호 불일치: phone={}, 남은 시도={}", phone, remainingAttempts);
+            return VerificationResult.fail(remainingAttempts);
         }
 
         verificationCodeStore.delete(phone);
         log.info("인증번호 검증 완료: phone={}", phone);
-        return true;
+        return VerificationResult.success();
     }
 
     private String generateCode() {
