@@ -1,8 +1,8 @@
 package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.SmsVerificationException;
 import com.maru.config.properties.SmsVerificationProperties;
-import com.maru.service.sms.dto.VerificationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,15 +40,17 @@ public class PhoneVerificationService {
      *
      * @param phone 전화번호
      * @param code 인증번호
-     * @return 검증 결과 (성공 여부, 남은 시도 횟수)
+     * @throws BusinessException SMS_CODE_NOT_FOUND, SMS_CODE_EXPIRED, SMS_MAX_ATTEMPTS_EXCEEDED
+     * @throws SmsVerificationException SMS_CODE_INVALID (남은 시도 횟수 포함)
      */
-    public VerificationResult verifyCode(String phone, String code) {
+    public void verifyCode(String phone, String code) {
         String storedCode = getStoredCodeOrThrow(phone);
 
         if (!storedCode.equals(code)) {
-            return handleVerificationFailure(phone);
+            handleVerificationFailure(phone);
+            return;
         }
-        return handleVerificationSuccess(phone);
+        handleVerificationSuccess(phone);
     }
 
     private void validateResendLimit(String phone) {
@@ -96,7 +98,7 @@ public class PhoneVerificationService {
         };
     }
 
-    private VerificationResult handleVerificationFailure(String phone) {
+    private void handleVerificationFailure(String phone) {
         int remainingAttempts = calculateRemainingAttempts(phone);
 
         if (remainingAttempts <= 0) {
@@ -106,7 +108,7 @@ public class PhoneVerificationService {
         }
 
         log.info("인증번호 불일치: phone={}, 남은 시도={}", phone, remainingAttempts);
-        return VerificationResult.fail(remainingAttempts);
+        throw new SmsVerificationException(SMS_CODE_INVALID, remainingAttempts);
     }
 
     private int calculateRemainingAttempts(String phone) {
@@ -114,10 +116,9 @@ public class PhoneVerificationService {
         return properties.maxAttempts() - failCount;
     }
 
-    private VerificationResult handleVerificationSuccess(String phone) {
+    private void handleVerificationSuccess(String phone) {
         verificationCodeStore.delete(phone);
         log.info("인증번호 검증 완료: phone={}", phone);
-        return VerificationResult.success();
     }
 
     private String generateCode() {
