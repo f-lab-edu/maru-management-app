@@ -18,9 +18,9 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
      * tenantId: 데이터 격리, dojangId: 권한 격리
      *
      * @param userId 사용자 ID
-     * @param tenantId 테넌트 ID (Cross-Tenant 공격 방어)
-     * @param dojangId 도장 ID (권한 격리 단위)
-     * @return 부여된 권한 목록 (예: ["STUDENT:READ", "PAYMENT:WRITE"])
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
+     * @return 부여된 권한 목록
      */
     @Cacheable(value = "dojangPermissions", key = "'user:' + #userId + ':dojang:' + #dojangId")
     @Query("""
