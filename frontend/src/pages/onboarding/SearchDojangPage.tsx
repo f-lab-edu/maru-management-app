@@ -1,14 +1,20 @@
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { userService } from '../../services/userService';
 import { CardHeader, CardTitle, CardDescription, CardContent } from '../../shared/components/ui/card';
 import { Clock, ArrowLeft } from 'lucide-react';
 import { OnboardingBackButton } from './components/OnboardingBackButton';
 import { Button } from '../../shared/components/ui/button';
 
 export default function SearchDojangPage() {
-  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
-  const handlePrevious = () => {
-    navigate('/onboarding/role');
+  const handlePrevious = async () => {
+    try {
+      await userService.rollbackOnboardingStep();
+      await refreshUser();
+    } catch (error) {
+      console.error('이전 단계 이동 실패:', error);
+    }
   };
 
   return (
