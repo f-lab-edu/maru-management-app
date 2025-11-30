@@ -144,18 +144,6 @@ public class UserService {
     }
 
     /**
-     * OAuth 계정을 다른 사용자로 이동 (계정 통합)
-     *
-     * @param currentUserId 현재 사용자 ID (OAuthAccount를 가진 사용자)
-     * @param existingUserId 기존 사용자 ID (OAuthAccount를 받을 사용자)
-     */
-    @Transactional
-    public void mergeOAuthAccount(Long currentUserId, Long existingUserId) {
-        moveOAuthAccountToExistingUser(currentUserId, existingUserId);
-        deleteCurrentUser(currentUserId);
-    }
-
-    /**
      * 인증번호 검증 및 계정 통합 처리
      *
      * @param userId 현재 사용자 ID
@@ -172,20 +160,6 @@ public class UserService {
             .orElseGet(() -> assignPhoneAndReturnResult(userId, phone));
     }
 
-    private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
-        OAuthAccount oAuthAccount = oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(currentUserId)
-            .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
-        User existingUser = getUserById(existingUserId);
-        oAuthAccount.changeUser(existingUser);
-        oAuthAccountRepository.flush();
-        log.info("OAuth 계정 이동: userId {} → {}", currentUserId, existingUserId);
-    }
-
-    private void deleteCurrentUser(Long userId) {
-        userRepository.deleteById(userId);
-        log.info("사용자 삭제: userId={}", userId);
-    }
-
     private Optional<User> findExistingUserByPhone(String phone, Long currentUserId) {
         return findByPhone(phone)
             .filter(user -> !user.getId().equals(currentUserId));
@@ -195,6 +169,26 @@ public class UserService {
         mergeOAuthAccount(currentUserId, existingUser.getId());
         log.info("계정 통합 완료: currentUserId={} → existingUserId={}", currentUserId, existingUser.getId());
         return new PhoneVerificationRes(existingUser.getId(), true);
+    }
+
+    private void mergeOAuthAccount(Long currentUserId, Long existingUserId) {
+        moveOAuthAccountToExistingUser(currentUserId, existingUserId);
+        deleteCurrentUser(currentUserId);
+    }
+
+
+    private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
+        OAuthAccount oAuthAccount = oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(currentUserId)
+                .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+        User existingUser = getUserById(existingUserId);
+        oAuthAccount.changeUser(existingUser);
+        oAuthAccountRepository.flush();
+        log.info("OAuth 계정 이동: userId {} → {}", currentUserId, existingUserId);
+    }
+
+    private void deleteCurrentUser(Long userId) {
+        userRepository.deleteById(userId);
+        log.info("사용자 삭제: userId={}", userId);
     }
 
     private PhoneVerificationRes assignPhoneAndReturnResult(Long userId, String phone) {
