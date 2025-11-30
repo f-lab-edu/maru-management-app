@@ -13,6 +13,10 @@ public class TenantContextHolder {
      * @param tenantId 테넌트 ID
      */
     public static AutoCloseable withTenant(Long tenantId) {
+        if(TENANT_CONTEXT.get() != null){
+            throw new IllegalStateException("테넌트 컨텍스트가 이미 설정되어 있음.");
+        }
+
         if(tenantId != null){
             TENANT_CONTEXT.set(tenantId);
             log.debug("테넌트 컨텍스트 설정: tenantId={}", tenantId);
