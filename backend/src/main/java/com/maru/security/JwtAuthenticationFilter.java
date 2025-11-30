@@ -88,42 +88,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = claims.get("role", String.class);
 
             // 테넌트 컨텍스트 설정
-            TenantContextHolder.setTenantId(tenantId);
+            try(AutoCloseable tenantContext = TenantContextHolder.withTenant(tenantId)){
 
-            // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
-            Map<String, Object> claimsMap = new HashMap<>();
-            claimsMap.put("userId", userId);
-            claimsMap.put("tenantId", tenantId);
-            claimsMap.put("dojangId", dojangId);
-            claimsMap.put("role", role);
+                // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
+                Map<String, Object> claimsMap = new HashMap<>();
+                claimsMap.put("userId", userId);
+                claimsMap.put("tenantId", tenantId);
+                claimsMap.put("dojangId", dojangId);
+                claimsMap.put("role", role);
 
-            // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
-            List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + role)
-            );
+                // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
+                List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
 
-            // TODO : UsernamePasswordAuthenticationToken -> Oauth2 의존성을 추가해서 JwtAuthenticationToken 등으로 리팩토링 고민
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                claimsMap,
-                null,
-                authorities
-            );
+                // TODO : UsernamePasswordAuthenticationToken -> Oauth2 의존성을 추가해서 JwtAuthenticationToken 등으로 리팩토링 고민
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        claimsMap,
+                        null,
+                        authorities
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // 인증 성공 로깅
-            log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
-                     userId, tenantId, dojangId, role, request.getRequestURI());
+                // 인증 성공 로깅
+                log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
+                        userId, tenantId, dojangId, role, request.getRequestURI());
 
-            // 필터 체인 계속
-            filterChain.doFilter(request, response);
+                // 필터 체인 계속
+                filterChain.doFilter(request, response);
+            }
 
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
             filterChain.doFilter(request, response);
-        } finally {
-            // 모든 요청 처리 완료 후 ThreadLocal 정리
-            TenantContextHolder.clear();
         }
     }
 

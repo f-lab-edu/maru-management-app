@@ -88,6 +88,7 @@ public class TenantService {
         return employmentRepository.save(employment);
     }
 
+    // TODO : 수정해야함
     private void grantOwnerPermissions(Employment employment) {
         String[] resources = {"students", "attendances", "payments", "classes", "promotions", "settings"};
         String[] actions = {"read", "write", "delete"};
