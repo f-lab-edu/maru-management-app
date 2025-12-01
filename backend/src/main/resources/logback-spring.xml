@@ -4,8 +4,8 @@
     <!-- Property 정의 -->
     <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
     <property name="LOG_FILE" value="application"/>
-    <property name="LOG_PATTERN_CONSOLE" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n"/>
-    <property name="LOG_PATTERN_FILE" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+    <property name="LOG_PATTERN_CONSOLE" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] [%X{requestId}] %cyan(%logger{36}) - %msg%n"/>
+    <property name="LOG_PATTERN_FILE" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{requestId}] %logger{36} - %msg%n"/>
 
     <!-- Console Appender (개발 환경용) -->
     <springProfile name="local">
