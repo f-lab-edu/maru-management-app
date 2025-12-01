@@ -1,6 +1,8 @@
 package com.maru.security.cache;
 
-import com.maru.repository.permission.PermissionRepository;
+import com.maru.domain.employment.EmploymentStatus;
+import com.maru.domain.permission.PermissionType;
+import com.maru.repository.employment.EmploymentRepository;
 import com.maru.security.PermissionCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,26 +15,33 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DatabasePermissionCache implements PermissionCache {
 
-    private final PermissionRepository permissionRepository;
+    private final EmploymentRepository employmentRepository;
 
     @Override
     public boolean hasPermission(Long userId, Long tenantId, Long dojangId, String resource, String action) {
-        Set<String> permissions = permissionRepository.findGrantedPermissions(userId, tenantId, dojangId);
-        String permissionKey = resource + ":" + action;
+        try {
+            PermissionType requiredPermission = PermissionType.of(resource, action);
 
-        boolean hasPermission = permissions.contains(permissionKey);
+            Set<PermissionType> permissions = employmentRepository.findPermissions(
+                    userId, tenantId, dojangId, EmploymentStatus.ACTIVE);
 
-        if (log.isDebugEnabled()) {
+            if (permissions == null || permissions.isEmpty()) {
+                return false;
+            }
+
+            boolean hasPermission = permissions.contains(requiredPermission);
             log.debug("권한 확인 - userId: {}, dojangId: {}, permission: {}, result: {}",
-                    userId, dojangId, permissionKey, hasPermission);
+                    userId, dojangId, requiredPermission, hasPermission);
+            return hasPermission;
+        } catch (IllegalArgumentException e) {
+            log.warn("존재하지 않는 권한 타입 요청: {}:{}", resource, action);
+            return false;
         }
-
-        return hasPermission;
     }
 
     @Override
     public void invalidate(Long userId, Long tenantId, Long dojangId) {
-        permissionRepository.evictPermissionCache(userId, dojangId);
+        employmentRepository.evictPermissionCache(userId, dojangId);
         log.info("권한 캐시 무효화 - userId: {}, dojangId: {}", userId, dojangId);
     }
 }
