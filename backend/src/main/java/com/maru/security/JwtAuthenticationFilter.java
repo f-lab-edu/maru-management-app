@@ -88,7 +88,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = claims.get("role", String.class);
 
             // 테넌트 컨텍스트 설정
-            try(AutoCloseable tenantContext = TenantContextHolder.withTenant(tenantId)){
+            try(AutoCloseable ignored = TenantContextHolder.withTenant(tenantId)){
 
                 // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
                 Map<String, Object> claimsMap = new HashMap<>();
