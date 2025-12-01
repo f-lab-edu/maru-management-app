@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
 
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ public class Tenant extends SoftDeletableEntity {
     private Boolean isActive = true;
 
     private Tenant(User owner, String slug) {
+        validateNotNull(owner, slug);
         this.owner = owner;
         this.slug = slug;
         this.isActive = true;
@@ -52,5 +54,10 @@ public class Tenant extends SoftDeletableEntity {
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    private void validateNotNull(User owner, String slug) {
+        Assert.notNull(owner, "owner는 필수입니다.");
+        Assert.hasText(slug, "slug는 필수입니다.");
     }
 }

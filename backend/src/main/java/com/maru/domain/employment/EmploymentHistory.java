@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -40,6 +41,7 @@ public class EmploymentHistory extends BaseTimeEntity {
     private String reason;
 
     private EmploymentHistory(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, User changedBy, String reason) {
+        validateNotNull(employment, toStatus);
         this.employment = employment;
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
@@ -49,5 +51,10 @@ public class EmploymentHistory extends BaseTimeEntity {
 
     public static EmploymentHistory record(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, User changedBy, String reason) {
         return new EmploymentHistory(employment, fromStatus, toStatus, changedBy, reason);
+    }
+
+    private void validateNotNull(Employment employment, EmploymentStatus toStatus) {
+        Assert.notNull(employment, "employment는 필수입니다.");
+        Assert.notNull(toStatus, "toStatus는 필수입니다.");
     }
 }

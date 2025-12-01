@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -35,6 +36,7 @@ public class OAuthAccount extends BaseEntity {
     private String providerAccountId;
 
     public OAuthAccount(User user, OAuthProvider provider, String providerAccountId) {
+        validateNotNull(user, provider, providerAccountId);
         this.user = user;
         this.provider = provider;
         this.providerAccountId = providerAccountId;
@@ -42,5 +44,11 @@ public class OAuthAccount extends BaseEntity {
 
     public void changeUser(User newUser) {
         this.user = newUser;
+    }
+
+    private void validateNotNull(User user, OAuthProvider provider, String providerAccountId) {
+        Assert.notNull(user, "user는 필수입니다.");
+        Assert.notNull(provider, "provider는 필수입니다.");
+        Assert.hasText(providerAccountId, "providerAccountId는 필수입니다.");
     }
 }

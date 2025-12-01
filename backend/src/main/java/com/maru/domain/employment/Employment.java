@@ -145,11 +145,10 @@ public class Employment extends BaseEntity {
         return this.permissions.contains(permission);
     }
 
-    // TODO : 다른 엔티티도 도메인 차원에서 검증 로직을 확인할 것. 지금 단계에서는 전부 수정하지 않음. (11/26)
     private void validateNotNull(User user, Tenant tenant, Dojang dojang){
-        Assert.notNull(user, "user 는 필수입니다.");
-        Assert.notNull(tenant, "tenant 는 필수입니다.");
-        Assert.notNull(dojang, "dojang 은 필수입니다.");
+        Assert.notNull(user, "user는 필수입니다.");
+        Assert.notNull(tenant, "tenant는 필수입니다.");
+        Assert.notNull(dojang, "dojang은 필수입니다.");
     }
 
     private void validateTenantIntegrity(Tenant tenant, Dojang dojang){

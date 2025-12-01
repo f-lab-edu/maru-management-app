@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
@@ -42,6 +43,7 @@ public class User extends SoftDeletableEntity {
     private LocalDateTime lastLoginAt;
 
     private User(String name, String email, String phone, UserRole role, OnboardingStep initialStep) {
+        validateNotNull(name, initialStep);
         this.name = name;
         this.email = email;
         this.phone = phone;
@@ -79,5 +81,10 @@ public class User extends SoftDeletableEntity {
 
     public void updateRole(UserRole role) {
         this.role = role;
+    }
+
+    private void validateNotNull(String name, OnboardingStep initialStep) {
+        Assert.hasText(name, "name은 필수입니다.");
+        Assert.notNull(initialStep, "initialStep은 필수입니다.");
     }
 }
