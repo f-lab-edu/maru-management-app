@@ -2,14 +2,13 @@ package com.maru.service.tenant;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.domain.employment.Employment;
-import com.maru.domain.permission.Permission;
+import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.domain.user.UserRole;
 import com.maru.repository.employment.EmploymentRepository;
-import com.maru.repository.permission.PermissionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.TenantRepository;
 import com.maru.service.user.UserService;
@@ -29,7 +28,6 @@ public class TenantService {
     private final TenantRepository tenantRepository;
     private final DojangRepository dojangRepository;
     private final EmploymentRepository employmentRepository;
-    private final PermissionRepository permissionRepository;
 
     /**
      * 테넌트와 도장을 생성하고 관장 권한을 부여
@@ -88,16 +86,7 @@ public class TenantService {
         return employmentRepository.save(employment);
     }
 
-    // TODO : 수정해야함
     private void grantOwnerPermissions(Employment employment) {
-        String[] resources = {"students", "attendances", "payments", "classes", "promotions", "settings"};
-        String[] actions = {"read", "write", "delete"};
-
-        for (String resource : resources) {
-            for (String action : actions) {
-                Permission permission = Permission.grant(employment, resource, action);
-                permissionRepository.save(permission);
-            }
-        }
+        PermissionType.getAllPermissions().forEach(employment::grantPermission);
     }
 }
