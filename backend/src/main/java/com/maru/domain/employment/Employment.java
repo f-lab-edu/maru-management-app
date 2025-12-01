@@ -1,6 +1,8 @@
 package com.maru.domain.employment;
 
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.permission.converter.PermissionSetConverter;
+import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.User;
@@ -8,11 +10,14 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
+@Slf4j
 @Entity
 @Table(
     name = "employment",
@@ -52,6 +57,10 @@ public class Employment extends BaseEntity {
 
     @Column
     private LocalDateTime endedAt;
+
+    @Convert(converter = PermissionSetConverter.class)
+    @Column(name = "permissions", columnDefinition = "json")
+    private Set<PermissionType> permissions = new HashSet<>();
 
     private Employment(User user, Tenant tenant, Dojang dojang) {
         validateNotNull(user, tenant, dojang);
@@ -118,6 +127,22 @@ public class Employment extends BaseEntity {
         this.status = EmploymentStatus.PENDING;
         this.joinedAt = LocalDateTime.now();
         this.endedAt = null;
+    }
+
+    public void grantPermission(PermissionType permission) {
+        if (this.permissions.add(permission)) {
+            log.info("권한 부여: employmentId={}, permission={}", getId(), permission);
+        }
+    }
+
+    public void revokePermission(PermissionType permission) {
+        if (this.permissions.remove(permission)) {
+            log.info("권한 회수: employmentId={}, permission={}", getId(), permission);
+        }
+    }
+
+    public boolean hasPermission(PermissionType permission) {
+        return this.permissions.contains(permission);
     }
 
     // TODO : 다른 엔티티도 도메인 차원에서 검증 로직을 확인할 것. 지금 단계에서는 전부 수정하지 않음. (11/26)
