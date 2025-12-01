@@ -32,6 +32,8 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
 
         try (MDC.MDCCloseable ignored = MDC.putCloseable(REQUEST_ID_KEY, requestId)) {
             filterChain.doFilter(request, response);
+        } finally {
+            MDC.clear();
         }
     }
 }

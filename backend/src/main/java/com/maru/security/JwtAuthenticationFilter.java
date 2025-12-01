@@ -9,6 +9,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -87,8 +88,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long dojangId = claims.get("dojangId", Long.class);
             String role = claims.get("role", String.class);
 
-            // 테넌트 컨텍스트 설정
-            try(AutoCloseable ignored = TenantContextHolder.withTenant(tenantId)){
+            // 테넌트 컨텍스트 + MDC userId 설정
+            try (AutoCloseable ignored = TenantContextHolder.withTenant(tenantId);
+                 MDC.MDCCloseable mdcUserId = MDC.putCloseable("userId", String.valueOf(userId))) {
 
                 // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
                 Map<String, Object> claimsMap = new HashMap<>();
