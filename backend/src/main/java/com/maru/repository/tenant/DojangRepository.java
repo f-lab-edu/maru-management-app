@@ -17,4 +17,10 @@ public interface DojangRepository extends JpaRepository<Dojang, Long> {
     @Query("SELECT d FROM Dojang d JOIN FETCH d.owner o WHERE d.deletedAt IS NULL AND d.isActive = true " +
            "AND (d.name LIKE %:keyword% OR d.address LIKE %:keyword% OR o.name LIKE %:keyword%)")
     List<Dojang> findByKeywordLike(@Param("keyword") String keyword);
+
+    @Query(value = "SELECT d.* FROM dojang d " +
+                   "WHERE d.deleted_at IS NULL AND d.is_active = true " +
+                   "AND MATCH(d.name, d.address) AGAINST(:keyword IN BOOLEAN MODE)",
+           nativeQuery = true)
+    List<Dojang> findByKeywordFullText(@Param("keyword") String keyword);
 }
