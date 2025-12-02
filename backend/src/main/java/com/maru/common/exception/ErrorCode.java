@@ -37,6 +37,16 @@ public enum ErrorCode {
     SMS_MAX_ATTEMPTS_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "SMS_006", "인증 시도 횟수를 초과했습니다"),
     SMS_USER_MISMATCH(HttpStatus.FORBIDDEN, "SMS_007", "인증 요청자와 검증 요청자가 일치하지 않습니다"),
 
+    // 고용(승인 요청) 관련 에러 (EMPLOYMENT_XXX)
+    EMPLOYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EMPLOYMENT_001", "승인 요청을 찾을 수 없습니다"),
+    EMPLOYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMPLOYMENT_002", "이미 해당 도장에 승인 요청이 존재합니다"),
+    EMPLOYMENT_NOT_PENDING(HttpStatus.BAD_REQUEST, "EMPLOYMENT_003", "대기 상태의 요청만 처리할 수 있습니다"),
+    EMPLOYMENT_NOT_OWNER(HttpStatus.FORBIDDEN, "EMPLOYMENT_004", "도장 관장만 승인/거절할 수 있습니다"),
+    EMPLOYMENT_NOT_REQUESTER(HttpStatus.FORBIDDEN, "EMPLOYMENT_005", "본인의 요청만 취소할 수 있습니다"),
+
+    // 도장 관련 에러 (DOJANG_XXX)
+    DOJANG_NOT_FOUND(HttpStatus.NOT_FOUND, "DOJANG_001", "도장을 찾을 수 없습니다"),
+
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "요청한 리소스를 찾을 수 없습니다"),

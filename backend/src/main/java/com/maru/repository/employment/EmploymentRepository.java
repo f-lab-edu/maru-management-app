@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -19,6 +20,14 @@ import java.util.Set;
 public interface EmploymentRepository extends JpaRepository<Employment, Long> {
 
     Optional<Employment> findByUserAndDojang(User user, Dojang dojang);
+
+    boolean existsByUserIdAndDojangId(Long userId, Long dojangId);
+
+    @Query("SELECT e FROM Employment e JOIN FETCH e.user WHERE e.dojang.id = :dojangId AND e.status = :status")
+    List<Employment> findByDojangIdAndStatus(@Param("dojangId") Long dojangId, @Param("status") EmploymentStatus status);
+
+    @Query("SELECT e FROM Employment e JOIN FETCH e.dojang WHERE e.user.id = :userId")
+    List<Employment> findByUserId(@Param("userId") Long userId);
 
     /**
      * 사용자의 도장별 권한 목록 조회
