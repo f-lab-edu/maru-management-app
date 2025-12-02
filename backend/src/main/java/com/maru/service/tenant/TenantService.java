@@ -11,6 +11,7 @@ import com.maru.domain.user.UserRole;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.TenantRepository;
+import com.maru.service.tenant.search.MemorySearchStrategy;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class TenantService {
     private final TenantRepository tenantRepository;
     private final DojangRepository dojangRepository;
     private final EmploymentRepository employmentRepository;
+    private final MemorySearchStrategy memorySearchStrategy;
 
     /**
      * 테넌트와 도장을 생성하고 관장 권한을 부여
@@ -52,6 +54,8 @@ public class TenantService {
         grantOwnerPermissions(employment);
 
         user.updateOnboardingStep(OnboardingStep.COMPLETED);
+
+        memorySearchStrategy.addDojang(dojang);
 
         log.info("테넌트 및 도장 생성 완료: userId={}, tenantId={}, dojangId={}",
             userId, tenant.getId(), dojang.getId());
