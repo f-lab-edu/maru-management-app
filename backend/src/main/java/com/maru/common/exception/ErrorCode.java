@@ -40,7 +40,8 @@ public enum ErrorCode {
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "요청한 리소스를 찾을 수 없습니다"),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_003", "서버 내부 오류가 발생했습니다");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_003", "서버 내부 오류가 발생했습니다"),
+    NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "COMMON_004", "아직 구현되지 않은 기능입니다");
 
     private final HttpStatus status;
     private final String code;
