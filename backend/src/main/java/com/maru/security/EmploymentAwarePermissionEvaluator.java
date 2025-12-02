@@ -7,7 +7,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -18,11 +17,11 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
 
     /**
      * 도메인 객체에 대한 권한 평가
-     * JWT Claims에서 userId, tenantId, dojangId, role을 추출하여 권한 검증
+     * JwtClaims에서 userId, tenantId, dojangId, role을 추출하여 권한 검증
      * - 관장(OWNER) 역할: 모든 권한 자동 부여
      * - 일반 역할: PermissionCache로 도장별 권한 검증
      *
-     * @param authentication 인증 정보 (principal에 Claims Map 포함)
+     * @param authentication 인증 정보 (principal에 JwtClaims 포함)
      * @param targetDomainObject 대상 도메인 객체 (미사용)
      * @param permission 권한 (예: "STUDENT:READ")
      * @return 권한이 있으면 true
@@ -35,21 +34,13 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
 
         try {
             Object principal = authentication.getPrincipal();
-            if (!(principal instanceof Map)) {
-                log.warn("Principal이 Map 타입이 아닙니다: {}", principal.getClass());
+            if (!(principal instanceof JwtClaims(Long userId, Long tenantId, Long dojangId, String role))) {
+                log.warn("Principal이 JwtClaims 타입이 아닙니다: {}", principal.getClass());
                 return false;
             }
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> claims = (Map<String, Object>) principal;
-
-            Long userId = (Long) claims.get("userId");
-            Long tenantId = (Long) claims.get("tenantId");
-            Long dojangId = (Long) claims.get("dojangId");
-            String role = (String) claims.get("role");
-
             if (userId == null || tenantId == null || dojangId == null) {
-                log.warn("Claims에 필수 ID가 없습니다 - userId: {}, tenantId: {}, dojangId: {}",
+                log.warn("JwtClaims에 필수 ID가 없습니다 - userId: {}, tenantId: {}, dojangId: {}",
                         userId, tenantId, dojangId);
                 return false;
             }
@@ -70,10 +61,12 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
                 return true;
             }
 
-            boolean hasPermission = permissionCache.hasPermission(userId, tenantId, dojangId, resource, action);
+            boolean hasPermission = permissionCache.hasPermission(
+                    userId, tenantId, dojangId, resource, action);
 
             if (!hasPermission) {
-                log.warn("권한 거부 - userId: {}, dojangId: {}, permission: {}", userId, dojangId, permissionStr);
+                log.warn("권한 거부 - userId: {}, dojangId: {}, permission: {}",
+                        userId, dojangId, permissionStr);
             }
 
             return hasPermission;
