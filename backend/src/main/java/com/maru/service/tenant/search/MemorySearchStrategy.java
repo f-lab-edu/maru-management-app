@@ -2,6 +2,9 @@ package com.maru.service.tenant.search;
 
 import com.maru.domain.tenant.Dojang;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.service.search.dojang.DojangAddressTokenizer;
+import com.maru.service.search.dojang.DojangNameTokenizer;
+import com.maru.service.search.dojang.DojangQueryTokenizer;
 import com.maru.service.tenant.search.dto.DojangSearchDto;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +21,9 @@ import java.util.stream.Collectors;
 public class MemorySearchStrategy implements SearchStrategy {
 
     private final DojangRepository dojangRepository;
-    private final DojangTokenizer tokenizer;
+    private final DojangNameTokenizer nameTokenizer;
+    private final DojangAddressTokenizer addressTokenizer;
+    private final DojangQueryTokenizer queryTokenizer;
 
     private final Map<String, Set<Long>> invertedIndex = new ConcurrentHashMap<>();
     private final Map<Long, DojangSearchDto> dojangData = new ConcurrentHashMap<>();
@@ -34,7 +39,7 @@ public class MemorySearchStrategy implements SearchStrategy {
             return List.of();
         }
 
-        Set<String> queryTokens = tokenizer.tokenizeQuery(keyword);
+        Set<String> queryTokens = queryTokenizer.tokenize(keyword);
         if (queryTokens.isEmpty()) {
             return List.of();
         }
@@ -91,15 +96,14 @@ public class MemorySearchStrategy implements SearchStrategy {
         Set<String> tokens = new HashSet<>();
 
         // 도장명 토큰화
-        tokens.addAll(tokenizer.tokenizeName(dto.name()));
+        tokens.addAll(nameTokenizer.tokenize(dto.name()));
 
         // 주소 토큰화
-        tokens.addAll(tokenizer.tokenizeAddress(dto.address()));
+        tokens.addAll(addressTokenizer.tokenize(dto.address()));
 
         // 관장명 토큰화 (이름 + 초성)
         if (dto.ownerName() != null && !dto.ownerName().isBlank()) {
-            tokens.add(dto.ownerName());
-            tokens.add(tokenizer.extractChosung(dto.ownerName()));
+            tokens.addAll(queryTokenizer.tokenize(dto.ownerName()));
         }
 
         for (String token : tokens) {
