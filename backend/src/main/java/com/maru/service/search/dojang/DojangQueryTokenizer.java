@@ -5,6 +5,7 @@ import com.maru.service.search.TokenizerEngine;
 import com.maru.service.search.rule.normalize.LowercaseNormalizeRule;
 import com.maru.service.search.rule.normalize.SpecialCharNormalizeRule;
 import com.maru.service.search.rule.normalize.WhitespaceNormalizeRule;
+import com.maru.service.search.rule.segment.EnglishKoreanSplitRule;
 import com.maru.service.search.rule.segment.FallbackSegmentRule;
 import com.maru.service.search.rule.tokenize.ChosungTokenizeRule;
 import com.maru.service.search.rule.tokenize.EnglishTokenizeRule;
@@ -27,8 +28,9 @@ public class DojangQueryTokenizer implements Tokenizer {
                         new WhitespaceNormalizeRule(),
                         new LowercaseNormalizeRule()
                 )
-                // 검색어는 분할 불필요, Fallback만
+                // 영한 분리 (성도2 → 성도, 2), Fallback
                 .segment(
+                        new EnglishKoreanSplitRule(),
                         new FallbackSegmentRule()
                 )
                 // 전체 단어, 초성, 영문 토큰

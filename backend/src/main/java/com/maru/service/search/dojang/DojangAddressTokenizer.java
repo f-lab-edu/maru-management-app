@@ -7,6 +7,7 @@ import com.maru.service.search.rule.normalize.ParenthesisExtractRule;
 import com.maru.service.search.rule.normalize.WhitespaceNormalizeRule;
 import com.maru.service.search.rule.segment.AddressDongSegmentRule;
 import com.maru.service.search.rule.segment.FallbackSegmentRule;
+import com.maru.service.search.rule.segment.WhitespaceSplitSegmentRule;
 import com.maru.service.search.rule.tokenize.ChosungTokenizeRule;
 import com.maru.service.search.rule.tokenize.FullWordTokenizeRule;
 import org.springframework.stereotype.Component;
@@ -27,8 +28,9 @@ public class DojangAddressTokenizer implements Tokenizer {
                         new ParenthesisExtractRule(),
                         new LowercaseNormalizeRule()
                 )
-                // 동/읍/면/리 패턴 추출
+                // 공백 분리, 동/읍/면/리 패턴 추출
                 .segment(
+                        new WhitespaceSplitSegmentRule(),
                         new AddressDongSegmentRule(),
                         new FallbackSegmentRule()
                 )

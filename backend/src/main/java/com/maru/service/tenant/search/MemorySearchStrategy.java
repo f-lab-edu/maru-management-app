@@ -44,17 +44,24 @@ public class MemorySearchStrategy implements SearchStrategy {
             return List.of();
         }
 
-        // 토큰 중 하나라도 매칭되면 결과에 포함 (OR 검색)
-        Set<Long> resultIds = new HashSet<>();
+        Set<Long> resultIds = null;
+
         for (String token : queryTokens) {
             Set<Long> matchedIds = invertedIndex.get(token);
-            if (matchedIds != null) {
-                resultIds.addAll(matchedIds);
-            }
-        }
 
-        if (resultIds.isEmpty()) {
-            return List.of();
+            if (matchedIds == null || matchedIds.isEmpty()) {
+                return List.of();
+            }
+
+            if (resultIds == null) {
+                resultIds = new HashSet<>(matchedIds);
+            } else {
+                resultIds.retainAll(matchedIds);
+            }
+
+            if (resultIds.isEmpty()) {
+                return List.of();
+            }
         }
 
         return resultIds.stream()
