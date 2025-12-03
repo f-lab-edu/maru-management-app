@@ -34,7 +34,9 @@ public class PrefixSegmentRule implements TokenRule {
 
         for (String prefix : PREFIXES) {
             if (startsWithIgnoreCase(text, prefix)) {
-                context.addToken(prefix.toLowerCase());
+                String lowerPrefix = prefix.toLowerCase();
+                context.addToken(lowerPrefix);
+                context.addSegment(lowerPrefix);
                 context.setRemainingText(text.substring(prefix.length()));
                 return;
             }

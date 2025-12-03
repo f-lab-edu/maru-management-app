@@ -3,6 +3,8 @@ package com.maru.service.search.rule.normalize;
 import com.maru.service.search.TokenContext;
 import com.maru.service.search.TokenRule;
 
+import java.util.Locale;
+
 /**
  * 영문을 소문자로 변환하는 룰
  */
@@ -17,7 +19,7 @@ public class LowercaseNormalizeRule implements TokenRule {
             return;
         }
 
-        context.setRemainingText(text.toLowerCase());
+        context.setRemainingText(text.toLowerCase(Locale.ROOT));
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.maru.service.search.TokenRule;
 
 /**
  * 특수문자를 정규화하는 룰
- * V.T.A → VTA, K-TI → KTI 등 특수문자 제거/표준화
+ * V.T.A → V T A, K-TI → K TI 등 특수문자를 공백으로 대체하여 단어 분리 유지
  */
 public class SpecialCharNormalizeRule implements TokenRule {
 
@@ -21,7 +21,7 @@ public class SpecialCharNormalizeRule implements TokenRule {
 
         String normalized = text;
         for (String ch : SPECIAL_CHARS) {
-            normalized = normalized.replace(ch, "");
+            normalized = normalized.replace(ch, " ");
         }
         context.setRemainingText(normalized);
     }

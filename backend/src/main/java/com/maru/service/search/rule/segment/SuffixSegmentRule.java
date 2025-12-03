@@ -33,7 +33,9 @@ public class SuffixSegmentRule implements TokenRule {
 
         for (String suffix : SUFFIXES) {
             if (endsWithIgnoreCase(text, suffix)) {
-                context.addToken(suffix.toLowerCase());
+                String lowerSuffix = suffix.toLowerCase();
+                context.addToken(lowerSuffix);
+                context.addSegment(lowerSuffix);
                 context.setRemainingText(text.substring(0, text.length() - suffix.length()));
                 return;
             }

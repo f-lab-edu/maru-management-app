@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 public class EnglishKoreanSplitRule implements TokenRule {
 
     private static final int ORDER = 130;
-    // 영문 연속 또는 한글 연속을 각각 캡처
-    private static final Pattern SPLIT_PATTERN = Pattern.compile("([a-zA-Z]+|[가-힣]+)");
+    // 영문 연속, 한글 연속, 숫자+한글 조합, 숫자 연속을 각각 캡처
+    private static final Pattern SPLIT_PATTERN = Pattern.compile("([a-zA-Z]+|[가-힣]+|[0-9]+[가-힣]*|[가-힣]*[0-9]+)");
 
     @Override
     public void apply(TokenContext context) {
