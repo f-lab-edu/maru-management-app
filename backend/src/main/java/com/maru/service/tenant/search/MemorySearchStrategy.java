@@ -9,6 +9,9 @@ import com.maru.service.tenant.search.dto.DojangSearchDto;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -34,14 +37,14 @@ public class MemorySearchStrategy implements SearchStrategy {
     }
 
     @Override
-    public List<DojangSearchDto> search(String keyword) {
+    public Page<DojangSearchDto> search(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
         Set<String> queryTokens = queryTokenizer.tokenize(keyword);
         if (queryTokens.isEmpty()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
         Set<Long> resultIds = null;
@@ -50,7 +53,7 @@ public class MemorySearchStrategy implements SearchStrategy {
             Set<Long> matchedIds = invertedIndex.get(token);
 
             if (matchedIds == null || matchedIds.isEmpty()) {
-                return List.of();
+                return Page.empty(pageable);
             }
 
             if (resultIds == null) {
@@ -60,14 +63,27 @@ public class MemorySearchStrategy implements SearchStrategy {
             }
 
             if (resultIds.isEmpty()) {
-                return List.of();
+                return Page.empty(pageable);
             }
         }
 
-        return resultIds.stream()
+        List<Long> sortedIds = resultIds.stream()
+                .sorted()
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), sortedIds.size());
+
+        if (start >= sortedIds.size()) {
+            return new PageImpl<>(List.of(), pageable, sortedIds.size());
+        }
+
+        List<DojangSearchDto> content = sortedIds.subList(start, end).stream()
                 .map(dojangData::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageable, sortedIds.size());
     }
 
     /**
