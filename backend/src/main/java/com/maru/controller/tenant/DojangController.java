@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -31,7 +32,8 @@ public class DojangController {
      */
     @GetMapping("/search")
     public ResponseEntity<Page<DojangSearchRes>> searchDojangs(
-            @CurrentUserId Long userId,
+//            @CurrentUserId Long userId,
+            @AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : userId") Long userId, // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
             @RequestParam String keyword,
             @RequestParam(defaultValue = "MEMORY") SearchType strategy,
             @PageableDefault(size = 10) Pageable pageable) {
