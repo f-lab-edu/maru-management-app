@@ -1,5 +1,6 @@
 package com.maru.controller.student.dto;
 
+import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import lombok.Builder;
 
@@ -16,4 +17,17 @@ public record StudentRes(
         LocalDate enrolledAt,
         StudentStatus status,
         List<GuardianRes> guardians
-) {}
+) {
+    public static StudentRes from(Student student) {
+        return StudentRes.builder()
+                .id(student.getId())
+                .name(student.getName())
+                .birth(student.getBirth())
+                .photoUrl(student.getPhotoUrl())
+                .phone(student.getPhone())
+                .enrolledAt(student.getEnrolledAt())
+                .status(student.getStatus())
+                .guardians(List.of())
+                .build();
+    }
+}
