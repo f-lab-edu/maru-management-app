@@ -34,7 +34,7 @@ public interface DojangRepository extends JpaRepository<Dojang, Long> {
 
     @Query(value = """
         SELECT d.* FROM dojang d
-        JOIN users u ON d.owner_id = u.id
+        JOIN users u ON d.user_id = u.id
         WHERE d.deleted_at IS NULL
           AND d.is_active = true
           AND MATCH(d.name, d.address) AGAINST(:keyword IN BOOLEAN MODE)

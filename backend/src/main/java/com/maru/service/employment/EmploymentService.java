@@ -37,9 +37,7 @@ public class EmploymentService {
      */
     @Transactional
     public Employment requestApproval(Long userId, Long dojangId) {
-        if (employmentRepository.existsByUserIdAndDojangId(userId, dojangId)) {
-            throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
-        }
+        validateNoDuplicateRequest(userId, dojangId);
 
         User user = userService.getUserById(userId);
         Dojang dojang = dojangRepository.findById(dojangId)
@@ -48,8 +46,16 @@ public class EmploymentService {
         Employment employment = Employment.create(user, dojang.getTenant(), dojang);
         Employment saved = employmentRepository.save(employment);
 
-        log.info("승인 요청 생성: userId={}, dojangId={}, employmentId={}", userId, dojangId, saved.getId());
+        log.info("승인 요청 생성: employmentId={}, userId={}, dojangId={}, dojangName={}",
+                saved.getId(), userId, dojangId, dojang.getName());
         return saved;
+    }
+
+    private void validateNoDuplicateRequest(Long userId, Long dojangId) {
+        if (employmentRepository.existsByUserIdAndDojangId(userId, dojangId)) {
+            log.warn("중복 승인 요청 시도: userId={}, dojangId={}", userId, dojangId);
+            throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
+        }
     }
 
     /**
@@ -85,13 +91,15 @@ public class EmploymentService {
     public Employment approve(Long employmentId, Long ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
+        validatePendingStatus(employment);
 
         employment.approve();
         grantDefaultPermissions(employment);
 
         employment.getUser().updateOnboardingStep(OnboardingStep.COMPLETED);
 
-        log.info("승인 요청 승인: employmentId={}, ownerId={}", employmentId, ownerId);
+        log.info("승인 요청 승인: employmentId={}, ownerId={}, userId={}",
+                employmentId, ownerId, employment.getUser().getId());
         return employment;
     }
 
@@ -106,10 +114,12 @@ public class EmploymentService {
     public Employment reject(Long employmentId, Long ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
+        validatePendingStatus(employment);
 
         employment.reject();
 
-        log.info("승인 요청 거절: employmentId={}, ownerId={}", employmentId, ownerId);
+        log.info("승인 요청 거절: employmentId={}, ownerId={}, userId={}",
+                employmentId, ownerId, employment.getUser().getId());
         return employment;
     }
 
@@ -122,17 +132,20 @@ public class EmploymentService {
     @Transactional
     public void cancel(Long employmentId, Long userId) {
         Employment employment = getEmploymentById(employmentId);
-
-        if (!employment.getUser().getId().equals(userId)) {
-            throw new BusinessException(EMPLOYMENT_NOT_REQUESTER);
-        }
-
-        if (employment.getStatus() != EmploymentStatus.PENDING) {
-            throw new BusinessException(EMPLOYMENT_NOT_PENDING);
-        }
+        validateRequesterPermission(employment, userId);
+        validatePendingStatus(employment);
 
         employmentRepository.delete(employment);
-        log.info("승인 요청 취소: employmentId={}, userId={}", employmentId, userId);
+        log.info("승인 요청 취소: employmentId={}, userId={}, dojangId={}",
+                employmentId, userId, employment.getDojang().getId());
+    }
+
+    private void validateRequesterPermission(Employment employment, Long userId) {
+        if (!employment.getUser().getId().equals(userId)) {
+            log.warn("본인이 아닌 사용자가 취소 시도: employmentId={}, requesterId={}, actualUserId={}",
+                    employment.getId(), userId, employment.getUser().getId());
+            throw new BusinessException(EMPLOYMENT_NOT_REQUESTER);
+        }
     }
 
     private Employment getEmploymentById(Long employmentId) {
@@ -143,11 +156,27 @@ public class EmploymentService {
     private void validateOwnerPermission(Employment employment, Long ownerId) {
         Long dojangOwnerId = employment.getDojang().getOwner().getId();
         if (!dojangOwnerId.equals(ownerId)) {
+            log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
+                    employment.getId(), ownerId, dojangOwnerId);
             throw new BusinessException(EMPLOYMENT_NOT_OWNER);
         }
     }
 
+    private void validatePendingStatus(Employment employment) {
+        if (employment.getStatus() != EmploymentStatus.PENDING) {
+            log.warn("PENDING 상태가 아닌 요청 처리 시도: employmentId={}, currentStatus={}",
+                    employment.getId(), employment.getStatus());
+            throw new BusinessException(EMPLOYMENT_NOT_PENDING);
+        }
+    }
+
     private void grantDefaultPermissions(Employment employment) {
-        PermissionType.getDefaultPermissions().forEach(employment::grantPermission);
+        var defaultPermissions = PermissionType.getDefaultPermissions();
+        defaultPermissions.forEach(employment::grantPermission);
+
+        log.info("기본 권한 부여 완료: employmentId={}, userId={}, permissions={}",
+                employment.getId(),
+                employment.getUser().getId(),
+                defaultPermissions);
     }
 }

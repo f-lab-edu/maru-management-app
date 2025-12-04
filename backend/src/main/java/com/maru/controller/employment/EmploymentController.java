@@ -66,7 +66,7 @@ public class EmploymentController {
     @GetMapping("/pending")
     public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId Long userId) {
         Dojang dojang = dojangRepository.findByOwnerId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DOJANG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_ACCESS_DENIED));
 
         List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
                 .stream()
