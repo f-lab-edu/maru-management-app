@@ -40,6 +40,7 @@ public class GuardianService {
      * @param req 보호자 정보
      * @return 연결된 보호자 정보
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     * @throws BusinessException GUARDIANSHIP_ALREADY_EXISTS - 이미 연결된 보호자
      */
     @Transactional
     public GuardianRes addGuardian(Long dojangId, Long studentId, GuardianCreateReq req) {
@@ -49,8 +50,19 @@ public class GuardianService {
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
 
+        validateStudentBelongsToDojang(student, dojangId);
+
         Guardian guardian = findOrCreateGuardian(req.phone(), req.name());
-        Guardianship guardianship = connectGuardian(student, guardian, req);
+
+        validateGuardianshipNotExists(studentId, guardian.getId());
+
+        if (req.isPrimary()) {
+            clearExistingPrimaryGuardian(studentId);
+        }
+
+        Guardianship guardianship = guardianshipRepository.save(
+                Guardianship.create(guardian, student, req.relation(), req.isPrimary())
+        );
 
         log.info("보호자 연결 - studentId: {}, guardianId: {}", studentId, guardian.getId());
         return GuardianRes.from(guardianship);
@@ -70,11 +82,12 @@ public class GuardianService {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
 
-        guardianshipRepository.findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(studentId)
-                .ifPresent(gs -> gs.updatePrimary(false));
+        validateStudentBelongsToDojang(student, dojangId);
+
+        clearExistingPrimaryGuardian(studentId);
 
         Guardianship target = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
                 .orElseThrow(() -> new BusinessException(GUARDIAN_NOT_FOUND));
@@ -96,8 +109,10 @@ public class GuardianService {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+
+        validateStudentBelongsToDojang(student, dojangId);
 
         return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
                 .map(GuardianRes::from)
@@ -109,12 +124,6 @@ public class GuardianService {
                 .orElseGet(() -> guardianRepository.save(Guardian.create(phone, name)));
     }
 
-    private Guardianship connectGuardian(Student student, Guardian guardian, GuardianCreateReq req) {
-        return guardianshipRepository.save(
-                Guardianship.create(guardian, student, req.relation(), req.isPrimary())
-        );
-    }
-
     private void validateDojangAccess(Long dojangId, Long tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
@@ -122,5 +131,23 @@ public class GuardianService {
         if (!dojang.getTenant().getId().equals(tenantId)) {
             throw new BusinessException(UNAUTHORIZED_DOJANG_ACCESS);
         }
+    }
+
+    private void validateStudentBelongsToDojang(Student student, Long dojangId) {
+        if (!student.getDojang().getId().equals(dojangId)) {
+            throw new BusinessException(STUDENT_NOT_FOUND);
+        }
+    }
+
+    private void validateGuardianshipNotExists(Long studentId, Long guardianId) {
+        guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
+                .ifPresent(gs -> {
+                    throw new BusinessException(GUARDIANSHIP_ALREADY_EXISTS);
+                });
+    }
+
+    private void clearExistingPrimaryGuardian(Long studentId) {
+        guardianshipRepository.findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(studentId)
+                .ifPresent(gs -> gs.updatePrimary(false));
     }
 }
