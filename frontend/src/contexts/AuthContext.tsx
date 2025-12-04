@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, AuthContextType } from '../types/auth';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
@@ -6,20 +7,18 @@ import { authService } from '../services/authService';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
 
-  const fetchUserInfo = async (): Promise<void> => {
-    try {
-      const userData = await userService.getMe();
-      setUser(userData);
-      setIsAuthenticated(true);
-    } catch {
-      setUser(null);
-      setIsAuthenticated(false);
-    }
-  };
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['user', 'me'],
+    queryFn: userService.getMe,
+    retry: false,
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: (query) =>
+      query.state.data?.onboardingStep === 'APPROVAL_WAIT' ? 5000 : false,
+  });
+
+  const isAuthenticated = !!user;
 
   const logout = async (): Promise<void> => {
     try {
@@ -27,27 +26,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('로그아웃 실패:', error);
     } finally {
-      setUser(null);
-      setIsAuthenticated(false);
+      queryClient.setQueryData(['user', 'me'], null);
     }
   };
 
   const refreshUser = async (): Promise<void> => {
-    await fetchUserInfo();
+    await queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
   };
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      setIsLoading(true);
-      await fetchUserInfo();
-      setIsLoading(false);
-    };
-
-    initializeAuth();
-  }, []);
-
   const value: AuthContextType = {
-    user,
+    user: user ?? null,
     isAuthenticated,
     isLoading,
     logout,
