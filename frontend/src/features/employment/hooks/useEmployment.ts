@@ -18,13 +18,13 @@ export function useDojangSearch(keyword: string, page: number = 0, enabled: bool
     queryFn: () => employmentService.searchDojangs(keyword, page),
     enabled: isEnabled,
     staleTime: 1000 * 60 * 5,
-    placeholderData: (prev) => prev,
   });
 
-  useEffect(() => {
-    if (!isEnabled || !query.data) return;
+  const totalPages = query.data?.totalPages ?? 0;
 
-    const { totalPages } = query.data;
+  useEffect(() => {
+    if (!isEnabled || totalPages === 0) return;
+    if (page >= totalPages) return;
 
     if (page < totalPages - 1) {
       queryClient.prefetchQuery({
@@ -33,15 +33,7 @@ export function useDojangSearch(keyword: string, page: number = 0, enabled: bool
         staleTime: 1000 * 60 * 5,
       });
     }
-
-    if (page > 0) {
-      queryClient.prefetchQuery({
-        queryKey: employmentKeys.search(keyword, page - 1),
-        queryFn: () => employmentService.searchDojangs(keyword, page - 1),
-        staleTime: 1000 * 60 * 5,
-      });
-    }
-  }, [queryClient, keyword, page, isEnabled, query.data]);
+  }, [queryClient, keyword, page, isEnabled, totalPages]);
 
   return query;
 }

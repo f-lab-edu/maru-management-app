@@ -30,6 +30,7 @@ const getOnboardingPath = (step: OnboardingStep): string => {
 export function DevLoginModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSeedingDojangs, setIsSeedingDojangs] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '테스트유저',
     phone: generateRandomPhone(),
@@ -61,6 +62,21 @@ export function DevLoginModal() {
       alert('테스트 유저 생성 실패. 콘솔을 확인해주세요.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSeedDojangs = async () => {
+    if (!confirm('9,371개 도장 데이터를 생성합니다. 계속할까요?')) return;
+
+    setIsSeedingDojangs(true);
+    try {
+      const response = await apiClient.post<{ count: number }>('/dev/seed-dojangs');
+      alert(`도장 ${response.data.count}개 생성 완료!`);
+    } catch (error) {
+      console.error('도장 시드 실패:', error);
+      alert('도장 시드 실패. 콘솔을 확인해주세요.');
+    } finally {
+      setIsSeedingDojangs(false);
     }
   };
 
@@ -135,6 +151,17 @@ export function DevLoginModal() {
             disabled={isLoading}
           >
             {isLoading ? '생성 중...' : '유저 생성'}
+          </button>
+        </div>
+
+        <div className="border-t mt-6 pt-4">
+          <p className="text-sm font-medium mb-2 text-gray-600">🗃️ 테스트 데이터</p>
+          <button
+            onClick={handleSeedDojangs}
+            className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+            disabled={isSeedingDojangs}
+          >
+            {isSeedingDojangs ? '생성 중...' : '도장 9,371개 시드'}
           </button>
         </div>
 
