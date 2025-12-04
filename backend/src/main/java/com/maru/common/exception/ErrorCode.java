@@ -46,6 +46,15 @@ public enum ErrorCode {
 
     // 도장 관련 에러 (DOJANG_XXX)
     DOJANG_NOT_FOUND(HttpStatus.NOT_FOUND, "DOJANG_001", "도장을 찾을 수 없습니다"),
+    UNAUTHORIZED_DOJANG_ACCESS(HttpStatus.FORBIDDEN, "DOJANG_002", "해당 도장에 접근 권한이 없습니다"),
+
+    // 원생 관련 에러 (STUDENT_XXX)
+    STUDENT_NOT_FOUND(HttpStatus.NOT_FOUND, "STUDENT_001", "원생을 찾을 수 없습니다"),
+    STUDENT_DUPLICATE(HttpStatus.CONFLICT, "STUDENT_002", "이미 등록된 원생입니다"),
+
+    // 보호자 관련 에러 (GUARDIAN_XXX)
+    GUARDIAN_NOT_FOUND(HttpStatus.NOT_FOUND, "GUARDIAN_001", "보호자를 찾을 수 없습니다"),
+    PRIMARY_GUARDIAN_EXISTS(HttpStatus.CONFLICT, "GUARDIAN_002", "이미 주 보호자가 설정되어 있습니다"),
 
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),
