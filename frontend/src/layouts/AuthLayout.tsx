@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent } from '../shared/components/ui/card';
 import { Button } from '../shared/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -9,8 +10,25 @@ const HERO_IMAGE = 'https://images.unsplash.com/photo-1518611012118-696072aa579a
 export default function AuthLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | undefined>(undefined);
 
   const isOnboarding = location.pathname.includes('/onboarding');
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setHeight(entry.contentRect.height);
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleBackToMain = () => {
     navigate('/');
@@ -40,12 +58,17 @@ export default function AuthLayout() {
       </div>
 
       <div className={cn(
-        "relative z-10 w-full transition-all duration-500 ease-in-out px-4",
+        "relative z-10 w-full px-4",
         isOnboarding ? "max-w-4xl" : "max-w-md"
       )}>
         <Card className="w-full bg-white/95 backdrop-blur-sm border-none shadow-2xl overflow-hidden">
-          <CardContent className="p-0 transition-all duration-500">
-            <Outlet />
+          <CardContent
+            className="p-0 transition-[height] duration-300 ease-out"
+            style={{ height: height ? `${height}px` : 'auto' }}
+          >
+            <div ref={contentRef}>
+              <Outlet />
+            </div>
           </CardContent>
         </Card>
       </div>
