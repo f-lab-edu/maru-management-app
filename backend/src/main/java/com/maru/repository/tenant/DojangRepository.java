@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DojangRepository extends JpaRepository<Dojang, Long> {
@@ -39,4 +40,6 @@ public interface DojangRepository extends JpaRepository<Dojang, Long> {
           AND MATCH(d.name, d.address) AGAINST(:keyword IN BOOLEAN MODE)
         """, nativeQuery = true)
     List<Dojang> findByKeywordFullText(@Param("keyword") String keyword);
+
+    Optional<Dojang> findByOwnerId(Long ownerId);
 }

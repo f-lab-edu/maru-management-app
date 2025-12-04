@@ -2,17 +2,28 @@ package com.maru.controller.employment;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.ErrorCode;
+import com.maru.controller.employment.dto.EmploymentRes;
+import com.maru.controller.employment.dto.PendingApprovalRes;
+import com.maru.domain.employment.Employment;
+import com.maru.domain.tenant.Dojang;
+import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.CurrentUserId;
+import com.maru.service.employment.EmploymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/employments")
 @RequiredArgsConstructor
 public class EmploymentController {
+
+    private final EmploymentService employmentService;
+    private final DojangRepository dojangRepository;
 
     /**
      * 승인 요청 API (사범 → 도장)
@@ -22,23 +33,47 @@ public class EmploymentController {
      * @return 생성된 Employment 정보
      */
     @PostMapping("/request")
-    public ResponseEntity<?> requestApproval(
+    public ResponseEntity<EmploymentRes> requestApproval(
             @CurrentUserId Long userId,
             @RequestParam Long dojangId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+
+        Employment employment = employmentService.requestApproval(userId, dojangId);
+        return ResponseEntity.ok(EmploymentRes.from(employment));
     }
 
     /**
-     * 대기 중인 승인 요청 목록 조회
-     * - 관장: 본인 도장의 대기 중인 승인 요청 목록
-     * - 사범: 본인이 보낸 승인 요청 상태
+     * 내 승인 요청 목록 조회 (사범용)
      *
      * @param userId 현재 인증된 사용자 ID
+     * @return 본인이 보낸 Employment 목록
+     */
+    @GetMapping("/my-requests")
+    public ResponseEntity<List<EmploymentRes>> getMyRequests(@CurrentUserId Long userId) {
+        List<EmploymentRes> results = employmentService.getMyRequests(userId)
+                .stream()
+                .map(EmploymentRes::from)
+                .toList();
+
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * 대기 중인 승인 요청 목록 조회 (관장용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
      * @return 대기 중인 Employment 목록
      */
     @GetMapping("/pending")
-    public ResponseEntity<?> getPendingRequests(@CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId Long userId) {
+        Dojang dojang = dojangRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DOJANG_NOT_FOUND));
+
+        List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
+                .stream()
+                .map(PendingApprovalRes::from)
+                .toList();
+
+        return ResponseEntity.ok(results);
     }
 
     /**
@@ -49,10 +84,12 @@ public class EmploymentController {
      * @return 승인된 Employment 정보
      */
     @PatchMapping("/{id}/approve")
-    public ResponseEntity<?> approve(
+    public ResponseEntity<EmploymentRes> approve(
             @CurrentUserId Long userId,
             @PathVariable Long id) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+
+        Employment employment = employmentService.approve(id, userId);
+        return ResponseEntity.ok(EmploymentRes.from(employment));
     }
 
     /**
@@ -63,24 +100,27 @@ public class EmploymentController {
      * @return 거절된 Employment 정보
      */
     @PatchMapping("/{id}/reject")
-    public ResponseEntity<?> reject(
+    public ResponseEntity<EmploymentRes> reject(
             @CurrentUserId Long userId,
             @PathVariable Long id) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+
+        Employment employment = employmentService.reject(id, userId);
+        return ResponseEntity.ok(EmploymentRes.from(employment));
     }
 
     /**
      * 요청 취소 API (사범 본인 전용)
-     * PENDING 상태의 요청만 취소 가능
      *
      * @param userId 현재 인증된 사용자 ID (사범)
      * @param id 취소할 Employment ID
      * @return 취소 결과
      */
     @DeleteMapping("/{id}/cancel")
-    public ResponseEntity<?> cancel(
+    public ResponseEntity<Void> cancel(
             @CurrentUserId Long userId,
             @PathVariable Long id) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+
+        employmentService.cancel(id, userId);
+        return ResponseEntity.noContent().build();
     }
 }

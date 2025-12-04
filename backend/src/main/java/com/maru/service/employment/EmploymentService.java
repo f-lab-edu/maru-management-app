@@ -5,6 +5,7 @@ import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
@@ -87,6 +88,8 @@ public class EmploymentService {
 
         employment.approve();
         grantDefaultPermissions(employment);
+
+        employment.getUser().updateOnboardingStep(OnboardingStep.COMPLETED);
 
         log.info("승인 요청 승인: employmentId={}, ownerId={}", employmentId, ownerId);
         return employment;
