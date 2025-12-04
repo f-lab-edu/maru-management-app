@@ -55,6 +55,7 @@ public enum ErrorCode {
     // 보호자 관련 에러 (GUARDIAN_XXX)
     GUARDIAN_NOT_FOUND(HttpStatus.NOT_FOUND, "GUARDIAN_001", "보호자를 찾을 수 없습니다"),
     PRIMARY_GUARDIAN_EXISTS(HttpStatus.CONFLICT, "GUARDIAN_002", "이미 주 보호자가 설정되어 있습니다"),
+    GUARDIANSHIP_ALREADY_EXISTS(HttpStatus.CONFLICT, "GUARDIAN_003", "이미 연결된 보호자입니다"),
 
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),
