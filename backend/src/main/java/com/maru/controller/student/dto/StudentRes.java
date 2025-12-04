@@ -19,6 +19,10 @@ public record StudentRes(
         List<GuardianRes> guardians
 ) {
     public static StudentRes from(Student student) {
+        return from(student, List.of());
+    }
+
+    public static StudentRes from(Student student, List<GuardianRes> guardians) {
         return StudentRes.builder()
                 .id(student.getId())
                 .name(student.getName())
@@ -27,7 +31,7 @@ public record StudentRes(
                 .phone(student.getPhone())
                 .enrolledAt(student.getEnrolledAt())
                 .status(student.getStatus())
-                .guardians(List.of())
+                .guardians(guardians)
                 .build();
     }
 }

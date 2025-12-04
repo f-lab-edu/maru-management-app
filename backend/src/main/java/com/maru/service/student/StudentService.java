@@ -5,6 +5,7 @@ import com.maru.controller.student.dto.*;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.tenant.Dojang;
+import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
@@ -25,6 +26,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final GuardianshipRepository guardianshipRepository;
 
     /**
      * 원생 등록
@@ -40,14 +42,13 @@ public class StudentService {
         Long tenantId = TenantContextHolder.getTenantId();
         Dojang dojang = validateDojangAccess(dojangId, tenantId);
 
-        // 중복/재등록 체크 (상태 무관 조회)
         Optional<Student> existing = studentRepository.findByDojangIdAndNameAndBirth(dojangId, req.name(), req.birth());
         if (existing.isPresent()) {
             Student student = existing.get();
             if (student.getStatus() == StudentStatus.WITHDRAWN) {
                 student.reactivate();
                 log.info("원생 재등록 - studentId: {}, dojangId: {}", student.getId(), dojangId);
-                return StudentRes.from(student);
+                return StudentRes.from(student, getGuardianResponses(student.getId()));
             }
             throw new BusinessException(STUDENT_DUPLICATE);
         }
@@ -90,7 +91,7 @@ public class StudentService {
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
 
-        return StudentRes.from(student);
+        return StudentRes.from(student, getGuardianResponses(studentId));
     }
 
     /**
@@ -118,7 +119,7 @@ public class StudentService {
         }
 
         log.info("원생 수정 - studentId: {}, dojangId: {}", studentId, dojangId);
-        return StudentRes.from(student);
+        return StudentRes.from(student, getGuardianResponses(studentId));
     }
 
     /**
@@ -139,7 +140,7 @@ public class StudentService {
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
 
         student.withdraw();
-        log.info("원생 퇴원 - studentId: {}, dojangId: {}, reason: {}", studentId, dojangId, reason);
+        log.info("원생 퇴원 - studentId: {}, dojangId: {}", studentId, dojangId);
     }
 
     private Dojang validateDojangAccess(Long dojangId, Long tenantId) {
@@ -151,5 +152,11 @@ public class StudentService {
         }
 
         return dojang;
+    }
+
+    private List<GuardianRes> getGuardianResponses(Long studentId) {
+        return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
+                .map(GuardianRes::from)
+                .toList();
     }
 }
