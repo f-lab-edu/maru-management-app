@@ -8,6 +8,7 @@ import com.maru.controller.auth.dto.TokenRes;
 import com.maru.controller.dev.dto.CreateTestUserReq;
 import com.maru.domain.user.User;
 import com.maru.repository.user.UserRepository;
+import com.maru.service.dev.DevDojangSeeder;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class DevController {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
+    private final DevDojangSeeder devDojangSeeder;
 
     @PostMapping("/create-test-user")
     @Transactional
@@ -54,6 +56,14 @@ public class DevController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/seed-dojangs")
+    public ResponseEntity<SeedDojangsRes> seedDojangs() {
+        log.info("[DEV] 도장 시드 데이터 생성 시작");
+        int count = devDojangSeeder.seedDojangs();
+        log.info("[DEV] 도장 시드 데이터 생성 완료: {}개", count);
+        return ResponseEntity.ok(new SeedDojangsRes(count));
+    }
+
     private TokenRes generateTokenResponse(User user) {
         String role = user.getRole() != null ? user.getRole().name() : "PENDING";
 
@@ -72,4 +82,6 @@ public class DevController {
             .role(role)
             .build();
     }
+
+    public record SeedDojangsRes(int count) {}
 }
