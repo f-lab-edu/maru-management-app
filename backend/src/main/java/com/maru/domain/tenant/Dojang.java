@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -45,6 +46,8 @@ public class Dojang extends SoftDeletableEntity {
     private Boolean isActive = true;
 
     private Dojang(Tenant tenant, User owner, String name, String address, String phone) {
+        validateNotNull(tenant, owner, name);
+        validateOwnership(tenant, owner);
         this.tenant = tenant;
         this.owner = owner;
         this.name = name;
@@ -76,5 +79,17 @@ public class Dojang extends SoftDeletableEntity {
         }
         this.address = address;
         this.phone = phone;
+    }
+
+    private void validateNotNull(Tenant tenant, User owner, String name) {
+        Assert.notNull(tenant, "tenant는 필수입니다.");
+        Assert.notNull(owner, "owner는 필수입니다.");
+        Assert.hasText(name, "name은 필수입니다.");
+    }
+
+    private void validateOwnership(Tenant tenant, User owner) {
+        if (!tenant.getOwner().getId().equals(owner.getId())) {
+            throw new IllegalStateException("도장 소유자는 테넌트 소유자와 일치해야 합니다.");
+        }
     }
 }

@@ -1,6 +1,8 @@
 package com.maru.domain.employment;
 
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.permission.converter.PermissionSetConverter;
+import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.User;
@@ -8,10 +10,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -52,6 +55,10 @@ public class Employment extends BaseEntity {
 
     @Column
     private LocalDateTime endedAt;
+
+    @Convert(converter = PermissionSetConverter.class)
+    @Column(name = "permissions", columnDefinition = "json")
+    private Set<PermissionType> permissions = new HashSet<>();
 
     private Employment(User user, Tenant tenant, Dojang dojang) {
         validateNotNull(user, tenant, dojang);
@@ -120,11 +127,22 @@ public class Employment extends BaseEntity {
         this.endedAt = null;
     }
 
-    // TODO : 다른 엔티티도 도메인 차원에서 검증 로직을 확인할 것. 지금 단계에서는 전부 수정하지 않음. (11/26)
+    public void grantPermission(PermissionType permission) {
+        this.permissions.add(permission);
+    }
+
+    public void revokePermission(PermissionType permission) {
+        this.permissions.remove(permission);
+    }
+
+    public boolean hasPermission(PermissionType permission) {
+        return this.permissions.contains(permission);
+    }
+
     private void validateNotNull(User user, Tenant tenant, Dojang dojang){
-        Assert.notNull(user, "user 는 필수입니다.");
-        Assert.notNull(tenant, "tenant 는 필수입니다.");
-        Assert.notNull(dojang, "dojang 은 필수입니다.");
+        Assert.notNull(user, "user는 필수입니다.");
+        Assert.notNull(tenant, "tenant는 필수입니다.");
+        Assert.notNull(dojang, "dojang은 필수입니다.");
     }
 
     private void validateTenantIntegrity(Tenant tenant, Dojang dojang){
