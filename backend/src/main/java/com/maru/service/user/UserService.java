@@ -1,6 +1,7 @@
 package com.maru.service.user;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.util.MaskingUtil;
 import com.maru.domain.user.*;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
@@ -194,7 +195,7 @@ public class UserService {
     private PhoneVerificationRes assignPhoneAndReturnResult(Long userId, String phone) {
         User user = getUserById(userId);
         user.updateProfile(user.getName(), user.getEmail(), phone);
-        log.info("전화번호 설정: userId={}, phone={}", userId, phone);
+        log.info("전화번호 설정: userId={}, phone={}", userId, MaskingUtil.phone(phone));
         return new PhoneVerificationRes(userId, false);
     }
 

@@ -2,6 +2,7 @@ package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.SmsVerificationException;
+import com.maru.common.util.MaskingUtil;
 import com.maru.config.properties.SmsVerificationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +74,7 @@ public class PhoneVerificationService {
         String message = buildVerificationMessage(code);
         try {
             smsService.send(phone, message);
-            log.info("인증번호 발송 완료: phone={}, provider={}", phone, smsService.getProviderName());
+            log.info("인증번호 발송 완료: phone={}, provider={}", MaskingUtil.phone(phone), smsService.getProviderName());
         } catch (BusinessException e) {
             verificationCodeStore.delete(phone);
             throw e;
@@ -104,7 +105,7 @@ public class PhoneVerificationService {
     private void validateUserMatch(String phone, Long userId) {
         Long storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
         if (storedUserId != null && !storedUserId.equals(userId)) {
-            log.warn("인증 요청자 불일치: phone={}, storedUserId={}, requestUserId={}", phone, storedUserId, userId);
+            log.warn("인증 요청자 불일치: phone={}, storedUserId={}, requestUserId={}", MaskingUtil.phone(phone), storedUserId, userId);
             throw new BusinessException(SMS_USER_MISMATCH);
         }
     }
@@ -114,11 +115,11 @@ public class PhoneVerificationService {
 
         if (remainingAttempts <= 0) {
             verificationCodeStore.delete(phone);
-            log.warn("인증 시도 횟수 초과: phone={}", phone);
+            log.warn("인증 시도 횟수 초과: phone={}", MaskingUtil.phone(phone));
             throw new BusinessException(SMS_MAX_ATTEMPTS_EXCEEDED);
         }
 
-        log.info("인증번호 불일치: phone={}, 남은 시도={}", phone, remainingAttempts);
+        log.info("인증번호 불일치: phone={}, 남은 시도={}", MaskingUtil.phone(phone), remainingAttempts);
         throw new SmsVerificationException(SMS_CODE_INVALID, remainingAttempts);
     }
 
@@ -129,7 +130,7 @@ public class PhoneVerificationService {
 
     private void handleVerificationSuccess(String phone) {
         verificationCodeStore.delete(phone);
-        log.info("인증번호 검증 완료: phone={}", phone);
+        log.info("인증번호 검증 완료: phone={}", MaskingUtil.phone(phone));
     }
 
     private String generateCode() {

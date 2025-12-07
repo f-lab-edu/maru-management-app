@@ -10,14 +10,12 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Slf4j
 @Entity
 @Table(
     name = "employment",
@@ -130,15 +128,11 @@ public class Employment extends BaseEntity {
     }
 
     public void grantPermission(PermissionType permission) {
-        if (this.permissions.add(permission)) {
-            log.info("권한 부여: employmentId={}, permission={}", getId(), permission);
-        }
+        this.permissions.add(permission);
     }
 
     public void revokePermission(PermissionType permission) {
-        if (this.permissions.remove(permission)) {
-            log.info("권한 회수: employmentId={}, permission={}", getId(), permission);
-        }
+        this.permissions.remove(permission);
     }
 
     public boolean hasPermission(PermissionType permission) {
