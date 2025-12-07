@@ -56,10 +56,6 @@ public class GuardianService {
 
         validateGuardianshipNotExists(studentId, guardian.getId());
 
-        if (req.isPrimary()) {
-            clearExistingPrimaryGuardian(studentId);
-        }
-
         Guardianship guardianship = guardianshipRepository.save(
                 Guardianship.create(guardian, student, req.relation(), req.isPrimary())
         );
@@ -69,7 +65,7 @@ public class GuardianService {
     }
 
     /**
-     * 주 보호자 설정
+     * 주 보호자 설정 (토글)
      *
      * @param dojangId 도장 ID
      * @param studentId 원생 ID
@@ -87,13 +83,11 @@ public class GuardianService {
 
         validateStudentBelongsToDojang(student, dojangId);
 
-        clearExistingPrimaryGuardian(studentId);
-
         Guardianship target = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
                 .orElseThrow(() -> new BusinessException(GUARDIAN_NOT_FOUND));
         target.updatePrimary(true);
 
-        log.info("주 보호자 변경 - studentId: {}, guardianId: {}", studentId, guardianId);
+        log.info("주 보호자 설정 - studentId: {}, guardianId: {}", studentId, guardianId);
     }
 
     /**
@@ -144,10 +138,5 @@ public class GuardianService {
                 .ifPresent(gs -> {
                     throw new BusinessException(GUARDIANSHIP_ALREADY_EXISTS);
                 });
-    }
-
-    private void clearExistingPrimaryGuardian(Long studentId) {
-        guardianshipRepository.findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(studentId)
-                .ifPresent(gs -> gs.updatePrimary(false));
     }
 }
