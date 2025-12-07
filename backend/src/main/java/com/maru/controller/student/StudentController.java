@@ -4,6 +4,8 @@ import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.ErrorCode;
 import com.maru.controller.student.dto.*;
 import com.maru.security.CurrentUserId;
+import com.maru.service.guardian.GuardianService;
+import com.maru.service.student.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StudentController {
 
+    private final StudentService studentService;
+    private final GuardianService guardianService;
+
     /**
      * 원생 등록
      *
@@ -32,7 +37,8 @@ public class StudentController {
             @RequestParam Long dojangId,
             @Valid @RequestBody StudentCreateReq request,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        StudentRes response = studentService.createStudent(dojangId, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -46,7 +52,8 @@ public class StudentController {
     public ResponseEntity<StudentListRes> getStudents(
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        StudentListRes response = studentService.getStudents(dojangId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -62,7 +69,8 @@ public class StudentController {
             @PathVariable Long id,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        StudentRes response = studentService.getStudent(dojangId, id);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -80,7 +88,8 @@ public class StudentController {
             @RequestParam Long dojangId,
             @Valid @RequestBody StudentUpdateReq request,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        StudentRes response = studentService.updateStudent(dojangId, id, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -98,7 +107,8 @@ public class StudentController {
             @RequestParam Long dojangId,
             @RequestParam(required = false) String reason,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        studentService.deleteStudent(dojangId, id, reason, userId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -116,7 +126,8 @@ public class StudentController {
             @RequestParam Long dojangId,
             @Valid @RequestBody GuardianCreateReq request,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        GuardianRes response = guardianService.addGuardian(dojangId, studentId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -134,7 +145,8 @@ public class StudentController {
             @PathVariable Long guardianId,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        guardianService.setPrimaryGuardian(dojangId, studentId, guardianId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
