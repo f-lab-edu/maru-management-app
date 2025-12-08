@@ -81,6 +81,17 @@ public class EmploymentService {
     }
 
     /**
+     * 사용자가 속한 도장 목록 조회 (활성 고용만)
+     *
+     * @param userId 사용자 ID
+     * @return Employment 목록
+     */
+    @Transactional(readOnly = true)
+    public List<Employment> getMyDojangs(Long userId) {
+        return employmentRepository.findActiveWithDojangAndTenant(userId, EmploymentStatus.ACTIVE);
+    }
+
+    /**
      * 승인 요청 승인 (관장용)
      *
      * @param employmentId 승인 요청 ID
