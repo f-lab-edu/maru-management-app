@@ -6,6 +6,7 @@ import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.User;
+import com.maru.domain.user.UserRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -137,6 +138,11 @@ public class Employment extends BaseEntity {
 
     public boolean hasPermission(PermissionType permission) {
         return this.permissions.contains(permission);
+    }
+
+    public UserRole resolveRole(Long userId) {
+        boolean isOwner = this.dojang.getOwner().getId().equals(userId);
+        return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }
 
     private void validateNotNull(User user, Tenant tenant, Dojang dojang){
