@@ -56,7 +56,7 @@ public class AuthController {
      * @param userId 현재 인증된 사용자 ID
      * @param dojangId 선택할 도장 ID
      * @param response HTTP 응답
-     * @return 재발급된 토큰 정보
+     * @return 204 No Content (토큰은 httpOnly 쿠키로 설정)
      */
     @PostMapping("/select-dojang")
     public ResponseEntity<Void> selectDojang(

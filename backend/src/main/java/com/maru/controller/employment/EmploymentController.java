@@ -113,7 +113,7 @@ public class EmploymentController {
      *
      * @param userId 현재 인증된 사용자 ID (사범)
      * @param id 취소할 Employment ID
-     * @return 취소 결과
+     * @return 204 No Content
      */
     @DeleteMapping("/{id}/cancel")
     public ResponseEntity<Void> cancel(
