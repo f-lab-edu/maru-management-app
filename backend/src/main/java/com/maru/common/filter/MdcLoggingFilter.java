@@ -13,10 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * 모든 HTTP 요청에 고유한 Request ID를 부여하는 필터.
- * MDC를 통해 로그에 자동으로 Request ID가 포함된다.
- */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class MdcLoggingFilter extends OncePerRequestFilter {

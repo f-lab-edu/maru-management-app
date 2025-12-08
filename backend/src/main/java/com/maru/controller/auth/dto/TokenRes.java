@@ -7,5 +7,7 @@ public record TokenRes(
     String accessToken,
     String refreshToken,
     Long userId,
+    Long tenantId,
+    Long dojangId,
     String role
 ) {}
