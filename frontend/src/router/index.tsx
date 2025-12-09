@@ -10,13 +10,10 @@ import CreateDojangPage from '../pages/onboarding/CreateDojangPage';
 import SearchDojangPage from '../pages/onboarding/SearchDojangPage';
 import UserInfoPage from '../pages/onboarding/UserInfoPage';
 import SettingsPage from '../pages/SettingsPage';
+import StudentListPage from '../pages/students/StudentListPage';
 import { OnboardingRoute, CompletedOnboardingRoute } from './AuthGuard';
 import AuthLayout from '../layouts/AuthLayout';
-import { AuthProvider } from '../contexts/AuthContext';
-
-const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>{children}</AuthProvider>
-);
+import { DojangGuard } from '../components/auth/DojangGuard';
 
 export const router = createBrowserRouter([
   {
@@ -31,11 +28,9 @@ export const router = createBrowserRouter([
           {
             path: '/onboarding',
             element: (
-              <AuthenticatedLayout>
-                <OnboardingRoute>
-                  <Outlet />
-                </OnboardingRoute>
-              </AuthenticatedLayout>
+              <OnboardingRoute>
+                <Outlet />
+              </OnboardingRoute>
             ),
             children: [
               { path: 'user-info', element: <UserInfoPage /> },
@@ -49,14 +44,15 @@ export const router = createBrowserRouter([
       {
         path: '/',
         element: (
-          <AuthenticatedLayout>
-            <CompletedOnboardingRoute>
+          <CompletedOnboardingRoute>
+            <DojangGuard>
               <DashboardLayout />
-            </CompletedOnboardingRoute>
-          </AuthenticatedLayout>
+            </DojangGuard>
+          </CompletedOnboardingRoute>
         ),
         children: [
           { path: 'dashboard', element: <DashboardPage /> },
+          { path: 'students', element: <StudentListPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },

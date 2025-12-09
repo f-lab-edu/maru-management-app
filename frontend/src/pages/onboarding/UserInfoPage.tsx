@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser, useLogout, useAlert } from '../../hooks';
 import { userService } from '../../services/userService';
 import { smsService } from '../../services/smsService';
 import { Button } from '../../shared/components/ui/button';
@@ -28,7 +28,9 @@ const RESEND_COOLDOWN = 60;
 
 export default function UserInfoPage() {
   const navigate = useNavigate();
-  const { user, logout, refreshUser } = useAuth();
+  const { data: user, refetch: refreshUser } = useUser();
+  const logoutMutation = useLogout();
+  const { showInfo } = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [verificationCode, setVerificationCode] = useState('');
@@ -122,8 +124,8 @@ export default function UserInfoPage() {
         otpRef.current?.blur();
 
         if (response.isExistingUser) {
-          alert('기존 계정과 연결되었습니다. 다시 로그인해주세요.');
-          await logout();
+          await showInfo('기존 계정과 연결되었습니다. 다시 로그인해주세요.', '안내');
+          await logoutMutation.mutateAsync();
           navigate('/login');
           return;
         }
@@ -136,7 +138,7 @@ export default function UserInfoPage() {
     } finally {
       setIsVerifying(false);
     }
-  }, [phoneValue, isVerifying, timer, logout, navigate]);
+  }, [phoneValue, isVerifying, timer, logoutMutation, navigate, showInfo]);
 
   const onSubmit = async (data: UserInfoFormValues) => {
     if (!isPhoneVerified) {
@@ -157,7 +159,7 @@ export default function UserInfoPage() {
   };
 
   const handlePrevious = async () => {
-    await logout();
+    await logoutMutation.mutateAsync();
     navigate('/login');
   };
 

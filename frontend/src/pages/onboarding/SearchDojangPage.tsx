@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '../../hooks';
 import { userService } from '../../services/userService';
 import { CardHeader, CardTitle, CardDescription, CardContent } from '../../shared/components/ui/card';
 import { Search, MapPin, User, Loader2, Send, CheckCircle2, ChevronLeft, ChevronRight, Clock, Building2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useDojangSearch, useRequestApproval, useMyRequests, useCancelRequest } 
 import { DojangSearchResult } from '../../types/employment';
 
 export default function SearchDojangPage() {
-  const { refreshUser } = useAuth();
+  const { refetch: refreshUser } = useUser();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
   const [page, setPage] = useState(0);
