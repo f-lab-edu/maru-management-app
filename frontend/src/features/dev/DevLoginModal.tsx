@@ -31,6 +31,7 @@ export function DevLoginModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSeedingDojangs, setIsSeedingDojangs] = useState(false);
+  const [isSeedingStudents, setIsSeedingStudents] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '테스트유저',
     phone: generateRandomPhone(),
@@ -77,6 +78,21 @@ export function DevLoginModal() {
       alert('도장 시드 실패. 콘솔을 확인해주세요.');
     } finally {
       setIsSeedingDojangs(false);
+    }
+  };
+
+  const handleSeedStudents = async () => {
+    if (!confirm('현재 도장에 테스트 학생 200명을 생성합니다. 계속할까요?')) return;
+
+    setIsSeedingStudents(true);
+    try {
+      const response = await apiClient.post<{ count: number }>('/dev/seed-students');
+      alert(`학생 ${response.data.count}명 생성 완료!`);
+    } catch (error) {
+      console.error('학생 시드 실패:', error);
+      alert('학생 시드 실패. 로그인 후 도장을 선택했는지 확인해주세요.');
+    } finally {
+      setIsSeedingStudents(false);
     }
   };
 
@@ -156,13 +172,22 @@ export function DevLoginModal() {
 
         <div className="border-t mt-6 pt-4">
           <p className="text-sm font-medium mb-2 text-gray-600">🗃️ 테스트 데이터</p>
-          <button
-            onClick={handleSeedDojangs}
-            className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-            disabled={isSeedingDojangs}
-          >
-            {isSeedingDojangs ? '생성 중...' : '도장 9,371개 시드'}
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={handleSeedDojangs}
+              className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+              disabled={isSeedingDojangs}
+            >
+              {isSeedingDojangs ? '생성 중...' : '도장 9,371개 시드'}
+            </button>
+            <button
+              onClick={handleSeedStudents}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              disabled={isSeedingStudents}
+            >
+              {isSeedingStudents ? '생성 중...' : '현재 도장에 학생 200명 시드'}
+            </button>
+          </div>
         </div>
 
         <p className="text-xs text-gray-400 mt-4 text-center">
