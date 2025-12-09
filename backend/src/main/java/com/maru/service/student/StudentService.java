@@ -143,6 +143,35 @@ public class StudentService {
         log.info("원생 퇴원 - studentId: {}, dojangId: {}", studentId, dojangId);
     }
 
+    /**
+     * 원생 일괄 퇴원 (소프트 삭제)
+     *
+     * @param dojangId 도장 ID
+     * @param studentIds 원생 ID 목록
+     * @param userId 현재 사용자 ID
+     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     */
+    @Transactional
+    public void bulkDeleteStudents(Long dojangId, List<Long> studentIds, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        List<Student> students = studentRepository.findAllById(studentIds);
+
+        for (Student student : students) {
+            if (!student.getDojang().getId().equals(dojangId) ||
+                !student.getDojang().getTenant().getId().equals(tenantId)) {
+                throw new BusinessException(UNAUTHORIZED_DOJANG_ACCESS);
+            }
+            if (student.getStatus() == StudentStatus.WITHDRAWN) {
+                throw new BusinessException(STUDENT_NOT_FOUND);
+            }
+            student.withdraw();
+        }
+
+        log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
+    }
+
     private Dojang validateDojangAccess(Long dojangId, Long tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));

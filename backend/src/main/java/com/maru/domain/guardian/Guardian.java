@@ -57,6 +57,11 @@ public class Guardian extends SoftDeletableEntity {
         this.name = name;
     }
 
+    public void updatePhone(String phone) {
+        Assert.hasText(phone, "phone은 필수입니다.");
+        this.phone = phone;
+    }
+
     public void verify() {
         this.isVerified = true;
         this.verifiedAt = LocalDateTime.now();

@@ -112,6 +112,23 @@ public class StudentController {
     }
 
     /**
+     * 원생 일괄 삭제 (소프트 삭제 - WITHDRAWN 상태 변경)
+     *
+     * @param dojangId 도장 ID
+     * @param request 삭제할 원생 ID 목록
+     * @param userId 현재 사용자 ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/bulk")
+    public ResponseEntity<Void> bulkDeleteStudents(
+            @RequestParam Long dojangId,
+            @Valid @RequestBody BulkDeleteReq request,
+            @CurrentUserId Long userId) {
+        studentService.bulkDeleteStudents(dojangId, request.studentIds(), userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * 보호자 연결 또는 생성
      *
      * @param studentId 원생 ID
@@ -131,6 +148,27 @@ public class StudentController {
     }
 
     /**
+     * 보호자 정보 수정
+     *
+     * @param studentId 원생 ID
+     * @param guardianId 보호자 ID
+     * @param dojangId 도장 ID
+     * @param request 수정할 보호자 정보
+     * @param userId 현재 사용자 ID
+     * @return 수정된 보호자 정보
+     */
+    @PatchMapping("/{studentId}/guardians/{guardianId}")
+    public ResponseEntity<GuardianRes> updateGuardian(
+            @PathVariable Long studentId,
+            @PathVariable Long guardianId,
+            @RequestParam Long dojangId,
+            @Valid @RequestBody GuardianUpdateReq request,
+            @CurrentUserId Long userId) {
+        GuardianRes response = guardianService.updateGuardian(dojangId, studentId, guardianId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 주 보호자 설정
      *
      * @param studentId 원생 ID
@@ -146,6 +184,25 @@ public class StudentController {
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
         guardianService.setPrimaryGuardian(dojangId, studentId, guardianId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 보호자 삭제
+     *
+     * @param studentId 원생 ID
+     * @param guardianId 보호자 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 사용자 ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/{studentId}/guardians/{guardianId}")
+    public ResponseEntity<Void> removeGuardian(
+            @PathVariable Long studentId,
+            @PathVariable Long guardianId,
+            @RequestParam Long dojangId,
+            @CurrentUserId Long userId) {
+        guardianService.removeGuardian(dojangId, studentId, guardianId);
         return ResponseEntity.noContent().build();
     }
 

@@ -3,6 +3,7 @@ package com.maru.service.guardian;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.GuardianCreateReq;
 import com.maru.controller.student.dto.GuardianRes;
+import com.maru.controller.student.dto.GuardianUpdateReq;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.guardian.Guardianship;
 import com.maru.domain.student.Student;
@@ -65,6 +66,39 @@ public class GuardianService {
     }
 
     /**
+     * 보호자 정보 수정
+     *
+     * @param dojangId 도장 ID
+     * @param studentId 원생 ID
+     * @param guardianId 보호자 ID
+     * @param req 수정할 정보
+     * @return 수정된 보호자 정보
+     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자를 찾을 수 없음
+     */
+    @Transactional
+    public GuardianRes updateGuardian(Long dojangId, Long studentId, Long guardianId, GuardianUpdateReq req) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+                .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+
+        validateStudentBelongsToDojang(student, dojangId);
+
+        Guardianship guardianship = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
+                .orElseThrow(() -> new BusinessException(GUARDIAN_NOT_FOUND));
+
+        Guardian guardian = guardianship.getGuardian();
+        guardian.updateName(req.name());
+        guardian.updatePhone(req.phone());
+        guardianship.updateRelation(req.relation());
+
+        log.info("보호자 정보 수정 - studentId: {}, guardianId: {}", studentId, guardianId);
+        return GuardianRes.from(guardianship);
+    }
+
+    /**
      * 주 보호자 설정 (토글)
      *
      * @param dojangId 도장 ID
@@ -85,9 +119,11 @@ public class GuardianService {
 
         Guardianship target = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
                 .orElseThrow(() -> new BusinessException(GUARDIAN_NOT_FOUND));
-        target.updatePrimary(true);
 
-        log.info("주 보호자 설정 - studentId: {}, guardianId: {}", studentId, guardianId);
+        boolean newPrimaryStatus = !target.getIsPrimary();
+        target.updatePrimary(newPrimaryStatus);
+
+        log.info("주 보호자 {} - studentId: {}, guardianId: {}", newPrimaryStatus ? "설정" : "해제", studentId, guardianId);
     }
 
     /**
@@ -111,6 +147,33 @@ public class GuardianService {
         return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
                 .map(GuardianRes::from)
                 .toList();
+    }
+
+    /**
+     * 보호자 삭제
+     *
+     * @param dojangId 도장 ID
+     * @param studentId 원생 ID
+     * @param guardianId 보호자 ID
+     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자 연결을 찾을 수 없음
+     */
+    @Transactional
+    public void removeGuardian(Long dojangId, Long studentId, Long guardianId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+                .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+
+        validateStudentBelongsToDojang(student, dojangId);
+
+        Guardianship guardianship = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
+                .orElseThrow(() -> new BusinessException(GUARDIAN_NOT_FOUND));
+
+        guardianship.markAsDeleted();
+
+        log.info("보호자 삭제 - studentId: {}, guardianId: {}", studentId, guardianId);
     }
 
     private Guardian findOrCreateGuardian(String phone, String name) {
