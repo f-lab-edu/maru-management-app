@@ -112,6 +112,13 @@ public class StudentService {
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
 
+        boolean nameOrBirthChanged = !student.getName().equals(req.name()) || !student.getBirth().equals(req.birth());
+        if (nameOrBirthChanged) {
+            studentRepository.findByDojangIdAndNameAndBirth(dojangId, req.name(), req.birth())
+                    .filter(existing -> !existing.getId().equals(studentId))
+                    .ifPresent(existing -> { throw new BusinessException(STUDENT_DUPLICATE); });
+        }
+
         student.update(req.name(), req.birth(), req.photoUrl(), req.phone());
 
         if (req.status() != null) {

@@ -29,33 +29,44 @@ public class EmploymentService {
     private final UserService userService;
 
     /**
-     * 사범이 도장에 승인 요청
+     * 사범이 도장에 승인 요청 (거절/퇴사 후 재요청 시 기존 레코드 재활용)
      *
      * @param userId 요청자(사범) ID
      * @param dojangId 도장 ID
-     * @return 생성된 Employment
+     * @return 생성 또는 재활용된 Employment
      */
     @Transactional
     public Employment requestApproval(Long userId, Long dojangId) {
-        validateNoDuplicateRequest(userId, dojangId);
-
-        User user = userService.getUserById(userId);
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
 
+        return employmentRepository.findByUserIdAndDojangId(userId, dojangId)
+                .map(existing -> handleExistingEmployment(existing, dojang.getName()))
+                .orElseGet(() -> createNewEmployment(userId, dojang));
+    }
+
+    private Employment handleExistingEmployment(Employment employment, String dojangName) {
+        EmploymentStatus status = employment.getStatus();
+
+        if (status == EmploymentStatus.REJECTED || status == EmploymentStatus.LEFT) {
+            employment.rejoin();
+            log.info("승인 재요청 (rejoin): employmentId={}, userId={}, dojangName={}",
+                    employment.getId(), employment.getUser().getId(), dojangName);
+            return employment;
+        }
+
+        log.warn("재요청 불가: employmentId={}, status={}", employment.getId(), status);
+        throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
+    }
+
+    private Employment createNewEmployment(Long userId, Dojang dojang) {
+        User user = userService.getUserById(userId);
         Employment employment = Employment.create(user, dojang.getTenant(), dojang);
         Employment saved = employmentRepository.save(employment);
 
         log.info("승인 요청 생성: employmentId={}, userId={}, dojangId={}, dojangName={}",
-                saved.getId(), userId, dojangId, dojang.getName());
+                saved.getId(), userId, dojang.getId(), dojang.getName());
         return saved;
-    }
-
-    private void validateNoDuplicateRequest(Long userId, Long dojangId) {
-        if (employmentRepository.existsByUserIdAndDojangId(userId, dojangId)) {
-            log.warn("중복 승인 요청 시도: userId={}, dojangId={}", userId, dojangId);
-            throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
-        }
     }
 
     /**

@@ -19,7 +19,7 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
 
     Optional<Employment> findByUserAndDojang(User user, Dojang dojang);
 
-    boolean existsByUserIdAndDojangId(Long userId, Long dojangId);
+    Optional<Employment> findByUserIdAndDojangId(Long userId, Long dojangId);
 
     @Query("""
         SELECT e

@@ -13,6 +13,7 @@ import com.maru.repository.user.UserRepository;
 import com.maru.security.JwtClaims;
 import com.maru.service.dev.DevDojangSeeder;
 import com.maru.service.dev.DevStudentSeeder;
+import com.maru.service.tenant.search.MemorySearchStrategy;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class DevController {
     private final CookieUtil cookieUtil;
     private final DevDojangSeeder devDojangSeeder;
     private final DevStudentSeeder devStudentSeeder;
+    private final MemorySearchStrategy memorySearchStrategy;
 
     @PostMapping("/create-test-user")
     @Transactional
@@ -64,9 +66,11 @@ public class DevController {
     }
 
     @PostMapping("/seed-dojangs")
+    @Transactional
     public ResponseEntity<SeedDojangsRes> seedDojangs() {
         log.info("[DEV] 도장 시드 데이터 생성 시작");
         int count = devDojangSeeder.seedDojangs();
+        memorySearchStrategy.refresh();
         log.info("[DEV] 도장 시드 데이터 생성 완료: {}개", count);
         return ResponseEntity.ok(new SeedDojangsRes(count));
     }
