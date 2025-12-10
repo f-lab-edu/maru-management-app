@@ -42,6 +42,7 @@ export function useMyRequests() {
   return useQuery({
     queryKey: employmentKeys.myRequests(),
     queryFn: () => employmentService.getMyRequests(),
+    refetchInterval: 5000,
   });
 }
 
@@ -49,6 +50,7 @@ export function usePendingRequests() {
   return useQuery({
     queryKey: employmentKeys.pendingRequests(),
     queryFn: () => employmentService.getPendingRequests(),
+    refetchInterval: 5000,
   });
 }
 

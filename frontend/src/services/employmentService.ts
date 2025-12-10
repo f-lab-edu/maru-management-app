@@ -13,11 +13,10 @@ export const employmentService = {
   searchDojangs: async (
     keyword: string,
     page: number = 0,
-    size: number = 10,
-    strategy: string = 'MEMORY'
+    size: number = 5,
   ): Promise<PagedResult<DojangSearchResult>> => {
     const response = await apiClient.get<PagedResult<DojangSearchResult>>('/dojangs/search', {
-      params: { keyword, page, size, strategy },
+      params: { keyword, page, size },
     });
     return response.data;
   },

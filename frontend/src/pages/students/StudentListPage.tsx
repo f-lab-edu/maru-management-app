@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
 import { RowSelectionState } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { Button } from '@/shared/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
+import { useAlert, useConfirm } from '@/hooks';
+import { ErrorResponse } from '@/services/api';
 import { StudentDataTable } from '@/features/students/components/StudentDataTable';
 import { StudentTableToolbar } from '@/features/students/components/StudentTableToolbar';
 import { createStudentColumns } from '@/features/students/components/studentColumns';
 import { StudentDetailDrawer } from '@/features/students/components/StudentDetailDrawer';
 import { StudentFormModal } from '@/features/students/components/StudentFormModal';
-import { DeleteStudentDialog } from '@/features/students/components/DeleteStudentDialog';
-import { BulkDeleteDialog } from '@/features/students/components/BulkDeleteDialog';
 import { StatusChangeDialog } from '@/features/students/components/StatusChangeDialog';
 import {
   useStudents,
@@ -28,13 +29,13 @@ type ModalState =
   | { type: 'closed' }
   | { type: 'create' }
   | { type: 'edit'; student: Student }
-  | { type: 'delete'; student: StudentSummary }
-  | { type: 'bulkDelete' }
   | { type: 'statusChange'; student: StudentSummary; newStatus: StudentStatus };
 
 export default function StudentListPage() {
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
+  const { showError } = useAlert();
+  const { confirmDelete } = useConfirm();
 
   const { data: studentsData, isLoading } = useStudents(dojangId);
 
@@ -99,7 +100,7 @@ export default function StudentListPage() {
     () =>
       createStudentColumns({
         onEdit: handleOpenEditModal,
-        onDelete: handleOpenDeleteDialog,
+        onDelete: handleDeleteStudent,
         onStatusChange: handleOpenStatusChangeDialog,
       }),
     []
@@ -133,13 +134,39 @@ export default function StudentListPage() {
     }
   }
 
-  function handleOpenDeleteDialog(student: StudentSummary) {
-    setModalState({ type: 'delete', student });
+  async function handleDeleteStudent(student: StudentSummary) {
+    const { isConfirmed } = await confirmDelete({
+      title: '수련생 삭제',
+      text: `${student.name} 수련생을 삭제하시겠습니까?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+    });
+    if (!isConfirmed) return;
+    try {
+      await deleteMutation.mutateAsync(student.id);
+    } catch (error) {
+      const axiosError = error as AxiosError<ErrorResponse>;
+      const errorCode = axiosError.response?.data?.code || 'COMMON_003';
+      showError(errorCode);
+    }
   }
 
-  function handleOpenBulkDeleteDialog() {
-    if (selectedCount > 0) {
-      setModalState({ type: 'bulkDelete' });
+  async function handleBulkDeleteStudents() {
+    if (selectedCount === 0) return;
+    const { isConfirmed } = await confirmDelete({
+      title: '수련생 일괄 삭제',
+      text: `선택한 ${selectedCount}명의 수련생을 삭제하시겠습니까?`,
+      confirmText: `${selectedCount}명 삭제`,
+      cancelText: '취소',
+    });
+    if (!isConfirmed) return;
+    try {
+      await bulkDeleteMutation.mutateAsync(selectedStudentIds);
+      setRowSelection({});
+    } catch (error) {
+      const axiosError = error as AxiosError<ErrorResponse>;
+      const errorCode = axiosError.response?.data?.code || 'COMMON_003';
+      showError(errorCode);
     }
   }
 
@@ -188,26 +215,9 @@ export default function StudentListPage() {
       }
       handleCloseModal();
     } catch (error) {
-      console.error('수련생 저장 실패:', error);
-    }
-  }
-
-  // 삭제 확인 핸들러
-  async function handleConfirmDelete() {
-    if (modalState.type === 'delete') {
-      await deleteMutation.mutateAsync(modalState.student.id);
-      handleCloseModal();
-    }
-  }
-
-  // 단체 삭제 핸들러
-  async function handleConfirmBulkDelete() {
-    try {
-      await bulkDeleteMutation.mutateAsync(selectedStudentIds);
-      setRowSelection({});
-      handleCloseModal();
-    } catch (error) {
-      console.error('단체 삭제 실패:', error);
+      const axiosError = error as AxiosError<ErrorResponse>;
+      const errorCode = axiosError.response?.data?.code || 'COMMON_003';
+      showError(errorCode);
     }
   }
 
@@ -233,7 +243,6 @@ export default function StudentListPage() {
   }
 
   const isFormLoading = createMutation.isPending || updateMutation.isPending;
-  const isDeleteLoading = deleteMutation.isPending || bulkDeleteMutation.isPending;
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
@@ -258,7 +267,7 @@ export default function StudentListPage() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         selectedCount={selectedCount}
-        onBulkDelete={handleOpenBulkDeleteDialog}
+        onBulkDelete={handleBulkDeleteStudents}
         stats={stats}
       />
 
@@ -288,24 +297,6 @@ export default function StudentListPage() {
         onSubmit={handleFormSubmit}
         student={modalState.type === 'edit' ? modalState.student : null}
         isLoading={isFormLoading}
-      />
-
-      {/* 개별 삭제 확인 다이얼로그 */}
-      <DeleteStudentDialog
-        isOpen={modalState.type === 'delete'}
-        onClose={handleCloseModal}
-        onConfirm={handleConfirmDelete}
-        student={modalState.type === 'delete' ? modalState.student : null}
-        isLoading={isDeleteLoading}
-      />
-
-      {/* 단체 삭제 확인 다이얼로그 */}
-      <BulkDeleteDialog
-        isOpen={modalState.type === 'bulkDelete'}
-        onClose={handleCloseModal}
-        onConfirm={handleConfirmBulkDelete}
-        count={selectedCount}
-        isLoading={isDeleteLoading}
       />
 
       {/* 상태 변경 확인 다이얼로그 */}
