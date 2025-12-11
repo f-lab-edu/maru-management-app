@@ -57,6 +57,12 @@ public enum ErrorCode {
     PRIMARY_GUARDIAN_EXISTS(HttpStatus.CONFLICT, "GUARDIAN_002", "이미 주 보호자가 설정되어 있습니다"),
     GUARDIANSHIP_ALREADY_EXISTS(HttpStatus.CONFLICT, "GUARDIAN_003", "이미 연결된 보호자입니다"),
 
+    // 출석 관련 에러 (ATTENDANCE_XXX)
+    ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE_001", "출석 기록을 찾을 수 없습니다"),
+    ATTENDANCE_DUPLICATE(HttpStatus.CONFLICT, "ATTENDANCE_002", "이미 출석 체크되었습니다"),
+    ATTENDANCE_ALREADY_CHECKOUT(HttpStatus.BAD_REQUEST, "ATTENDANCE_003", "이미 퇴관 처리되었습니다"),
+    ATTENDANCE_STATUS_INVALID(HttpStatus.BAD_REQUEST, "ATTENDANCE_004", "유효하지 않은 출석 상태입니다"),
+
     // 일반 에러 (COMMON_XXX)
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001", "잘못된 요청입니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_002", "요청한 리소스를 찾을 수 없습니다"),
