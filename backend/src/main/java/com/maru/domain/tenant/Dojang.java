@@ -1,7 +1,10 @@
 package com.maru.domain.tenant;
 
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.common.exception.DomainException;
 import com.maru.domain.user.User;
+
+import static com.maru.common.exception.DomainErrorCode.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -89,7 +92,7 @@ public class Dojang extends SoftDeletableEntity {
 
     private void validateOwnership(Tenant tenant, User owner) {
         if (!tenant.getOwner().getId().equals(owner.getId())) {
-            throw new IllegalStateException("도장 소유자는 테넌트 소유자와 일치해야 합니다.");
+            throw new DomainException(DOJANG_OWNER_TENANT_MISMATCH);
         }
     }
 }

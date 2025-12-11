@@ -9,6 +9,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.http.HttpStatus;
+
 import java.util.Map;
 
 import static com.maru.common.exception.ErrorCode.*;
@@ -48,6 +50,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(errorCode.getStatus())
                 .body(ErrorRes.of(errorCode, request.getRequestURI()));
+    }
+
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorRes> handleDomainException(
+            DomainException ex,
+            HttpServletRequest request) {
+
+        DomainErrorCode errorCode = ex.getErrorCode();
+
+        log.warn("도메인 예외: code={}, path={}", errorCode.name(), request.getRequestURI());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorRes.ofDomain(errorCode, request.getRequestURI()));
     }
 
     @ExceptionHandler(AuthException.class)

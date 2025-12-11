@@ -2,8 +2,10 @@ package com.maru.controller.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.maru.common.exception.DomainErrorCode;
 import com.maru.common.exception.ErrorCode;
 import lombok.Builder;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -33,6 +35,17 @@ public record ErrorRes(
                 .message(errorCode.getMessage())
                 .path(path)
                 .data(data)
+                .build();
+    }
+
+    public static ErrorRes ofDomain(DomainErrorCode errorCode, String path) {
+        return ErrorRes.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.name())
+                .code(errorCode.name())
+                .message(errorCode.getMessage())
+                .path(path)
                 .build();
     }
 }
