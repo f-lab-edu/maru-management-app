@@ -1,5 +1,7 @@
 package com.maru.service.auth;
 
+import com.maru.common.exception.AuthErrorCode;
+import com.maru.common.exception.AuthException;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
@@ -11,7 +13,6 @@ import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
 import com.maru.security.JwtClaims;
 import com.maru.service.auth.dto.OAuthUserInfo;
-import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -118,7 +117,7 @@ public class AuthService {
         OAuthService service = oauthServices.get(provider);
         if (service == null) {
             log.error("지원하지 않는 OAuth Provider: {}", provider);
-            throw new AuthException(AUTH_OAUTH_FAILED);
+            throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
         return service;
     }
@@ -127,15 +126,15 @@ public class AuthService {
         JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
 
         if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         } else if (validationResult != JwtUtil.TokenValidationResult.VALID) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_INVALID);
         }
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
+            .orElseThrow(() -> new AuthException(AuthErrorCode.INVALID_TOKEN));
     }
 
     private TokenRes generateTokenResponse(User user) {
@@ -177,7 +176,7 @@ public class AuthService {
         }
 
         return employmentRepository.findByUserIdAndDojangIdAndStatus(userId, dojangId, EmploymentStatus.ACTIVE)
-            .orElseThrow(() -> new AuthException(AUTH_ACCESS_DENIED));
+            .orElseThrow(() -> new AuthException(AuthErrorCode.ACCESS_DENIED));
     }
 
     private String resolveRole(User user, Employment employment, String fallbackRole) {

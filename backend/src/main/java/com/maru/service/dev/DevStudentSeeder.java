@@ -1,8 +1,11 @@
 package com.maru.service.dev;
 
+// TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
+
 import com.maru.common.exception.BusinessException;
 import com.maru.domain.student.Student;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +18,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static com.maru.common.exception.ErrorCode.DOJANG_NOT_FOUND;
-import static com.maru.common.exception.ErrorCode.UNAUTHORIZED_DOJANG_ACCESS;
 
 @Slf4j
 @Service
@@ -61,10 +61,10 @@ public class DevStudentSeeder {
     @Transactional
     public int seedStudents(Long tenantId, Long dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
         if (!dojang.getTenant().getId().equals(tenantId)) {
-            throw new BusinessException(UNAUTHORIZED_DOJANG_ACCESS);
+            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
         }
 
         List<Student> students = new ArrayList<>();

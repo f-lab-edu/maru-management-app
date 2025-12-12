@@ -1,12 +1,13 @@
 package com.maru.domain.student;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDate;
 
@@ -88,8 +89,8 @@ public class Student extends SoftDeletableEntity {
     }
 
     private void validateNotNull(Dojang dojang, String name, LocalDate birth) {
-        Assert.notNull(dojang, "dojang은 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
-        Assert.notNull(birth, "birth는 필수입니다.");
+        DomainAssert.notNull(dojang, StudentErrorCode.DOJANG_REQUIRED);
+        DomainAssert.hasText(name, StudentErrorCode.NAME_REQUIRED);
+        DomainAssert.notNull(birth, StudentErrorCode.BIRTH_REQUIRED);
     }
 }

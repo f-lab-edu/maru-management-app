@@ -2,8 +2,8 @@ package com.maru.controller.dev;
 
 // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
 
+import com.maru.common.exception.AuthErrorCode;
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
 import com.maru.common.util.CookieUtil;
 import com.maru.common.util.JwtUtil;
 import com.maru.controller.auth.dto.TokenRes;
@@ -79,7 +79,7 @@ public class DevController {
     public ResponseEntity<SeedStudentsRes> seedStudents() {
         JwtClaims claims = getCurrentJwtClaims();
         if (claims.tenantId() == null || claims.dojangId() == null) {
-            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
         }
 
         log.info("[DEV] 테스트 학생 생성 시작 - tenantId: {}, dojangId: {}",
@@ -93,7 +93,7 @@ public class DevController {
     private JwtClaims getCurrentJwtClaims() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof JwtClaims)) {
-            throw new BusinessException(ErrorCode.AUTH_ACCESS_DENIED);
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
         }
         return (JwtClaims) auth.getPrincipal();
     }

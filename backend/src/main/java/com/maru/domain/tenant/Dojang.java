@@ -1,15 +1,14 @@
 package com.maru.domain.tenant;
 
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
-import com.maru.common.exception.DomainException;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.domain.user.User;
-
-import static com.maru.common.exception.DomainErrorCode.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -85,14 +84,14 @@ public class Dojang extends SoftDeletableEntity {
     }
 
     private void validateNotNull(Tenant tenant, User owner, String name) {
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(owner, "owner는 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
+        DomainAssert.notNull(tenant, DojangErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(owner, DojangErrorCode.OWNER_REQUIRED);
+        DomainAssert.hasText(name, DojangErrorCode.NAME_REQUIRED);
     }
 
     private void validateOwnership(Tenant tenant, User owner) {
         if (!tenant.getOwner().getId().equals(owner.getId())) {
-            throw new DomainException(DOJANG_OWNER_TENANT_MISMATCH);
+            throw new BusinessException(DojangErrorCode.OWNER_TENANT_MISMATCH);
         }
     }
 }

@@ -1,11 +1,11 @@
 package com.maru.domain.employment;
 
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
-import com.maru.common.exception.DomainException;
-import com.maru.domain.permission.converter.PermissionSetConverter;
-
-import static com.maru.common.exception.DomainErrorCode.*;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
+import com.maru.domain.permission.converter.PermissionSetConverter;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.User;
@@ -14,7 +14,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -87,35 +86,35 @@ public class Employment extends BaseEntity {
 
     public void approve() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new DomainException(EMPLOYMENT_NOT_PENDING);
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void reject() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new DomainException(EMPLOYMENT_NOT_PENDING);
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.REJECTED;
     }
 
     public void suspend() {
         if (this.status != EmploymentStatus.ACTIVE) {
-            throw new DomainException(EMPLOYMENT_NOT_ACTIVE);
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE);
         }
         this.status = EmploymentStatus.SUSPENDED;
     }
 
     public void reactivate() {
         if (this.status != EmploymentStatus.SUSPENDED) {
-            throw new DomainException(EMPLOYMENT_NOT_SUSPENDED);
+            throw new BusinessException(EmploymentErrorCode.NOT_SUSPENDED);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void leave() {
         if (this.status != EmploymentStatus.ACTIVE && this.status != EmploymentStatus.SUSPENDED) {
-            throw new DomainException(EMPLOYMENT_NOT_ACTIVE_OR_SUSPENDED);
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE_OR_SUSPENDED);
         }
         this.status = EmploymentStatus.LEFT;
         this.endedAt = LocalDateTime.now();
@@ -123,7 +122,7 @@ public class Employment extends BaseEntity {
 
     public void rejoin() {
         if (this.status != EmploymentStatus.LEFT && this.status != EmploymentStatus.REJECTED) {
-            throw new DomainException(EMPLOYMENT_NOT_LEFT_OR_REJECTED);
+            throw new BusinessException(EmploymentErrorCode.NOT_LEFT_OR_REJECTED);
         }
 
         this.status = EmploymentStatus.PENDING;
@@ -148,15 +147,15 @@ public class Employment extends BaseEntity {
         return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }
 
-    private void validateNotNull(User user, Tenant tenant, Dojang dojang){
-        Assert.notNull(user, "user는 필수입니다.");
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(dojang, "dojang은 필수입니다.");
+    private void validateNotNull(User user, Tenant tenant, Dojang dojang) {
+        DomainAssert.notNull(user, EmploymentErrorCode.USER_REQUIRED);
+        DomainAssert.notNull(tenant, EmploymentErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(dojang, EmploymentErrorCode.DOJANG_REQUIRED);
     }
 
-    private void validateTenantIntegrity(Tenant tenant, Dojang dojang){
-        if(!dojang.getTenant().getId().equals(tenant.getId())){
-            throw new DomainException(EMPLOYMENT_TENANT_MISMATCH);
+    private void validateTenantIntegrity(Tenant tenant, Dojang dojang) {
+        if (!dojang.getTenant().getId().equals(tenant.getId())) {
+            throw new BusinessException(EmploymentErrorCode.TENANT_MISMATCH);
         }
     }
 }

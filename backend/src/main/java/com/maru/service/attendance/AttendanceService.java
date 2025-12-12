@@ -1,7 +1,7 @@
 package com.maru.service.attendance;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
+import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.attendance.dto.*;
 import com.maru.domain.attendance.AttendanceStatus;
 import com.maru.domain.attendance.CheckMethod;
@@ -40,7 +40,7 @@ public class AttendanceService {
             LocalDate date,
             LocalDateTime checkinAt,
             String note) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -53,7 +53,7 @@ public class AttendanceService {
      */
     @Transactional
     public BulkCheckRes bulkCheckIn(Long dojangId, List<Long> studentIds, CheckMethod method) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -66,7 +66,7 @@ public class AttendanceService {
      */
     @Transactional
     public AttendanceRes checkOut(Long dojangId, Long attendanceId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -85,7 +85,7 @@ public class AttendanceService {
             Long attendanceId,
             AttendanceStatus status,
             String note) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -96,7 +96,7 @@ public class AttendanceService {
      */
     @Transactional(readOnly = true)
     public CurrentAttendanceRes getTodayAttendance(Long dojangId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -109,7 +109,7 @@ public class AttendanceService {
      */
     @Transactional(readOnly = true)
     public RangeAttendanceRes getAttendanceRange(Long dojangId, LocalDate startDate, LocalDate endDate) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -127,7 +127,7 @@ public class AttendanceService {
             Long studentId,
             LocalDate startDate,
             LocalDate endDate) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 
     /**
@@ -139,6 +139,6 @@ public class AttendanceService {
      */
     @Transactional(readOnly = true)
     public AttendanceStatsRes getMonthlyStats(Long dojangId, YearMonth yearMonth) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 }

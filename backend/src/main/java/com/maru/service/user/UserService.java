@@ -1,8 +1,10 @@
 package com.maru.service.user;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.OnboardingErrorCode;
 import com.maru.common.util.MaskingUtil;
 import com.maru.domain.user.*;
+import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
 import com.maru.service.sms.PhoneVerificationService;
@@ -13,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -35,7 +35,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND));
     }
 
     /**
@@ -88,7 +88,7 @@ public class UserService {
 
     private void validatePhoneVerified(User user, String requestPhone) {
         if (user.getPhone() == null || !user.getPhone().equals(requestPhone)) {
-            throw new BusinessException(ONBOARDING_PHONE_NOT_VERIFIED);
+            throw new BusinessException(OnboardingErrorCode.PHONE_NOT_VERIFIED);
         }
     }
 
@@ -116,13 +116,13 @@ public class UserService {
 
     private void validateOnboardingStep(User user, OnboardingStep expectedStep) {
         if (user.getOnboardingStep() != expectedStep) {
-            throw new BusinessException(ONBOARDING_STAGE_INVALID);
+            throw new BusinessException(OnboardingErrorCode.STAGE_INVALID);
         }
     }
 
     private void validateRole(UserRole role) {
         if (role == null) {
-            throw new BusinessException(USER_INVALID_ROLE);
+            throw new BusinessException(UserErrorCode.INVALID_ROLE);
         }
     }
 
@@ -180,7 +180,7 @@ public class UserService {
 
     private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
         OAuthAccount oAuthAccount = oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(currentUserId)
-                .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND));
         User existingUser = getUserById(existingUserId);
         oAuthAccount.changeUser(existingUser);
         oAuthAccountRepository.flush();
@@ -221,7 +221,7 @@ public class UserService {
         return switch (currentStep) {
             case ROLE_SELECT -> OnboardingStep.PROFILE_INPUT;
             case DOJANG_INFO, APPROVAL_WAIT -> OnboardingStep.ROLE_SELECT;
-            case PROFILE_INPUT, COMPLETED -> throw new BusinessException(ONBOARDING_STAGE_INVALID);
+            case PROFILE_INPUT, COMPLETED -> throw new BusinessException(OnboardingErrorCode.STAGE_INVALID);
         };
     }
 }

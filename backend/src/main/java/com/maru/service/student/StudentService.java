@@ -4,7 +4,9 @@ import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.*;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
+import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
@@ -16,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -50,7 +50,7 @@ public class StudentService {
                 log.info("원생 재등록 - studentId: {}, dojangId: {}", student.getId(), dojangId);
                 return StudentRes.from(student, getGuardianResponses(student.getId()));
             }
-            throw new BusinessException(STUDENT_DUPLICATE);
+            throw new BusinessException(StudentErrorCode.DUPLICATE);
         }
 
         Student student = Student.create(dojang, req.name(), req.birth(), req.photoUrl(), req.phone());
@@ -89,7 +89,7 @@ public class StudentService {
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         return StudentRes.from(student, getGuardianResponses(studentId));
     }
@@ -110,13 +110,13 @@ public class StudentService {
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         boolean nameOrBirthChanged = !student.getName().equals(req.name()) || !student.getBirth().equals(req.birth());
         if (nameOrBirthChanged) {
             studentRepository.findByDojangIdAndNameAndBirth(dojangId, req.name(), req.birth())
                     .filter(existing -> !existing.getId().equals(studentId))
-                    .ifPresent(existing -> { throw new BusinessException(STUDENT_DUPLICATE); });
+                    .ifPresent(existing -> { throw new BusinessException(StudentErrorCode.DUPLICATE); });
         }
 
         student.update(req.name(), req.birth(), req.photoUrl(), req.phone());
@@ -144,7 +144,7 @@ public class StudentService {
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(STUDENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         student.withdraw();
         log.info("원생 퇴원 - studentId: {}, dojangId: {}", studentId, dojangId);
@@ -168,10 +168,10 @@ public class StudentService {
         for (Student student : students) {
             if (!student.getDojang().getId().equals(dojangId) ||
                 !student.getDojang().getTenant().getId().equals(tenantId)) {
-                throw new BusinessException(UNAUTHORIZED_DOJANG_ACCESS);
+                throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
             }
             if (student.getStatus() == StudentStatus.WITHDRAWN) {
-                throw new BusinessException(STUDENT_NOT_FOUND);
+                throw new BusinessException(StudentErrorCode.NOT_FOUND);
             }
             student.withdraw();
         }
@@ -181,10 +181,10 @@ public class StudentService {
 
     private Dojang validateDojangAccess(Long dojangId, Long tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
         if (!dojang.getTenant().getId().equals(tenantId)) {
-            throw new BusinessException(UNAUTHORIZED_DOJANG_ACCESS);
+            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
         }
 
         return dojang;

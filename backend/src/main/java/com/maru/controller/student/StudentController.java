@@ -1,7 +1,7 @@
 package com.maru.controller.student;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
+import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.student.dto.*;
 import com.maru.security.CurrentUserId;
 import com.maru.service.guardian.GuardianService;
@@ -221,6 +221,6 @@ public class StudentController {
             @PathVariable Long guardianId,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 }
