@@ -73,12 +73,19 @@ public class DevController {
             null,
             role
         );
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(
+            user.getId(),
+            null,
+            null,
+            role
+        );
 
         return TokenRes.builder()
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .userId(user.getId())
+            .tenantId(null)
+            .dojangId(null)
             .role(role)
             .build();
     }

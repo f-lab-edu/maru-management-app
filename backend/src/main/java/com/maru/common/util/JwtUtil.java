@@ -102,6 +102,19 @@ public class JwtUtil {
      * @return Refresh Token
      */
     public String generateRefreshToken(Long userId) {
+        return generateRefreshToken(userId, null, null, null);
+    }
+
+    /**
+     * Refresh Token 생성 (테넌트/도장/역할 포함)
+     *
+     * @param userId 사용자 ID
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
+     * @param role 사용자 역할
+     * @return Refresh Token
+     */
+    public String generateRefreshToken(Long userId, Long tenantId, Long dojangId, String role) {
         Instant now = Instant.now();
         Instant expiryDate = now.plus(jwtProperties.refreshTokenExpiration());
 
@@ -110,6 +123,9 @@ public class JwtUtil {
                 .issuer("maru-management-api")
                 .audience().add("maru-management-client").and()
                 .claim("type", TOKEN_TYPE_REFRESH)
+                .claim("tenantId", tenantId)
+                .claim("dojangId", dojangId)
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiryDate))
                 .signWith(getSigningKey())

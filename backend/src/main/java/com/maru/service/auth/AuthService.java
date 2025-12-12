@@ -1,14 +1,18 @@
 package com.maru.service.auth;
 
-import com.maru.common.exception.AuthException;
-import com.maru.common.util.JwtUtil;
+import com.maru.controller.auth.dto.TokenRes;
+import com.maru.domain.employment.Employment;
+import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.user.OAuthAccount;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.domain.user.User;
+import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
+import com.maru.security.JwtClaims;
 import com.maru.service.auth.dto.OAuthUserInfo;
-import com.maru.controller.auth.dto.TokenRes;
+import com.maru.common.exception.AuthException;
+import com.maru.common.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +33,20 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final OAuthAccountRepository oauthAccountRepository;
+    private final EmploymentRepository employmentRepository;
     private final Map<OAuthProvider, OAuthService> oauthServices;
 
     public AuthService(
         JwtUtil jwtUtil,
         UserRepository userRepository,
         OAuthAccountRepository oauthAccountRepository,
+        EmploymentRepository employmentRepository,
         List<OAuthService> oauthServiceList
     ) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.oauthAccountRepository = oauthAccountRepository;
+        this.employmentRepository = employmentRepository;
         this.oauthServices = oauthServiceList.stream()
             .collect(Collectors.toMap(OAuthService::getProviderType, Function.identity()));
     }
@@ -53,22 +60,15 @@ public class AuthService {
     @Transactional(readOnly = true)
     public TokenRes refreshAccessToken(String refreshToken) {
         validateRefreshToken(refreshToken);
-        Long userId = jwtUtil.extractUserId(refreshToken);
-        User user = findUserById(userId);
+        JwtClaims claims = JwtClaims.fromJwt(jwtUtil.parseClaims(refreshToken));
 
-        String newAccessToken = jwtUtil.generateAccessToken(
-            user.getId(),
-            null,
-            null,
-            extractRoleString(user)
-        );
+        User user = findUserById(claims.userId());
+        Employment employment = findActiveEmployment(claims.userId(), claims.dojangId());
+        Long tenantId = employment != null ? employment.getTenant().getId() : null;
+        Long dojangId = employment != null ? employment.getDojang().getId() : null;
+        String role = resolveRole(user, employment, claims.role());
 
-        return TokenRes.builder()
-            .accessToken(newAccessToken)
-            .refreshToken(refreshToken)
-            .userId(user.getId())
-            .role(extractRoleString(user))
-            .build();
+        return generateTokenResponse(user, tenantId, dojangId, role);
     }
 
     /**
@@ -93,6 +93,25 @@ public class AuthService {
         OAuthUserInfo userInfo = getOAuthService(provider).authenticate(code);
         User user = createOrUpdateUserFromOAuth(userInfo);
         return generateTokenResponse(user);
+    }
+
+    /**
+     * 도장 선택 후 토큰 재발급
+     *
+     * @param userId 사용자 ID
+     * @param dojangId 선택한 도장 ID
+     * @return 새로운 Access/Refresh Token
+     */
+    @Transactional(readOnly = true)
+    public TokenRes selectDojang(Long userId, Long dojangId) {
+        User user = findUserById(userId);
+        Employment employment = findActiveEmployment(userId, dojangId);
+
+        Long tenantId = employment.getTenant().getId();
+        Long resolvedDojangId = employment.getDojang().getId();
+        String role = resolveRole(user, employment, null);
+
+        return generateTokenResponse(user, tenantId, resolvedDojangId, role);
     }
 
     private OAuthService getOAuthService(OAuthProvider provider) {
@@ -120,25 +139,57 @@ public class AuthService {
     }
 
     private TokenRes generateTokenResponse(User user) {
+        return generateTokenResponse(user, null, null, extractRoleString(user));
+    }
+
+    private TokenRes generateTokenResponse(User user, Long tenantId, Long dojangId, String role) {
         String accessToken = jwtUtil.generateAccessToken(
             user.getId(),
-            null,
-            null,
-            extractRoleString(user)
+            tenantId,
+            dojangId,
+            role
         );
 
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(
+            user.getId(),
+            tenantId,
+            dojangId,
+            role
+        );
 
         return TokenRes.builder()
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .userId(user.getId())
-            .role(extractRoleString(user))
+            .tenantId(tenantId)
+            .dojangId(dojangId)
+            .role(role)
             .build();
     }
 
     private String extractRoleString(User user) {
         return user.getRole() != null ? user.getRole().name() : ROLE_PENDING;
+    }
+
+    private Employment findActiveEmployment(Long userId, Long dojangId) {
+        if (dojangId == null) {
+            return null;
+        }
+
+        return employmentRepository.findByUserIdAndDojangIdAndStatus(userId, dojangId, EmploymentStatus.ACTIVE)
+            .orElseThrow(() -> new AuthException(AUTH_ACCESS_DENIED));
+    }
+
+    private String resolveRole(User user, Employment employment, String fallbackRole) {
+        if (employment != null) {
+            return employment.resolveRole(user.getId()).name();
+        }
+
+        if (fallbackRole != null) {
+            return fallbackRole;
+        }
+
+        return extractRoleString(user);
     }
 
     private User createOrUpdateUserFromOAuth(OAuthUserInfo userInfo) {
