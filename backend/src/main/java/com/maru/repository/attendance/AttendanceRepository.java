@@ -74,6 +74,20 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             @Param("month") int month);
 
     @Query("""
+        SELECT COUNT(DISTINCT a.attendanceDate)
+        FROM Attendance a
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND YEAR(a.attendanceDate) = :year
+          AND MONTH(a.attendanceDate) = :month
+        """)
+    int countDistinctDatesForMonth(
+            @Param("tenantId") Long tenantId,
+            @Param("dojangId") Long dojangId,
+            @Param("year") int year,
+            @Param("month") int month);
+
+    @Query("""
         SELECT a FROM Attendance a
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId

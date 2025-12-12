@@ -9,8 +9,7 @@ import java.util.List;
 public record RangeAttendanceRes(
         LocalDate startDate,
         LocalDate endDate,
-        List<LocalDate> dates,
-        List<StudentAttendanceRowRes> students,
-        RangeAttendanceSummaryRes summary
+        int totalStudents,
+        List<StudentAttendanceRowRes> students
 ) {
 }

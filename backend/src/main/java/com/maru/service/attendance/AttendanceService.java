@@ -243,12 +243,11 @@ public class AttendanceService {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
         validateDateRange(startDate, endDate);
 
-        List<LocalDate> dates = startDate.datesUntil(endDate.plusDays(1)).toList();
         List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
         List<Attendance> attendances = attendanceRepository
                 .findByTenantIdAndDojangIdAndAttendanceDateBetween(tenantId, dojangId, startDate, endDate);
 
-        return buildRangeAttendanceRes(dates, students, attendances, startDate, endDate);
+        return buildRangeAttendanceRes(students, attendances, startDate, endDate);
     }
 
     /**
@@ -292,7 +291,9 @@ public class AttendanceService {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
         Map<AttendanceStatus, Long> statusCounts = getStatusCountsForMonth(tenantId, dojangId, yearMonth);
-        return buildAttendanceStatsRes(statusCounts, yearMonth.lengthOfMonth());
+        int recordedDays = attendanceRepository.countDistinctDatesForMonth(
+                tenantId, dojangId, yearMonth.getYear(), yearMonth.getMonthValue());
+        return buildAttendanceStatsRes(statusCounts, recordedDays);
     }
 
     private Long validateDojangAndGetTenantId(Long dojangId) {
@@ -406,24 +407,20 @@ public class AttendanceService {
                 .build();
     }
 
-    private RangeAttendanceRes buildRangeAttendanceRes(List<LocalDate> dates, List<Student> students,
+    private RangeAttendanceRes buildRangeAttendanceRes(List<Student> students,
                                                         List<Attendance> attendances,
                                                         LocalDate startDate, LocalDate endDate) {
         Map<Long, Map<LocalDate, Attendance>> attendanceMap = groupAttendancesByStudent(attendances);
 
         List<StudentAttendanceRowRes> studentRows = students.stream()
-                .map(s -> buildStudentRow(s, dates, attendanceMap.getOrDefault(s.getId(), Map.of())))
+                .map(s -> buildStudentRow(s, attendanceMap.getOrDefault(s.getId(), Map.of())))
                 .toList();
 
         return RangeAttendanceRes.builder()
                 .startDate(startDate)
                 .endDate(endDate)
-                .dates(dates)
+                .totalStudents(students.size())
                 .students(studentRows)
-                .summary(RangeAttendanceSummaryRes.builder()
-                        .totalStudents(students.size())
-                        .byDate(buildDailySummaries(dates, attendances))
-                        .build())
                 .build();
     }
 
@@ -433,14 +430,16 @@ public class AttendanceService {
                 Collectors.toMap(Attendance::getAttendanceDate, a -> a)));
     }
 
-    private StudentAttendanceRowRes buildStudentRow(Student student, List<LocalDate> dates,
-                                                  Map<LocalDate, Attendance> studentAttendances) {
-        Map<LocalDate, AttendanceInfo> infoMap = dates.stream()
-                .filter(studentAttendances::containsKey)
-                .collect(Collectors.toMap(d -> d, d -> {
-                    Attendance a = studentAttendances.get(d);
-                    return AttendanceInfo.builder().status(a.getStatus()).checkinAt(a.getCheckinAt()).build();
-                }));
+    private StudentAttendanceRowRes buildStudentRow(Student student,
+                                                     Map<LocalDate, Attendance> studentAttendances) {
+        Map<LocalDate, AttendanceInfo> infoMap = studentAttendances.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> AttendanceInfo.builder()
+                                .status(e.getValue().getStatus())
+                                .checkinAt(e.getValue().getCheckinAt())
+                                .build()
+                ));
 
         return StudentAttendanceRowRes.builder()
                 .id(student.getId())
@@ -448,25 +447,6 @@ public class AttendanceService {
                 .photoUrl(student.getPhotoUrl())
                 .className(null)
                 .attendances(infoMap)
-                .build();
-    }
-
-    private Map<LocalDate, DailySummaryRes> buildDailySummaries(List<LocalDate> dates, List<Attendance> attendances) {
-        Map<LocalDate, List<Attendance>> byDate = attendances.stream()
-                .collect(Collectors.groupingBy(Attendance::getAttendanceDate));
-
-        return dates.stream().collect(Collectors.toMap(d -> d, d -> buildDailySummary(byDate.getOrDefault(d, List.of()))));
-    }
-
-    private DailySummaryRes buildDailySummary(List<Attendance> attendances) {
-        Map<AttendanceStatus, Long> counts = attendances.stream()
-                .collect(Collectors.groupingBy(Attendance::getStatus, Collectors.counting()));
-
-        return DailySummaryRes.builder()
-                .present(counts.getOrDefault(AttendanceStatus.PRESENT, 0L).intValue())
-                .absent(counts.getOrDefault(AttendanceStatus.ABSENT, 0L).intValue())
-                .sick(counts.getOrDefault(AttendanceStatus.SICK, 0L).intValue())
-                .excused(counts.getOrDefault(AttendanceStatus.EXCUSED, 0L).intValue())
                 .build();
     }
 
