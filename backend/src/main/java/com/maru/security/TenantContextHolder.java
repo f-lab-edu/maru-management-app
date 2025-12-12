@@ -12,13 +12,16 @@ public class TenantContextHolder {
      *
      * @param tenantId 테넌트 ID
      */
-    public static void setTenantId(Long tenantId) {
-        if (tenantId == null) {
-            log.warn("테넌트 ID가 null입니다. 설정을 건너뜁니다.");
-            return;
+    public static AutoCloseable withTenant(Long tenantId) {
+        if(TENANT_CONTEXT.get() != null){
+            throw new IllegalStateException("테넌트 컨텍스트가 이미 설정되어 있음.");
         }
-        TENANT_CONTEXT.set(tenantId);
-        log.debug("테넌트 컨텍스트 설정: tenantId={}", tenantId);
+
+        if(tenantId != null){
+            TENANT_CONTEXT.set(tenantId);
+            log.debug("테넌트 컨텍스트 설정: tenantId={}", tenantId);
+        }
+        return TenantContextHolder::clear;
     }
 
     /**Ï

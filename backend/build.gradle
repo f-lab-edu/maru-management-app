@@ -38,6 +38,9 @@ dependencies {
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
+    // Spring validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     // Spring Boot DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -73,14 +76,24 @@ dependencies {
     // SpringDoc OpenAPI (Swagger UI)
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
+    // ============== External Services ==============
+    // Solapi SMS SDK
+    implementation 'com.solapi:sdk:1.0.3'
+
     // ============== Test ==============
     // Spring Boot Test (JUnit 5, Mockito 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
+// ============== 로그 경로 설정 ==============
+bootRun {
+    systemProperty 'LOG_PATH', "${projectDir}/logs"
+}
+
 // ============== Test 설정 ==============
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'LOG_PATH', "${projectDir}/logs"
 
     // 테스트 리포트 설정
     testLogging {

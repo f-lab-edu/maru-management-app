@@ -1,13 +1,15 @@
 package com.maru.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.maru.config.properties.CorsProperties;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * CORS 설정
@@ -15,34 +17,49 @@ import java.util.Arrays;
  * httpOnly Cookie 기반 인증을 지원하기 위한 CORS 설정
  * - allowCredentials: true로 설정하여 Cookie 전송 허용
  * - allowedOrigins: 명시적 Origin 목록 (wildcard 사용 불가)
+ * - Spring Security와 통합하여 인증 실패 시에도 CORS 헤더 적용
  */
 @Configuration
-public class CorsConfig implements WebMvcConfigurer {
+@RequiredArgsConstructor
+public class CorsConfig {
 
-    @Value("${cors.allowed-origins:*}")
-    private String allowedOrigins;
+    private final CorsProperties corsProperties;
 
-    @Value("${cors.max-age:1h}")
-    private Duration maxAge;
+    /**
+     * CORS 설정을 CorsConfigurationSource Bean으로 등록
+     *
+     * @return CorsConfigurationSource
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        CorsRegistration reg = registry.addMapping("/**")
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .maxAge(maxAge.toSeconds());
+        config.setAllowedOrigins(parseList(corsProperties.allowedOrigins()));
+        config.setAllowedMethods(parseList(corsProperties.allowedMethods()));
+        config.setAllowedHeaders(parseList(corsProperties.allowedHeaders()));
 
-        String[] origins = Arrays.stream(allowedOrigins.split(","))
+        config.setMaxAge(corsProperties.maxAge().toSeconds());
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    /**
+     * 콤마(,) 로 구분된 corsProperties 문자열을 파싱해서 리스트로 반환
+     *
+     * @param value corsProperties 값
+     * @return corsProperties 값이 파싱된 리스트(요소가 없으면 빈 리스트 반환)
+     */
+    private List<String> parseList(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(value.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .toArray(String[]::new);
-
-        if (origins.length == 1 && "*".equals(origins[0])) {
-            // Wildcard 사용 시 credentials 비활성화 (보안 제약)
-            reg.allowedOriginPatterns("*").allowCredentials(false);
-        } else {
-            // 명시적 Origin 사용 시 credentials 활성화 (httpOnly Cookie 지원)
-            reg.allowedOrigins(origins).allowCredentials(true);
-        }
+                .toList();
     }
 }

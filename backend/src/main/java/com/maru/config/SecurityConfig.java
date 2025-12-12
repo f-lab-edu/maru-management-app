@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity // Spring Security 활성화
@@ -23,11 +24,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final EmploymentAwarePermissionEvaluator permissionEvaluator;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // CSRF 보호 비활성화
+            // CORS 설정
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+
+            // CSRF 보호 비활성화 (JWT + Stateless 방식이므로 불필요)
             .csrf(AbstractHttpConfigurer::disable)
 
             // 세션을 생성하거나 사용하지 않음
@@ -43,8 +48,12 @@ public class SecurityConfig {
 
             // URL별 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
-                // 인증 없이 접근 가능한 URL (로그인, 회원가입, 헬스체크)
-                .requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll()
+                // 인증 없이 접근 가능한 URL (로그인, 회원가입, 헬스체크, SMS 인증)
+                .requestMatchers(
+                        "/api/v1/auth/**",
+                        "/api/v1/sms/**",
+                        "/actuator/health"
+                ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()

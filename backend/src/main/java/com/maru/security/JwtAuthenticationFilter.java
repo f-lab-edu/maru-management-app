@@ -1,5 +1,6 @@
 package com.maru.security;
 
+import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -8,27 +9,35 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final HandlerExceptionResolver exceptionResolver;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver
+    ) {
         this.jwtUtil = jwtUtil;
+        this.exceptionResolver = exceptionResolver;
     }
 
     /**
@@ -42,9 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         try {
@@ -58,56 +67,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             // JwtUtil을 사용한 토큰 검증
-            if (!jwtUtil.validateAccessToken(token)) {
-                log.warn("유효하지 않은 JWT 토큰: {}", request.getRequestURI());
+            JwtUtil.TokenValidationResult validationResult = jwtUtil.validateAccessToken(token);
+            if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
+                log.warn("만료된 JWT 토큰: {}", request.getRequestURI());
+                exceptionResolver.resolveException(request, response, null, new AuthException(AUTH_TOKEN_EXPIRED));
+                return;
+            }
+            if (validationResult != JwtUtil.TokenValidationResult.VALID) {
+                log.warn("유효하지 않은 JWT 토큰: {}, 상태: {}", request.getRequestURI(), validationResult);
                 filterChain.doFilter(request, response);
                 return;
             }
 
             // 유효한 토큰에서 Claims 추출
             Claims claims = jwtUtil.parseClaims(token);
-            Long userId = Long.parseLong(claims.getSubject());
-            Long tenantId = claims.get("tenantId", Long.class);
-            Long dojangId = claims.get("dojangId", Long.class);
-            String role = claims.get("role", String.class);
+            JwtClaims jwtClaims = JwtClaims.fromJwt(claims);
 
-            // 테넌트 컨텍스트 설정
-            TenantContextHolder.setTenantId(tenantId);
+            // 테넌트 컨텍스트 + MDC userId 설정
+            try (AutoCloseable ignored = TenantContextHolder.withTenant(jwtClaims.tenantId());
+                 MDC.MDCCloseable mdcUserId = MDC.putCloseable("userId", String.valueOf(jwtClaims.userId()))) {
 
-            // Claims를 Map으로 변환하여 principal로 전달 (PermissionEvaluator에서 사용)
-            Map<String, Object> claimsMap = new HashMap<>();
-            claimsMap.put("userId", userId);
-            claimsMap.put("tenantId", tenantId);
-            claimsMap.put("dojangId", dojangId);
-            claimsMap.put("role", role);
+                // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
+                List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + jwtClaims.role())
+                );
 
-            // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
-            List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + role)
-            );
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        jwtClaims,
+                        null,
+                        authorities
+                );
 
-            // TODO : UsernamePasswordAuthenticationToken -> Oauth2 의존성을 추가해서 JwtAuthenticationToken 등으로 리팩토링 고민
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                claimsMap,
-                null,
-                authorities
-            );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                // 인증 성공 로깅
+                log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
+                        jwtClaims.userId(), jwtClaims.tenantId(), jwtClaims.dojangId(), jwtClaims.role(), request.getRequestURI());
 
-            // 인증 성공 로깅
-            log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
-                     userId, tenantId, dojangId, role, request.getRequestURI());
+                // 필터 체인 계속
+                filterChain.doFilter(request, response);
+            }
 
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
-        } finally {
-            // ThreadLocal 정리
-            // TODO : try with resource 로 리팩토링 고민
-            TenantContextHolder.clear();
+            filterChain.doFilter(request, response);
         }
-
-        filterChain.doFilter(request, response);
     }
 
     /**
@@ -128,5 +132,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    /**
+     * 헬스체크 엔드포인트를 필터에서 제외
+     *
+     * @param request HttpServletRequest
+     */
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/actuator/health");
     }
 }

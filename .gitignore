@@ -24,6 +24,8 @@ Thumbs.db
 # Logs
 # ----------------------------
 *.log
+logs/
+backend/logs/
 
 # ----------------------------
 # Node/JS (frontend & mobile)
@@ -52,6 +54,10 @@ backend/out/
 build/
 out/
 bin/
+
+# Spring Boot sensitive config files
+**/application-local.yml
+**/application-prod.yml
 
 # Java compiled artifacts
 *.class
