@@ -1,0 +1,95 @@
+package com.maru.domain.student;
+
+import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.tenant.Dojang;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.springframework.util.Assert;
+
+import java.time.LocalDate;
+
+@Entity
+@Table(
+    name = "student",
+    indexes = {
+        @Index(name = "idx_student_tenant_status", columnList = "tenant_id, status"),
+        @Index(name = "idx_student_dojang_status", columnList = "dojang_id, status"),
+        @Index(name = "idx_student_tenant_name", columnList = "tenant_id, name")
+    }
+)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Student extends SoftDeletableEntity {
+
+    @Column(nullable = false)
+    private Long tenantId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dojang_id", nullable = false)
+    private Dojang dojang;
+
+    @Column(nullable = false, length = 100)
+    private String name;
+
+    @Column(length = 500)
+    private String photoUrl;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column
+    private LocalDate birth;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StudentStatus status;
+
+    @Column
+    private LocalDate enrolledAt;
+
+    private Student(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
+        validateNotNull(dojang, name, birth);
+        this.tenantId = dojang.getTenant().getId();
+        this.dojang = dojang;
+        this.name = name;
+        this.birth = birth;
+        this.photoUrl = photoUrl;
+        this.phone = phone;
+        this.status = StudentStatus.ACTIVE;
+        this.enrolledAt = LocalDate.now();
+    }
+
+    public static Student create(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
+        return new Student(dojang, name, birth, photoUrl, phone);
+    }
+
+    public void update(String name, LocalDate birth, String photoUrl, String phone) {
+        this.name = name;
+        this.birth = birth;
+        this.photoUrl = photoUrl;
+        this.phone = phone;
+    }
+
+    public void changeStatus(StudentStatus status) {
+        this.status = status;
+    }
+
+    public void withdraw() {
+        this.status = StudentStatus.WITHDRAWN;
+        markAsDeleted();
+    }
+
+    public void reactivate() {
+        this.status = StudentStatus.ACTIVE;
+        this.enrolledAt = LocalDate.now();
+        restore();
+    }
+
+    private void validateNotNull(Dojang dojang, String name, LocalDate birth) {
+        Assert.notNull(dojang, "dojang은 필수입니다.");
+        Assert.hasText(name, "name은 필수입니다.");
+        Assert.notNull(birth, "birth는 필수입니다.");
+    }
+}

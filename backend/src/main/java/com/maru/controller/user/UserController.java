@@ -5,6 +5,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.domain.user.User;
 import com.maru.security.CurrentUserId;
+import com.maru.service.employment.EmploymentService;
 import com.maru.service.tenant.TenantService;
 import com.maru.service.user.UserService;
 import jakarta.validation.Valid;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -21,6 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private final TenantService tenantService;
+    private final EmploymentService employmentService;
 
     /**
      * 현재 로그인한 사용자 정보 조회
@@ -108,5 +112,20 @@ public class UserController {
         OAuthProvider provider = userService.getOAuthProvider(userId);
 
         return ResponseEntity.ok(UserMeRes.from(user, provider));
+    }
+
+    /**
+     * 소속 도장 목록 조회
+     *
+     * @param userId 현재 인증된 사용자 ID
+     * @return 도장 목록 및 개수
+     */
+    @GetMapping("/me/dojangs")
+    public ResponseEntity<MyDojangsRes> getMyDojangs(@CurrentUserId Long userId) {
+        List<MyDojangRes> dojangs = employmentService.getMyDojangs(userId).stream()
+                .map(employment -> MyDojangRes.from(employment, userId))
+                .toList();
+
+        return ResponseEntity.ok(MyDojangsRes.from(dojangs));
     }
 }
