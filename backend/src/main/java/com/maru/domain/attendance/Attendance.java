@@ -39,9 +39,6 @@ public class Attendance extends BaseEntity {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @Column(name = "class_id")
-    private Long classId;
-
     @Column(name = "checked_by")
     private Long checkedBy;
 
