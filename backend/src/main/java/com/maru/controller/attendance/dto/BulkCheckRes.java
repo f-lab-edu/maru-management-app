@@ -9,6 +9,6 @@ public record BulkCheckRes(
         int successCount,
         int failureCount,
         List<AttendanceRes> successList,
-        List<BulkCheckFailure> failureList
+        List<BulkCheckFailureRes> failureList
 ) {
 }

@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.Map;
 
 @Builder
-public record StudentAttendanceRow(
+public record StudentAttendanceRowRes(
         Long id,
         String name,
         String photoUrl,

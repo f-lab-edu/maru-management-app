@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.util.Map;
 
 @Builder
-public record RangeAttendanceSummary(
+public record RangeAttendanceSummaryRes(
         int totalStudents,
-        Map<LocalDate, DailySummary> byDate
+        Map<LocalDate, DailySummaryRes> byDate
 ) {
 }

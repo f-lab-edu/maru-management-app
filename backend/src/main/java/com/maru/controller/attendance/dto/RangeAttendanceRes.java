@@ -10,7 +10,7 @@ public record RangeAttendanceRes(
         LocalDate startDate,
         LocalDate endDate,
         List<LocalDate> dates,
-        List<StudentAttendanceRow> students,
-        RangeAttendanceSummary summary
+        List<StudentAttendanceRowRes> students,
+        RangeAttendanceSummaryRes summary
 ) {
 }
