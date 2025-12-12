@@ -82,6 +82,23 @@ public class AttendanceController {
     }
 
     /**
+     * 일괄 퇴관 처리 API
+     *
+     * @param dojangId 도장 ID
+     * @param request 일괄 퇴관 요청 정보
+     * @param userId 현재 인증된 사용자 ID
+     * @return 성공/실패 결과
+     */
+    @PostMapping("/bulk-checkout")
+    public ResponseEntity<BulkCheckRes> bulkCheckOut(
+            @RequestParam Long dojangId,
+            @Valid @RequestBody BulkCheckoutReq request,
+            @CurrentUserId Long userId) {
+        BulkCheckRes response = attendanceService.bulkCheckOut(dojangId, request.attendanceIds());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 출석 상태 변경 API
      *
      * @param id 출석 기록 ID

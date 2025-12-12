@@ -38,4 +38,32 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             @Param("excludeStatus") StudentStatus excludeStatus);
 
     Optional<Student> findByDojangIdAndNameAndBirth(Long dojangId, String name, LocalDate birth);
+
+    @Query("""
+        SELECT s FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojang.id = :dojangId
+          AND s.status = 'ACTIVE'
+          AND s.deletedAt IS NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM Attendance a
+              WHERE a.student.id = s.id AND a.attendanceDate = :date
+          )
+        """)
+    List<Student> findActiveStudentsWithoutAttendance(
+            @Param("tenantId") Long tenantId,
+            @Param("dojangId") Long dojangId,
+            @Param("date") LocalDate date);
+
+    @Query("""
+        SELECT s FROM Student s
+        WHERE s.id IN :ids
+          AND s.tenantId = :tenantId
+          AND s.status != :excludeStatus
+          AND s.deletedAt IS NULL
+        """)
+    List<Student> findAllActiveByIds(
+            @Param("ids") List<Long> ids,
+            @Param("tenantId") Long tenantId,
+            @Param("excludeStatus") StudentStatus excludeStatus);
 }

@@ -1,24 +1,46 @@
 package com.maru.service.attendance;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.attendance.dto.*;
+import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.AttendanceStatus;
 import com.maru.domain.attendance.CheckMethod;
+import com.maru.domain.attendance.exception.AttendanceErrorCode;
+import com.maru.domain.student.Student;
+import com.maru.domain.student.StudentStatus;
+import com.maru.domain.student.exception.StudentErrorCode;
+import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.attendance.AttendanceRepository;
+import com.maru.repository.student.StudentRepository;
+import com.maru.repository.tenant.DojangRepository;
+import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
-import java.util.List;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AttendanceService {
+
+    private static final int MAX_DATE_RANGE_DAYS = 31;
+    private static final int MAX_RETROACTIVE_DAYS = 30;
+    private static final LocalTime DEFAULT_CHECKIN_TIME = LocalTime.of(9, 0);
+
+    private final AttendanceRepository attendanceRepository;
+    private final StudentRepository studentRepository;
+    private final DojangRepository dojangRepository;
 
     /**
      * 단일 원생 출석 체크 (과거 날짜 소급 입력 지원)
@@ -30,17 +52,24 @@ public class AttendanceService {
      * @param checkinAt 체크인 시각 (null이면 현재 시각 또는 date의 기본 시각)
      * @param note 비고 (선택)
      * @return 출석 기록
-     * @throws BusinessException 원생을 찾을 수 없거나 중복 체크인 경우
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_RETROACTIVE_LIMIT_EXCEEDED - 소급 입력 30일 초과
+     * @throws BusinessException ATTENDANCE_DUPLICATE - 이미 출석 체크됨
      */
     @Transactional
-    public AttendanceRes checkIn(
-            Long dojangId,
-            Long studentId,
-            CheckMethod method,
-            LocalDate date,
-            LocalDateTime checkinAt,
-            String note) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+    public AttendanceRes checkIn(Long dojangId, Long studentId, CheckMethod method,
+                                  LocalDate date, LocalDateTime checkinAt, String note) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        Student student = findStudentInDojang(studentId, dojangId, tenantId);
+        LocalDate targetDate = resolveTargetDate(date);
+        LocalDateTime targetCheckinAt = resolveCheckinAt(targetDate, checkinAt);
+
+        Attendance attendance = saveAttendanceWithDuplicateCheck(student, method, targetCheckinAt, note);
+
+        log.info("출석 체크 - attendanceId: {}, studentId: {}, dojangId: {}", attendance.getId(), studentId, dojangId);
+        return AttendanceRes.from(attendance);
     }
 
     /**
@@ -50,10 +79,42 @@ public class AttendanceService {
      * @param studentIds 원생 ID 목록
      * @param method 체크 방법
      * @return 성공/실패 결과
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
     @Transactional
     public BulkCheckRes bulkCheckIn(Long dojangId, List<Long> studentIds, CheckMethod method) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+
+        Map<Long, Student> studentMap = findStudentsAsMap(studentIds, tenantId);
+        Set<Long> alreadyCheckedSet = findAlreadyCheckedStudentIds(tenantId, dojangId, studentIds);
+
+        List<Student> validStudents = new ArrayList<>();
+        List<BulkCheckFailureRes> failureList = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Long studentId : studentIds) {
+            validateAndCollectStudent(studentId, dojangId, studentMap, alreadyCheckedSet, validStudents, failureList);
+        }
+
+        List<Attendance> attendances = validStudents.stream()
+                .map(student -> Attendance.create(student, method, now, null))
+                .toList();
+        attendanceRepository.saveAll(attendances);
+
+        List<AttendanceRes> successList = attendances.stream()
+                .map(AttendanceRes::from)
+                .toList();
+
+        log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}",
+                dojangId, successList.size(), failureList.size());
+
+        return BulkCheckRes.builder()
+                .successCount(successList.size())
+                .failureCount(failureList.size())
+                .successList(successList)
+                .failureList(failureList)
+                .build();
     }
 
     /**
@@ -62,11 +123,62 @@ public class AttendanceService {
      * @param dojangId 도장 ID
      * @param attendanceId 출석 기록 ID
      * @return 업데이트된 출석 기록
-     * @throws BusinessException 출석 기록을 찾을 수 없거나 이미 퇴관 처리된 경우
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_ALREADY_CHECKOUT - 이미 퇴관 처리됨
      */
     @Transactional
     public AttendanceRes checkOut(Long dojangId, Long attendanceId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
+
+        attendance.checkOut(LocalDateTime.now());
+
+        log.info("퇴관 처리 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
+        return AttendanceRes.from(attendance);
+    }
+
+    /**
+     * 일괄 퇴관 처리
+     *
+     * @param dojangId 도장 ID
+     * @param attendanceIds 출석 기록 ID 목록
+     * @return 성공/실패 결과
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     */
+    @Transactional
+    public BulkCheckRes bulkCheckOut(Long dojangId, List<Long> attendanceIds) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+
+        List<Attendance> attendances = attendanceRepository
+                .findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(tenantId, dojangId, attendanceIds);
+        Set<Long> foundIds = attendances.stream()
+                .map(Attendance::getId)
+                .collect(Collectors.toSet());
+
+        List<BulkCheckFailureRes> failureList = attendanceIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .map(id -> buildFailure(id, AttendanceErrorCode.NOT_FOUND.getMessage()))
+                .toList();
+
+        LocalDateTime now = LocalDateTime.now();
+        attendances.forEach(attendance -> attendance.checkOut(now));
+
+        List<AttendanceRes> successList = attendances.stream()
+                .map(AttendanceRes::from)
+                .toList();
+
+        log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}",
+                dojangId, successList.size(), failureList.size());
+
+        return BulkCheckRes.builder()
+                .successCount(successList.size())
+                .failureCount(failureList.size())
+                .successList(successList)
+                .failureList(failureList)
+                .build();
     }
 
     /**
@@ -77,15 +189,20 @@ public class AttendanceService {
      * @param status 새로운 상태
      * @param note 비고 (선택)
      * @return 업데이트된 출석 기록
-     * @throws BusinessException 출석 기록을 찾을 수 없거나 유효하지 않은 상태 전이인 경우
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_SAME_STATUS - 이미 동일한 상태
      */
     @Transactional
-    public AttendanceRes changeStatus(
-            Long dojangId,
-            Long attendanceId,
-            AttendanceStatus status,
-            String note) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+    public AttendanceRes changeStatus(Long dojangId, Long attendanceId, AttendanceStatus status, String note) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
+
+        attendance.changeStatus(status, note);
+
+        log.info("출석 상태 변경 - attendanceId: {}, status: {}, dojangId: {}", attendanceId, status, dojangId);
+        return AttendanceRes.from(attendance);
     }
 
     /**
@@ -93,10 +210,20 @@ public class AttendanceService {
      *
      * @param dojangId 도장 ID
      * @return 현재 출석 현황
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
     @Transactional(readOnly = true)
     public CurrentAttendanceRes getTodayAttendance(Long dojangId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        LocalDate today = LocalDate.now();
+
+        List<Attendance> attendances = attendanceRepository
+                .findByTenantIdAndDojangIdAndAttendanceDate(tenantId, dojangId, today);
+        int expectedCount = studentRepository
+                .findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
+
+        return buildCurrentAttendanceRes(attendances, expectedCount);
     }
 
     /**
@@ -106,10 +233,22 @@ public class AttendanceService {
      * @param startDate 시작 날짜
      * @param endDate 종료 날짜 (최대 31일 범위)
      * @return 기간별 출석 현황
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException ATTENDANCE_DATE_RANGE_INVALID - 시작일이 종료일보다 이후
+     * @throws BusinessException ATTENDANCE_DATE_RANGE_TOO_LARGE - 조회 기간 31일 초과
      */
     @Transactional(readOnly = true)
     public RangeAttendanceRes getAttendanceRange(Long dojangId, LocalDate startDate, LocalDate endDate) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        validateDateRange(startDate, endDate);
+
+        List<LocalDate> dates = startDate.datesUntil(endDate.plusDays(1)).toList();
+        List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+        List<Attendance> attendances = attendanceRepository
+                .findByTenantIdAndDojangIdAndAttendanceDateBetween(tenantId, dojangId, startDate, endDate);
+
+        return buildRangeAttendanceRes(dates, students, attendances, startDate, endDate);
     }
 
     /**
@@ -120,14 +259,23 @@ public class AttendanceService {
      * @param startDate 시작 날짜
      * @param endDate 종료 날짜
      * @return 출석 이력 목록
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_DATE_RANGE_INVALID - 시작일이 종료일보다 이후
+     * @throws BusinessException ATTENDANCE_DATE_RANGE_TOO_LARGE - 조회 기간 31일 초과
      */
     @Transactional(readOnly = true)
-    public List<AttendanceRes> getHistory(
-            Long dojangId,
-            Long studentId,
-            LocalDate startDate,
-            LocalDate endDate) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+    public List<AttendanceRes> getHistory(Long dojangId, Long studentId, LocalDate startDate, LocalDate endDate) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        validateDateRange(startDate, endDate);
+        findStudentInDojang(studentId, dojangId, tenantId);
+
+        return attendanceRepository
+                .findByTenantIdAndStudentIdAndAttendanceDateBetween(tenantId, studentId, startDate, endDate)
+                .stream()
+                .map(AttendanceRes::from)
+                .toList();
     }
 
     /**
@@ -136,9 +284,214 @@ public class AttendanceService {
      * @param dojangId 도장 ID
      * @param yearMonth 연월
      * @return 월간 통계
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
     @Transactional(readOnly = true)
     public AttendanceStatsRes getMonthlyStats(Long dojangId, YearMonth yearMonth) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+
+        Map<AttendanceStatus, Long> statusCounts = getStatusCountsForMonth(tenantId, dojangId, yearMonth);
+        return buildAttendanceStatsRes(statusCounts, yearMonth.lengthOfMonth());
+    }
+
+    private Long validateDojangAndGetTenantId(Long dojangId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        Dojang dojang = dojangRepository.findById(dojangId)
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+
+        if (!dojang.getTenant().getId().equals(tenantId)) {
+            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
+        }
+        return tenantId;
+    }
+
+    private Student findStudentInDojang(Long studentId, Long dojangId, Long tenantId) {
+        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+
+        if (!student.getDojang().getId().equals(dojangId)) {
+            throw new BusinessException(StudentErrorCode.NOT_FOUND);
+        }
+        return student;
+    }
+
+    private Attendance findAttendanceInDojang(Long tenantId, Long attendanceId, Long dojangId) {
+        return attendanceRepository.findByTenantIdAndIdAndDojangId(tenantId, attendanceId, dojangId)
+                .orElseThrow(() -> new BusinessException(AttendanceErrorCode.NOT_FOUND));
+    }
+
+    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate.isAfter(endDate)) {
+            throw new BusinessException(AttendanceErrorCode.DATE_RANGE_INVALID);
+        }
+        if (ChronoUnit.DAYS.between(startDate, endDate) + 1 > MAX_DATE_RANGE_DAYS) {
+            throw new BusinessException(AttendanceErrorCode.DATE_RANGE_TOO_LARGE);
+        }
+    }
+
+    private LocalDate resolveTargetDate(LocalDate date) {
+        if (date == null) return LocalDate.now();
+
+        if (ChronoUnit.DAYS.between(date, LocalDate.now()) > MAX_RETROACTIVE_DAYS) {
+            throw new BusinessException(AttendanceErrorCode.RETROACTIVE_LIMIT_EXCEEDED);
+        }
+        return date;
+    }
+
+    private LocalDateTime resolveCheckinAt(LocalDate targetDate, LocalDateTime checkinAt) {
+        if (checkinAt != null) return checkinAt;
+        return targetDate.equals(LocalDate.now())
+                ? LocalDateTime.now()
+                : targetDate.atTime(DEFAULT_CHECKIN_TIME);
+    }
+
+    private Attendance saveAttendanceWithDuplicateCheck(Student student, CheckMethod method,
+                                                         LocalDateTime checkinAt, String note) {
+        Attendance attendance = Attendance.create(student, method, checkinAt, note);
+        try {
+            return attendanceRepository.save(attendance);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(AttendanceErrorCode.DUPLICATE);
+        }
+    }
+
+    private Map<Long, Student> findStudentsAsMap(List<Long> studentIds, Long tenantId) {
+        return studentRepository.findAllActiveByIds(studentIds, tenantId, StudentStatus.WITHDRAWN)
+                .stream()
+                .collect(Collectors.toMap(Student::getId, s -> s));
+    }
+
+    private Set<Long> findAlreadyCheckedStudentIds(Long tenantId, Long dojangId, List<Long> studentIds) {
+        return new HashSet<>(attendanceRepository.findStudentIdsWithAttendanceToday(
+                tenantId, dojangId, studentIds, LocalDate.now()));
+    }
+
+    private void validateAndCollectStudent(Long studentId, Long dojangId, Map<Long, Student> studentMap,
+                                           Set<Long> alreadyCheckedSet, List<Student> validStudents,
+                                           List<BulkCheckFailureRes> failureList) {
+        if (alreadyCheckedSet.contains(studentId)) {
+            failureList.add(buildFailure(studentId, AttendanceErrorCode.DUPLICATE.getMessage()));
+            return;
+        }
+
+        Student student = studentMap.get(studentId);
+        if (student == null) {
+            failureList.add(buildFailure(studentId, StudentErrorCode.NOT_FOUND.getMessage()));
+            return;
+        }
+        if (!student.getDojang().getId().equals(dojangId)) {
+            failureList.add(buildFailure(studentId, DojangErrorCode.UNAUTHORIZED_ACCESS.getMessage()));
+            return;
+        }
+
+        validStudents.add(student);
+    }
+
+    private BulkCheckFailureRes buildFailure(Long id, String message) {
+        return BulkCheckFailureRes.builder().studentId(id).errorMessage(message).build();
+    }
+
+    private CurrentAttendanceRes buildCurrentAttendanceRes(List<Attendance> attendances, int expectedCount) {
+        int presentCount = (int) attendances.stream()
+                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT).count();
+        int currentlyPresent = (int) attendances.stream()
+                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT && a.getCheckoutAt() == null).count();
+
+        return CurrentAttendanceRes.builder()
+                .presentCount(presentCount)
+                .expectedCount(expectedCount)
+                .currentlyPresent(currentlyPresent)
+                .attendanceList(attendances.stream().map(AttendanceRes::from).toList())
+                .build();
+    }
+
+    private RangeAttendanceRes buildRangeAttendanceRes(List<LocalDate> dates, List<Student> students,
+                                                        List<Attendance> attendances,
+                                                        LocalDate startDate, LocalDate endDate) {
+        Map<Long, Map<LocalDate, Attendance>> attendanceMap = groupAttendancesByStudent(attendances);
+
+        List<StudentAttendanceRowRes> studentRows = students.stream()
+                .map(s -> buildStudentRow(s, dates, attendanceMap.getOrDefault(s.getId(), Map.of())))
+                .toList();
+
+        return RangeAttendanceRes.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .dates(dates)
+                .students(studentRows)
+                .summary(RangeAttendanceSummaryRes.builder()
+                        .totalStudents(students.size())
+                        .byDate(buildDailySummaries(dates, attendances))
+                        .build())
+                .build();
+    }
+
+    private Map<Long, Map<LocalDate, Attendance>> groupAttendancesByStudent(List<Attendance> attendances) {
+        return attendances.stream().collect(Collectors.groupingBy(
+                a -> a.getStudent().getId(),
+                Collectors.toMap(Attendance::getAttendanceDate, a -> a)));
+    }
+
+    private StudentAttendanceRowRes buildStudentRow(Student student, List<LocalDate> dates,
+                                                  Map<LocalDate, Attendance> studentAttendances) {
+        Map<LocalDate, AttendanceInfo> infoMap = dates.stream()
+                .filter(studentAttendances::containsKey)
+                .collect(Collectors.toMap(d -> d, d -> {
+                    Attendance a = studentAttendances.get(d);
+                    return AttendanceInfo.builder().status(a.getStatus()).checkinAt(a.getCheckinAt()).build();
+                }));
+
+        return StudentAttendanceRowRes.builder()
+                .id(student.getId())
+                .name(student.getName())
+                .photoUrl(student.getPhotoUrl())
+                .className(null)
+                .attendances(infoMap)
+                .build();
+    }
+
+    private Map<LocalDate, DailySummaryRes> buildDailySummaries(List<LocalDate> dates, List<Attendance> attendances) {
+        Map<LocalDate, List<Attendance>> byDate = attendances.stream()
+                .collect(Collectors.groupingBy(Attendance::getAttendanceDate));
+
+        return dates.stream().collect(Collectors.toMap(d -> d, d -> buildDailySummary(byDate.getOrDefault(d, List.of()))));
+    }
+
+    private DailySummaryRes buildDailySummary(List<Attendance> attendances) {
+        Map<AttendanceStatus, Long> counts = attendances.stream()
+                .collect(Collectors.groupingBy(Attendance::getStatus, Collectors.counting()));
+
+        return DailySummaryRes.builder()
+                .present(counts.getOrDefault(AttendanceStatus.PRESENT, 0L).intValue())
+                .absent(counts.getOrDefault(AttendanceStatus.ABSENT, 0L).intValue())
+                .sick(counts.getOrDefault(AttendanceStatus.SICK, 0L).intValue())
+                .excused(counts.getOrDefault(AttendanceStatus.EXCUSED, 0L).intValue())
+                .build();
+    }
+
+    private Map<AttendanceStatus, Long> getStatusCountsForMonth(Long tenantId, Long dojangId, YearMonth yearMonth) {
+        return attendanceRepository.countByStatusForMonth(tenantId, dojangId, yearMonth.getYear(), yearMonth.getMonthValue())
+                .stream()
+                .collect(Collectors.toMap(row -> (AttendanceStatus) row[0], row -> (Long) row[1]));
+    }
+
+    private AttendanceStatsRes buildAttendanceStatsRes(Map<AttendanceStatus, Long> counts, int totalDays) {
+        int present = counts.getOrDefault(AttendanceStatus.PRESENT, 0L).intValue();
+        int absent = counts.getOrDefault(AttendanceStatus.ABSENT, 0L).intValue();
+        int sick = counts.getOrDefault(AttendanceStatus.SICK, 0L).intValue();
+        int excused = counts.getOrDefault(AttendanceStatus.EXCUSED, 0L).intValue();
+        int total = present + absent + sick + excused;
+
+        double rate = total > 0 ? (double) present / total * 100 : 0.0;
+
+        return AttendanceStatsRes.builder()
+                .totalDays(totalDays)
+                .presentCount(present)
+                .absentCount(absent)
+                .sickCount(sick)
+                .excusedCount(excused)
+                .attendanceRate(Math.round(rate * 100.0) / 100.0)
+                .build();
     }
 }
