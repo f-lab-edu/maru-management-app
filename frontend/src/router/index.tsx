@@ -11,6 +11,7 @@ import SearchDojangPage from '../pages/onboarding/SearchDojangPage';
 import UserInfoPage from '../pages/onboarding/UserInfoPage';
 import SettingsPage from '../pages/SettingsPage';
 import StudentListPage from '../pages/students/StudentListPage';
+import AttendanceListPage from '../pages/attendance/AttendanceListPage';
 import { OnboardingRoute, CompletedOnboardingRoute } from './AuthGuard';
 import AuthLayout from '../layouts/AuthLayout';
 import { DojangGuard } from '../components/auth/DojangGuard';
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
         children: [
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'students', element: <StudentListPage /> },
+          { path: 'attendance', element: <AttendanceListPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },

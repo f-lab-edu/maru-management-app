@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { TooltipProvider } from './shared/components/ui/tooltip';
 import { DevLoginModal } from './features/dev';
 import { GlobalLoadingOverlay } from './components/GlobalLoadingOverlay';
 
@@ -7,11 +8,13 @@ const isDev = import.meta.env.DEV;
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Outlet />
-      {isDev && <DevLoginModal />}
-      <GlobalLoadingOverlay />
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="min-h-screen bg-background">
+        <Outlet />
+        {isDev && <DevLoginModal />}
+        <GlobalLoadingOverlay />
+      </div>
+    </TooltipProvider>
   );
 }
 
