@@ -5,6 +5,7 @@ import com.maru.domain.attendance.AttendanceStatus;
 import com.maru.domain.attendance.CheckMethod;
 import lombok.Builder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Builder
@@ -14,6 +15,7 @@ public record AttendanceRes(
         String studentName,
         AttendanceStatus status,
         CheckMethod method,
+        LocalDate attendanceDate,
         LocalDateTime checkinAt,
         LocalDateTime checkoutAt,
         String note,
@@ -26,6 +28,7 @@ public record AttendanceRes(
                 .studentName(attendance.getStudent().getName())
                 .status(attendance.getStatus())
                 .method(attendance.getMethod())
+                .attendanceDate(attendance.getAttendanceDate())
                 .checkinAt(attendance.getCheckinAt())
                 .checkoutAt(attendance.getCheckoutAt())
                 .note(attendance.getNote())
