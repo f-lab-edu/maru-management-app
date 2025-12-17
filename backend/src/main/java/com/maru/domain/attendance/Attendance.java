@@ -62,19 +62,26 @@ public class Attendance extends BaseEntity {
     @Column(name = "note", length = 500)
     private String note;
 
-    private Attendance(Student student, CheckMethod method, LocalDateTime checkinAt, String note) {
+    private Attendance(Student student, CheckMethod method, AttendanceStatus status, LocalDateTime checkinAt, String note) {
         validateCommonRules(student);
         DomainAssert.notNull(method, AttendanceErrorCode.METHOD_REQUIRED);
-        DomainAssert.notNull(checkinAt, AttendanceErrorCode.CHECKIN_AT_REQUIRED);
+        DomainAssert.notNull(status, AttendanceErrorCode.STATUS_REQUIRED);
 
         this.tenantId = student.getTenantId();
         this.dojangId = student.getDojang().getId();
         this.student = student;
-        this.attendanceDate = checkinAt.toLocalDate();
-        this.status = AttendanceStatus.PRESENT;
+        this.status = status;
         this.method = method;
-        this.checkinAt = checkinAt;
         this.note = note;
+
+        if (status == AttendanceStatus.PRESENT) {
+            DomainAssert.notNull(checkinAt, AttendanceErrorCode.CHECKIN_AT_REQUIRED);
+            this.checkinAt = checkinAt;
+            this.attendanceDate = checkinAt.toLocalDate();
+        } else {
+            this.checkinAt = checkinAt != null ? checkinAt : LocalDateTime.now().toLocalDate().atStartOfDay();
+            this.attendanceDate = this.checkinAt.toLocalDate();
+        }
     }
 
     private Attendance(Student student, LocalDate date, CheckMethod method) {
@@ -90,8 +97,12 @@ public class Attendance extends BaseEntity {
         this.checkinAt = date.atStartOfDay();
     }
 
+    public static Attendance create(Student student, CheckMethod method, AttendanceStatus status, LocalDateTime checkinAt, String note) {
+        return new Attendance(student, method, status, checkinAt, note);
+    }
+
     public static Attendance create(Student student, CheckMethod method, LocalDateTime checkinAt, String note) {
-        return new Attendance(student, method, checkinAt, note);
+        return new Attendance(student, method, AttendanceStatus.PRESENT, checkinAt, note);
     }
 
     public static Attendance createAutoAbsent(Student student, LocalDate date) {
@@ -109,6 +120,13 @@ public class Attendance extends BaseEntity {
         this.checkoutAt = checkoutAt;
     }
 
+    public void cancelCheckout() {
+        if (this.checkoutAt == null) {
+            throw new BusinessException(AttendanceErrorCode.NOT_CHECKOUT);
+        }
+        this.checkoutAt = null;
+    }
+
     public void changeStatus(AttendanceStatus newStatus, String note) {
         DomainAssert.notNull(newStatus, AttendanceErrorCode.STATUS_REQUIRED);
 
@@ -119,6 +137,19 @@ public class Attendance extends BaseEntity {
         this.status = newStatus;
         if (note != null) {
             this.note = note;
+        }
+    }
+
+    public void changeTime(LocalDateTime newCheckinAt, LocalDateTime newCheckoutAt) {
+        if (newCheckinAt != null) {
+            this.checkinAt = newCheckinAt;
+            this.attendanceDate = newCheckinAt.toLocalDate();
+        }
+        if (newCheckoutAt != null) {
+            if (this.checkinAt != null && newCheckoutAt.isBefore(this.checkinAt)) {
+                throw new BusinessException(AttendanceErrorCode.CHECKOUT_BEFORE_CHECKIN);
+            }
+            this.checkoutAt = newCheckoutAt;
         }
     }
 
