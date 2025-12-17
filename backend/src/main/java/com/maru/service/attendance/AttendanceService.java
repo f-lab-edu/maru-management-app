@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,13 +42,14 @@ public class AttendanceService {
     private final DojangRepository dojangRepository;
 
     /**
-     * 단일 원생 출석 체크 (과거 날짜 소급 입력 지원)
+     * 단일 원생 출석 기록 생성
      *
      * @param dojangId 도장 ID
      * @param studentId 원생 ID
      * @param method 체크 방법
+     * @param status 출석 상태 (null이면 PRESENT)
      * @param date 출석 날짜 (null이면 오늘, 과거 30일 이내)
-     * @param checkinAt 체크인 시각 (null이면 현재 시각 또는 date의 기본 시각)
+     * @param checkinAt 체크인 시각 (null이면 현재 시각 또는 date의 기본 시각, 결석/병결/공결은 무시)
      * @param note 비고 (선택)
      * @return 출석 기록
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
@@ -59,16 +59,21 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_DUPLICATE - 이미 출석 체크됨
      */
     @Transactional
-    public AttendanceRes checkIn(Long dojangId, Long studentId, CheckMethod method,
+    public AttendanceRes checkIn(Long dojangId, Long studentId, CheckMethod method, AttendanceStatus status,
                                   LocalDate date, LocalDateTime checkinAt, String note) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
         Student student = findStudentInDojang(studentId, dojangId, tenantId);
         LocalDate targetDate = resolveTargetDate(date);
-        LocalDateTime targetCheckinAt = resolveCheckinAt(targetDate, checkinAt);
 
-        Attendance attendance = saveAttendanceWithDuplicateCheck(student, method, targetCheckinAt, note);
+        AttendanceStatus targetStatus = status != null ? status : AttendanceStatus.PRESENT;
+        LocalDateTime targetCheckinAt = targetStatus == AttendanceStatus.PRESENT
+                ? resolveCheckinAt(targetDate, checkinAt)
+                : targetDate.atTime(DEFAULT_CHECKIN_TIME);
 
-        log.info("출석 체크 - attendanceId: {}, studentId: {}, dojangId: {}", attendance.getId(), studentId, dojangId);
+        Attendance attendance = saveAttendanceWithDuplicateCheck(student, method, targetStatus, targetCheckinAt, note);
+
+        log.info("출석 기록 생성 - attendanceId: {}, studentId: {}, status: {}, dojangId: {}",
+                attendance.getId(), studentId, targetStatus, dojangId);
         return AttendanceRes.from(attendance);
     }
 
@@ -86,35 +91,14 @@ public class AttendanceService {
     public BulkCheckRes bulkCheckIn(Long dojangId, List<Long> studentIds, CheckMethod method) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
-        Map<Long, Student> studentMap = findStudentsAsMap(studentIds, tenantId);
-        Set<Long> alreadyCheckedSet = findAlreadyCheckedStudentIds(tenantId, dojangId, studentIds);
-
         List<Student> validStudents = new ArrayList<>();
-        List<BulkCheckFailureRes> failureList = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
+        List<BulkCheckFailureRes> failures = new ArrayList<>();
+        validateAndCollectStudentsForCheckIn(tenantId, dojangId, studentIds, validStudents, failures);
 
-        for (Long studentId : studentIds) {
-            validateAndCollectStudent(studentId, dojangId, studentMap, alreadyCheckedSet, validStudents, failureList);
-        }
+        List<Attendance> attendances = createAndSaveBulkAttendances(validStudents, method, dojangId);
 
-        List<Attendance> attendances = validStudents.stream()
-                .map(student -> Attendance.create(student, method, now, null))
-                .toList();
-        attendanceRepository.saveAll(attendances);
-
-        List<AttendanceRes> successList = attendances.stream()
-                .map(AttendanceRes::from)
-                .toList();
-
-        log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}",
-                dojangId, successList.size(), failureList.size());
-
-        return BulkCheckRes.builder()
-                .successCount(successList.size())
-                .failureCount(failureList.size())
-                .successList(successList)
-                .failureList(failureList)
-                .build();
+        log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
+        return buildBulkCheckRes(attendances, failures);
     }
 
     /**
@@ -140,6 +124,28 @@ public class AttendanceService {
     }
 
     /**
+     * 퇴관 취소
+     *
+     * @param dojangId 도장 ID
+     * @param attendanceId 출석 기록 ID
+     * @return 업데이트된 출석 기록
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_NOT_CHECKOUT - 퇴관 기록이 없음
+     */
+    @Transactional
+    public AttendanceRes cancelCheckout(Long dojangId, Long attendanceId) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
+
+        attendance.cancelCheckout();
+
+        log.info("퇴관 취소 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
+        return AttendanceRes.from(attendance);
+    }
+
+    /**
      * 일괄 퇴관 처리
      *
      * @param dojangId 도장 ID
@@ -152,33 +158,13 @@ public class AttendanceService {
     public BulkCheckRes bulkCheckOut(Long dojangId, List<Long> attendanceIds) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
-        List<Attendance> attendances = attendanceRepository
-                .findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(tenantId, dojangId, attendanceIds);
-        Set<Long> foundIds = attendances.stream()
-                .map(Attendance::getId)
-                .collect(Collectors.toSet());
+        List<Attendance> attendances = findCheckableAttendances(tenantId, dojangId, attendanceIds);
+        List<BulkCheckFailureRes> failures = buildNotFoundFailures(attendanceIds, attendances);
 
-        List<BulkCheckFailureRes> failureList = attendanceIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .map(id -> buildFailure(id, AttendanceErrorCode.NOT_FOUND.getMessage()))
-                .toList();
+        processCheckOut(attendances);
 
-        LocalDateTime now = LocalDateTime.now();
-        attendances.forEach(attendance -> attendance.checkOut(now));
-
-        List<AttendanceRes> successList = attendances.stream()
-                .map(AttendanceRes::from)
-                .toList();
-
-        log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}",
-                dojangId, successList.size(), failureList.size());
-
-        return BulkCheckRes.builder()
-                .successCount(successList.size())
-                .failureCount(failureList.size())
-                .successList(successList)
-                .failureList(failureList)
-                .build();
+        log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
+        return buildBulkCheckRes(attendances, failures);
     }
 
     /**
@@ -206,24 +192,54 @@ public class AttendanceService {
     }
 
     /**
-     * 오늘 출석 현황 조회
+     * 출석 시간 변경
      *
      * @param dojangId 도장 ID
-     * @return 현재 출석 현황
+     * @param attendanceId 출석 기록 ID
+     * @param checkinAt 새로운 출석 시간 (null이면 변경 안 함)
+     * @param checkoutAt 새로운 퇴관 시간 (null이면 변경 안 함)
+     * @return 업데이트된 출석 기록
+     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
+     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
+     * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
+     * @throws BusinessException ATTENDANCE_CHECKOUT_BEFORE_CHECKIN - 퇴관 시간이 출석 시간보다 이전
+     */
+    @Transactional
+    public AttendanceRes changeTime(Long dojangId, Long attendanceId, LocalDateTime checkinAt, LocalDateTime checkoutAt) {
+        Long tenantId = validateDojangAndGetTenantId(dojangId);
+        Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
+
+        attendance.changeTime(checkinAt, checkoutAt);
+
+        log.info("출석 시간 변경 - attendanceId: {}, checkinAt: {}, checkoutAt: {}, dojangId: {}",
+                attendanceId, checkinAt, checkoutAt, dojangId);
+        return AttendanceRes.from(attendance);
+    }
+
+    /**
+     * 일괄 출석 상태 변경
+     *
+     * @param dojangId 도장 ID
+     * @param attendanceIds 출석 기록 ID 목록
+     * @param status 새로운 상태
+     * @param note 비고 (선택)
+     * @return 성공/실패 결과
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
      * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
-    @Transactional(readOnly = true)
-    public CurrentAttendanceRes getTodayAttendance(Long dojangId) {
+    @Transactional
+    public BulkCheckRes bulkChangeStatus(Long dojangId, List<Long> attendanceIds, AttendanceStatus status, String note) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
-        LocalDate today = LocalDate.now();
 
-        List<Attendance> attendances = attendanceRepository
-                .findByTenantIdAndDojangIdAndAttendanceDate(tenantId, dojangId, today);
-        int expectedCount = studentRepository
-                .findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
+        List<Attendance> attendances = attendanceRepository.findByTenantIdAndDojangIdAndIdIn(tenantId, dojangId, attendanceIds);
 
-        return buildCurrentAttendanceRes(attendances, expectedCount);
+        List<Attendance> successAttendances = new ArrayList<>();
+        List<BulkCheckFailureRes> failures = new ArrayList<>();
+        validateAndChangeStatus(attendanceIds, attendances, status, note, successAttendances, failures);
+
+        log.info("일괄 출석 상태 변경 - dojangId: {}, status: {}, success: {}, failure: {}",
+                dojangId, status, successAttendances.size(), failures.size());
+        return buildBulkCheckRes(successAttendances, failures);
     }
 
     /**
@@ -271,29 +287,10 @@ public class AttendanceService {
         findStudentInDojang(studentId, dojangId, tenantId);
 
         return attendanceRepository
-                .findByTenantIdAndStudentIdAndAttendanceDateBetween(tenantId, studentId, startDate, endDate)
+                .findByTenantIdAndDojangIdAndStudentIdAndAttendanceDateBetween(tenantId, dojangId, studentId, startDate, endDate)
                 .stream()
                 .map(AttendanceRes::from)
                 .toList();
-    }
-
-    /**
-     * 월간 출석 통계 조회
-     *
-     * @param dojangId 도장 ID
-     * @param yearMonth 연월
-     * @return 월간 통계
-     * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
-     * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
-     */
-    @Transactional(readOnly = true)
-    public AttendanceStatsRes getMonthlyStats(Long dojangId, YearMonth yearMonth) {
-        Long tenantId = validateDojangAndGetTenantId(dojangId);
-
-        Map<AttendanceStatus, Long> statusCounts = getStatusCountsForMonth(tenantId, dojangId, yearMonth);
-        int recordedDays = attendanceRepository.countDistinctDatesForMonth(
-                tenantId, dojangId, yearMonth.getYear(), yearMonth.getMonthValue());
-        return buildAttendanceStatsRes(statusCounts, recordedDays);
     }
 
     private Long validateDojangAndGetTenantId(Long dojangId) {
@@ -347,9 +344,9 @@ public class AttendanceService {
                 : targetDate.atTime(DEFAULT_CHECKIN_TIME);
     }
 
-    private Attendance saveAttendanceWithDuplicateCheck(Student student, CheckMethod method,
+    private Attendance saveAttendanceWithDuplicateCheck(Student student, CheckMethod method, AttendanceStatus status,
                                                          LocalDateTime checkinAt, String note) {
-        Attendance attendance = Attendance.create(student, method, checkinAt, note);
+        Attendance attendance = Attendance.create(student, method, status, checkinAt, note);
         try {
             return attendanceRepository.save(attendance);
         } catch (DataIntegrityViolationException e) {
@@ -393,20 +390,6 @@ public class AttendanceService {
         return BulkCheckFailureRes.builder().studentId(id).errorMessage(message).build();
     }
 
-    private CurrentAttendanceRes buildCurrentAttendanceRes(List<Attendance> attendances, int expectedCount) {
-        int presentCount = (int) attendances.stream()
-                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT).count();
-        int currentlyPresent = (int) attendances.stream()
-                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT && a.getCheckoutAt() == null).count();
-
-        return CurrentAttendanceRes.builder()
-                .presentCount(presentCount)
-                .expectedCount(expectedCount)
-                .currentlyPresent(currentlyPresent)
-                .attendanceList(attendances.stream().map(AttendanceRes::from).toList())
-                .build();
-    }
-
     private RangeAttendanceRes buildRangeAttendanceRes(List<Student> students,
                                                         List<Attendance> attendances,
                                                         LocalDate startDate, LocalDate endDate) {
@@ -436,8 +419,10 @@ public class AttendanceService {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         e -> AttendanceInfo.builder()
+                                .id(e.getValue().getId())
                                 .status(e.getValue().getStatus())
                                 .checkinAt(e.getValue().getCheckinAt())
+                                .checkoutAt(e.getValue().getCheckoutAt())
                                 .build()
                 ));
 
@@ -450,28 +435,80 @@ public class AttendanceService {
                 .build();
     }
 
-    private Map<AttendanceStatus, Long> getStatusCountsForMonth(Long tenantId, Long dojangId, YearMonth yearMonth) {
-        return attendanceRepository.countByStatusForMonth(tenantId, dojangId, yearMonth.getYear(), yearMonth.getMonthValue())
-                .stream()
-                .collect(Collectors.toMap(row -> (AttendanceStatus) row[0], row -> (Long) row[1]));
+    private void validateAndCollectStudentsForCheckIn(Long tenantId, Long dojangId, List<Long> studentIds,
+                                                       List<Student> validStudents, List<BulkCheckFailureRes> failures) {
+        Map<Long, Student> studentMap = findStudentsAsMap(studentIds, tenantId);
+        Set<Long> alreadyCheckedSet = findAlreadyCheckedStudentIds(tenantId, dojangId, studentIds);
+
+        for (Long studentId : studentIds) {
+            validateAndCollectStudent(studentId, dojangId, studentMap, alreadyCheckedSet, validStudents, failures);
+        }
     }
 
-    private AttendanceStatsRes buildAttendanceStatsRes(Map<AttendanceStatus, Long> counts, int totalDays) {
-        int present = counts.getOrDefault(AttendanceStatus.PRESENT, 0L).intValue();
-        int absent = counts.getOrDefault(AttendanceStatus.ABSENT, 0L).intValue();
-        int sick = counts.getOrDefault(AttendanceStatus.SICK, 0L).intValue();
-        int excused = counts.getOrDefault(AttendanceStatus.EXCUSED, 0L).intValue();
-        int total = present + absent + sick + excused;
+    private List<Attendance> createAndSaveBulkAttendances(List<Student> students, CheckMethod method, Long dojangId) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Attendance> attendances = students.stream()
+                .map(student -> Attendance.create(student, method, now, null))
+                .toList();
 
-        double rate = total > 0 ? (double) present / total * 100 : 0.0;
+        try {
+            attendanceRepository.saveAll(attendances);
+        } catch (DataIntegrityViolationException e) {
+            log.error("일괄 출석 체크 중복 발생 - dojangId: {}", dojangId, e);
+            throw new BusinessException(AttendanceErrorCode.DUPLICATE);
+        }
+        return attendances;
+    }
 
-        return AttendanceStatsRes.builder()
-                .totalDays(totalDays)
-                .presentCount(present)
-                .absentCount(absent)
-                .sickCount(sick)
-                .excusedCount(excused)
-                .attendanceRate(Math.round(rate * 100.0) / 100.0)
+    private BulkCheckRes buildBulkCheckRes(List<Attendance> attendances, List<BulkCheckFailureRes> failures) {
+        List<AttendanceRes> successList = attendances.stream()
+                .map(AttendanceRes::from)
+                .toList();
+
+        return BulkCheckRes.builder()
+                .successCount(successList.size())
+                .failureCount(failures.size())
+                .successList(successList)
+                .failureList(failures)
                 .build();
+    }
+
+    private List<Attendance> findCheckableAttendances(Long tenantId, Long dojangId, List<Long> attendanceIds) {
+        return attendanceRepository.findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(tenantId, dojangId, attendanceIds);
+    }
+
+    private List<BulkCheckFailureRes> buildNotFoundFailures(List<Long> requestedIds, List<Attendance> foundAttendances) {
+        Set<Long> foundIds = foundAttendances.stream()
+                .map(Attendance::getId)
+                .collect(Collectors.toSet());
+
+        return requestedIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .map(id -> buildFailure(id, AttendanceErrorCode.NOT_FOUND.getMessage()))
+                .toList();
+    }
+
+    private void processCheckOut(List<Attendance> attendances) {
+        LocalDateTime now = LocalDateTime.now();
+        attendances.forEach(attendance -> attendance.checkOut(now));
+    }
+
+    private void validateAndChangeStatus(List<Long> attendanceIds, List<Attendance> attendances,
+                                          AttendanceStatus status, String note,
+                                          List<Attendance> successAttendances, List<BulkCheckFailureRes> failures) {
+        Map<Long, Attendance> attendanceMap = attendances.stream()
+                .collect(Collectors.toMap(Attendance::getId, a -> a));
+
+        for (Long attendanceId : attendanceIds) {
+            Attendance attendance = attendanceMap.get(attendanceId);
+            if (attendance == null) {
+                failures.add(buildFailure(attendanceId, AttendanceErrorCode.NOT_FOUND.getMessage()));
+            } else if (attendance.getStatus() == status) {
+                failures.add(buildFailure(attendanceId, AttendanceErrorCode.SAME_STATUS.getMessage()));
+            } else {
+                attendance.changeStatus(status, note);
+                successAttendances.add(attendance);
+            }
+        }
     }
 }

@@ -1,14 +1,11 @@
 package com.maru.controller.attendance.dto;
 
-import com.maru.domain.attendance.AttendanceStatus;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
 
 @Builder
-public record AttendanceInfo(
-        Long id,
-        AttendanceStatus status,
+public record AttendanceTimeChangeReq(
         LocalDateTime checkinAt,
         LocalDateTime checkoutAt
 ) {
