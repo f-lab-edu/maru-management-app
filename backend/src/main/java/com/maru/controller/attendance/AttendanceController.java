@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
 
 @Slf4j
@@ -22,7 +21,7 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     /**
-     * 단일 출석 체크 API
+     * 단일 출석 기록 생성 API
      *
      * @param dojangId 도장 ID
      * @param request 출석 체크 요청 정보
@@ -38,6 +37,7 @@ public class AttendanceController {
                 dojangId,
                 request.studentId(),
                 request.method(),
+                request.status(),
                 request.date(),
                 request.checkinAt(),
                 request.note());
@@ -82,6 +82,23 @@ public class AttendanceController {
     }
 
     /**
+     * 퇴관 취소 API
+     *
+     * @param id 출석 기록 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 인증된 사용자 ID
+     * @return 업데이트된 출석 기록
+     */
+    @PatchMapping("/{id}/cancel-checkout")
+    public ResponseEntity<AttendanceRes> cancelCheckout(
+            @PathVariable Long id,
+            @RequestParam Long dojangId,
+            @CurrentUserId Long userId) {
+        AttendanceRes response = attendanceService.cancelCheckout(dojangId, id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 일괄 퇴관 처리 API
      *
      * @param dojangId 도장 ID
@@ -122,17 +139,46 @@ public class AttendanceController {
     }
 
     /**
-     * 오늘 출석 현황 조회 API
+     * 출석 시간 변경 API
+     *
+     * @param id 출석 기록 ID
+     * @param dojangId 도장 ID
+     * @param request 시간 변경 요청 정보
+     * @param userId 현재 인증된 사용자 ID
+     * @return 업데이트된 출석 기록
+     */
+    @PatchMapping("/{id}/time")
+    public ResponseEntity<AttendanceRes> changeTime(
+            @PathVariable Long id,
+            @RequestParam Long dojangId,
+            @Valid @RequestBody AttendanceTimeChangeReq request,
+            @CurrentUserId Long userId) {
+        AttendanceRes response = attendanceService.changeTime(
+                dojangId,
+                id,
+                request.checkinAt(),
+                request.checkoutAt());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 일괄 출석 상태 변경 API
      *
      * @param dojangId 도장 ID
+     * @param request 일괄 상태 변경 요청 정보
      * @param userId 현재 인증된 사용자 ID
-     * @return 오늘 출석 현황
+     * @return 성공/실패 결과
      */
-    @GetMapping("/today")
-    public ResponseEntity<CurrentAttendanceRes> getTodayAttendance(
+    @PostMapping("/bulk-status")
+    public ResponseEntity<BulkCheckRes> bulkChangeStatus(
             @RequestParam Long dojangId,
+            @Valid @RequestBody BulkStatusChangeReq request,
             @CurrentUserId Long userId) {
-        CurrentAttendanceRes response = attendanceService.getTodayAttendance(dojangId);
+        BulkCheckRes response = attendanceService.bulkChangeStatus(
+                dojangId,
+                request.attendanceIds(),
+                request.status(),
+                request.note());
         return ResponseEntity.ok(response);
     }
 
@@ -154,23 +200,6 @@ public class AttendanceController {
             @RequestParam LocalDate endDate,
             @CurrentUserId Long userId) {
         List<AttendanceRes> response = attendanceService.getHistory(dojangId, studentId, startDate, endDate);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 월간 출석 통계 조회 API
-     *
-     * @param dojangId 도장 ID
-     * @param yearMonth 연월
-     * @param userId 현재 인증된 사용자 ID
-     * @return 월간 통계
-     */
-    @GetMapping("/stats/monthly")
-    public ResponseEntity<AttendanceStatsRes> getMonthlyStats(
-            @RequestParam Long dojangId,
-            @RequestParam YearMonth yearMonth,
-            @CurrentUserId Long userId) {
-        AttendanceStatsRes response = attendanceService.getMonthlyStats(dojangId, yearMonth);
         return ResponseEntity.ok(response);
     }
 

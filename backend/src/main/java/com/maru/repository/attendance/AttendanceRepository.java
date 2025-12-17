@@ -15,21 +15,12 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
         SELECT a FROM Attendance a
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
-          AND a.attendanceDate = :date
-        """)
-    List<Attendance> findByTenantIdAndDojangIdAndAttendanceDate(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("date") LocalDate date);
-
-    @Query("""
-        SELECT a FROM Attendance a
-        WHERE a.tenantId = :tenantId
           AND a.student.id = :studentId
           AND a.attendanceDate BETWEEN :startDate AND :endDate
         """)
-    List<Attendance> findByTenantIdAndStudentIdAndAttendanceDateBetween(
+    List<Attendance> findByTenantIdAndDojangIdAndStudentIdAndAttendanceDateBetween(
             @Param("tenantId") Long tenantId,
+            @Param("dojangId") Long dojangId,
             @Param("studentId") Long studentId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
@@ -59,36 +50,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             @Param("date") LocalDate date);
 
     @Query("""
-        SELECT a.status, COUNT(a)
-        FROM Attendance a
-        WHERE a.tenantId = :tenantId
-          AND a.dojangId = :dojangId
-          AND YEAR(a.attendanceDate) = :year
-          AND MONTH(a.attendanceDate) = :month
-        GROUP BY a.status
-        """)
-    List<Object[]> countByStatusForMonth(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("year") int year,
-            @Param("month") int month);
-
-    @Query("""
-        SELECT COUNT(DISTINCT a.attendanceDate)
-        FROM Attendance a
-        WHERE a.tenantId = :tenantId
-          AND a.dojangId = :dojangId
-          AND YEAR(a.attendanceDate) = :year
-          AND MONTH(a.attendanceDate) = :month
-        """)
-    int countDistinctDatesForMonth(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("year") int year,
-            @Param("month") int month);
-
-    @Query("""
         SELECT a FROM Attendance a
+        JOIN FETCH a.student
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
           AND a.attendanceDate BETWEEN :startDate AND :endDate
@@ -107,6 +70,17 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.checkoutAt IS NULL
         """)
     List<Attendance> findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(
+            @Param("tenantId") Long tenantId,
+            @Param("dojangId") Long dojangId,
+            @Param("ids") List<Long> ids);
+
+    @Query("""
+        SELECT a FROM Attendance a
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.id IN :ids
+        """)
+    List<Attendance> findByTenantIdAndDojangIdAndIdIn(
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
             @Param("ids") List<Long> ids);
