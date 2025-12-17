@@ -1,62 +1,93 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AttendanceStatus } from '../types';
-
-/**
- * 출석 체크 요청 타입
- */
-export interface AttendanceCheckRequest {
-  studentId: string;
-  date: string;
-  status: AttendanceStatus;
-  checkinAt: string;
-  memo?: string;
-}
-
-/**
- * 출석 체크 응답 타입
- */
-export interface AttendanceCheckResponse {
-  id: string;
-  studentId: string;
-  status: AttendanceStatus;
-  date: string;
-  checkinAt: string;
-  memo?: string;
-}
-
-/**
- * 출석 상태 수정 요청 타입
- */
-interface AttendanceStatusUpdateRequest {
-  id: string;
-  status: AttendanceStatus;
-  notes?: string;
-}
-
-/**
- * 퇴관 처리 요청 타입
- */
-interface AttendanceCheckoutRequest {
-  id: string;
-  checkoutAt: string;
-}
+import { attendanceService } from '@/services/attendanceService';
+import type {
+  AttendanceResponse,
+  BulkCheckResponse,
+  AttendanceCheckRequest,
+  BulkCheckRequest,
+  AttendanceStatusChangeRequest,
+  BulkStatusChangeRequest,
+  AttendanceTimeChangeRequest,
+} from '../types';
 
 /**
  * 출석 체크 mutation
  */
-export function useAttendanceCheck(_dojangId: number | null) {
+export function useAttendanceCheck(dojangId: number | null) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: AttendanceCheckRequest): Promise<AttendanceCheckResponse> => {
-      console.log('출석 체크:', data);
+  return useMutation<AttendanceResponse, Error, AttendanceCheckRequest>({
+    mutationFn: (request) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.checkIn(dojangId, request);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+  });
+}
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+/**
+ * 일괄 출석 체크 mutation
+ */
+export function useBulkCheckIn(dojangId: number | null) {
+  const queryClient = useQueryClient();
 
-      return {
-        id: `attendance-${Date.now()}`,
-        ...data,
-      };
+  return useMutation<BulkCheckResponse, Error, BulkCheckRequest>({
+    mutationFn: (request) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.bulkCheckIn(dojangId, request);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+  });
+}
+
+/**
+ * 퇴관 처리 mutation
+ */
+export function useAttendanceCheckout(dojangId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<AttendanceResponse, Error, number>({
+    mutationFn: (attendanceId) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.checkout(dojangId, attendanceId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+  });
+}
+
+/**
+ * 퇴관 취소 mutation
+ */
+export function useCancelCheckout(dojangId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<AttendanceResponse, Error, number>({
+    mutationFn: (attendanceId) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.cancelCheckout(dojangId, attendanceId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+  });
+}
+
+/**
+ * 일괄 퇴관 처리 mutation
+ */
+export function useBulkCheckout(dojangId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<BulkCheckResponse, Error, number[]>({
+    mutationFn: (attendanceIds) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.bulkCheckout(dojangId, attendanceIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
@@ -67,41 +98,58 @@ export function useAttendanceCheck(_dojangId: number | null) {
 /**
  * 출석 상태 수정 mutation
  */
-export function useAttendanceStatusUpdate(_dojangId: number | null) {
+export function useAttendanceStatusUpdate(dojangId: number | null) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: AttendanceStatusUpdateRequest) => {
-      console.log('상태 수정:', data);
-      return data;
+  return useMutation<
+    AttendanceResponse,
+    Error,
+    { attendanceId: number; request: AttendanceStatusChangeRequest }
+  >({
+    mutationFn: ({ attendanceId, request }) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.changeStatus(dojangId, attendanceId, request);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-    },
-    onError: (error) => {
-      console.error('상태 수정 실패:', error);
-      throw new Error('출석 상태 수정에 실패했습니다');
     },
   });
 }
 
 /**
- * 퇴관 처리 mutation
+ * 일괄 상태 변경 mutation
  */
-export function useAttendanceCheckout(_dojangId: number | null) {
+export function useBulkStatusChange(dojangId: number | null) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: AttendanceCheckoutRequest) => {
-      console.log('퇴관 처리:', data);
-      return data;
+  return useMutation<BulkCheckResponse, Error, BulkStatusChangeRequest>({
+    mutationFn: (request) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.bulkChangeStatus(dojangId, request);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
-    onError: (error) => {
-      console.error('퇴관 처리 실패:', error);
-      throw new Error('퇴관 처리에 실패했습니다');
+  });
+}
+
+/**
+ * 시간 변경 mutation
+ */
+export function useAttendanceTimeChange(dojangId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    AttendanceResponse,
+    Error,
+    { attendanceId: number; request: AttendanceTimeChangeRequest }
+  >({
+    mutationFn: ({ attendanceId, request }) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return attendanceService.changeTime(dojangId, attendanceId, request);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     },
   });
 }

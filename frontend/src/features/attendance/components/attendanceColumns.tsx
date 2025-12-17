@@ -2,8 +2,9 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { AttendanceStatusBadge } from './AttendanceStatusBadge';
-import type { RangeStudentRow, ViewMode, AttendanceStatus } from '../types';
+import type { StudentAttendanceRow, ViewMode, AttendanceStatus } from '../types';
 import { ATTENDANCE_STATUS_LABELS } from '../constants';
+import { isToday } from '../utils/dateUtils';
 
 interface ColumnOptions {
   dates: string[];
@@ -11,10 +12,10 @@ interface ColumnOptions {
 }
 
 const STATUS_DOT_COLORS: Record<AttendanceStatus, string> = {
-  PRESENT: 'bg-foreground',
-  ABSENT: 'bg-muted-foreground/70',
-  SICK: 'bg-muted-foreground/50',
-  EXCUSED: 'bg-muted-foreground/30',
+  PRESENT: 'bg-emerald-600',
+  ABSENT: 'bg-red-500',
+  SICK: 'bg-amber-500',
+  EXCUSED: 'bg-blue-500',
 };
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -46,21 +47,23 @@ function StatusDot({ status }: { status: AttendanceStatus | null }) {
   );
 }
 
-export function createAttendanceColumns({ dates, viewMode }: ColumnOptions): ColumnDef<RangeStudentRow>[] {
-  const dateColumns: ColumnDef<RangeStudentRow>[] = dates.map((date) => {
+export function createAttendanceColumns({ dates, viewMode }: ColumnOptions): ColumnDef<StudentAttendanceRow>[] {
+  const dateColumns: ColumnDef<StudentAttendanceRow>[] = dates.map((date) => {
     const { day, date: subText } = formatDayHeader(date, viewMode);
+    const isTodayDate = isToday(date);
 
     return {
       id: `date-${date}`,
       header: () => (
         <div className="flex flex-col items-center leading-tight">
-          <span className="text-xs font-medium">{day}</span>
-          <span className="text-[10px] text-muted-foreground">{subText}</span>
+          <span className={`text-xs font-medium ${isTodayDate ? 'text-primary' : ''}`}>{day}</span>
+          <span className={`text-[10px] ${isTodayDate ? 'text-primary' : 'text-muted-foreground'}`}>{subText}</span>
         </div>
       ),
       cell: ({ row }) => {
         const attendance = row.original.attendances[date];
         const status = attendance?.status ?? null;
+        const checkoutAt = attendance?.checkoutAt ?? null;
 
         if (viewMode === 'monthly') {
           return (
@@ -72,7 +75,7 @@ export function createAttendanceColumns({ dates, viewMode }: ColumnOptions): Col
 
         return (
           <div className="flex justify-center">
-            <AttendanceStatusBadge status={status} size="sm" />
+            <AttendanceStatusBadge status={status} checkoutAt={checkoutAt} date={date} size="sm" />
           </div>
         );
       },
@@ -89,7 +92,13 @@ export function createAttendanceColumns({ dates, viewMode }: ColumnOptions): Col
       cell: ({ row }) => {
         const student = row.original;
         return (
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer -m-4 p-4"
+            onClick={(e) => {
+              e.stopPropagation();
+              row.toggleSelected();
+            }}
+          >
             <Avatar className="h-7 w-7">
               <AvatarImage src={student.photoUrl ?? undefined} alt={student.name} />
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">

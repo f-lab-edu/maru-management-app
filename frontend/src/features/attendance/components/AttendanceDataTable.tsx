@@ -1,22 +1,16 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useRef, memo, useEffect, useMemo } from 'react';
 import {
   ColumnDef,
   SortingState,
-  PaginationState,
+  RowSelectionState,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   useReactTable,
   Row,
 } from '@tanstack/react-table';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,23 +21,22 @@ import {
 } from '@/shared/components/ui/table';
 import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
-
-const ROW_HEIGHT = 53;
-const TABLE_HEADER_HEIGHT = 49;
-const PAGINATION_HEIGHT = 57;
-const MIN_PAGE_SIZE = 3;
-const MAX_PAGE_SIZE = 20;
+import { Checkbox } from '@/shared/components/ui/checkbox';
+import { getTodayISO } from '../utils/dateUtils';
 
 const NAME_COL_WIDTH = 140;
+const CHECKBOX_COL_WIDTH = 40;
 const RATE_COL_WIDTH = 110;
 const SUMMARY_COL_WIDTH = 140;
 
-interface AttendanceDataTableProps<TData> {
+interface AttendanceDataTableProps<TData extends { id: number }> {
   columns: ColumnDef<TData>[];
   data: TData[];
   isLoading?: boolean;
   onRowClick?: (row: TData) => void;
   globalFilter?: string;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: (selection: RowSelectionState) => void;
 }
 
 function TableSkeleton({ columnCount, rowCount }: { columnCount: number; rowCount: number }) {
@@ -66,29 +59,42 @@ interface MemoizedRowProps<TData> {
   row: Row<TData>;
   onRowClick?: (row: TData) => void;
   columnCount: number;
+  hasCheckbox: boolean;
+  todayColumnId: string;
 }
 
 const MemoizedRow = memo(function MemoizedRow<TData>({
   row,
   onRowClick,
   columnCount,
+  hasCheckbox,
+  todayColumnId,
 }: MemoizedRowProps<TData>) {
   const cells = row.getVisibleCells();
   const lastTwoStart = columnCount - 2;
+  const nameColIndex = hasCheckbox ? 1 : 0;
 
   return (
     <TableRow
       className="cursor-pointer hover:bg-muted/50"
       onClick={() => onRowClick?.(row.original)}
+      data-state={row.getIsSelected() && 'selected'}
     >
       {cells.map((cell, index) => {
-        let className = '';
+        const isToday = cell.column.id === todayColumnId;
+        let className = isToday ? 'bg-primary/10' : '';
         let style: React.CSSProperties = { width: cell.column.columnDef.size };
 
-        // 첫 번째 컬럼 (이름) - 왼쪽 고정
-        if (index === 0) {
+        // 체크박스 컬럼 - 왼쪽 고정
+        if (hasCheckbox && index === 0) {
           className = 'sticky left-0 z-10 bg-white';
-          style = { ...style, minWidth: NAME_COL_WIDTH, boxShadow: '2px 0 0 0 hsl(var(--border))' };
+          style = { ...style, minWidth: CHECKBOX_COL_WIDTH };
+        }
+        // 이름 컬럼 - 왼쪽 고정 (체크박스 다음)
+        else if (index === nameColIndex) {
+          className = 'sticky z-10 bg-white';
+          const leftOffset = hasCheckbox ? CHECKBOX_COL_WIDTH : 0;
+          style = { ...style, left: leftOffset, minWidth: NAME_COL_WIDTH, boxShadow: '2px 0 0 0 hsl(var(--border))' };
         }
         // 마지막 두 컬럼 (출석률, 상세) - 오른쪽 고정
         else if (index === lastTwoStart) {
@@ -109,68 +115,87 @@ const MemoizedRow = memo(function MemoizedRow<TData>({
   );
 }) as <TData>(props: MemoizedRowProps<TData>) => JSX.Element;
 
-export function AttendanceDataTable<TData>({
+export function AttendanceDataTable<TData extends { id: number }>({
   columns,
   data,
   isLoading,
   onRowClick,
   globalFilter = '',
+  rowSelection = {},
+  onRowSelectionChange,
 }: AttendanceDataTableProps<TData>) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [pageSize, setPageSize] = useState(MIN_PAGE_SIZE);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: MIN_PAGE_SIZE,
-  });
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
 
-  // 컨테이너 높이 기반 pageSize 계산
+  const hasCheckbox = !!onRowSelectionChange;
+  const effectiveRowSelection = onRowSelectionChange ? rowSelection : internalRowSelection;
+
+  // 외부 rowSelection이 변경되면 내부 상태도 동기화
   useEffect(() => {
-    const calculatePageSize = () => {
-      if (!containerRef.current) return;
-
-      const containerHeight = containerRef.current.clientHeight;
-      const availableHeight = containerHeight - TABLE_HEADER_HEIGHT - PAGINATION_HEIGHT;
-      const calculated = Math.floor(availableHeight / ROW_HEIGHT);
-      const newPageSize = Math.max(MIN_PAGE_SIZE, Math.min(MAX_PAGE_SIZE, calculated));
-
-      if (newPageSize !== pageSize) {
-        setPageSize(newPageSize);
-        setPagination({ pageIndex: 0, pageSize: newPageSize });
-      }
-    };
-
-    calculatePageSize();
-
-    const resizeObserver = new ResizeObserver(calculatePageSize);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
+    if (onRowSelectionChange) {
+      setInternalRowSelection(rowSelection);
     }
+  }, [rowSelection, onRowSelectionChange]);
 
-    return () => resizeObserver.disconnect();
-  }, [pageSize]);
-
-  // 필터 변경 시 첫 페이지로 이동
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [globalFilter]);
+  // 체크박스 컬럼 추가
+  const columnsWithCheckbox: ColumnDef<TData>[] = hasCheckbox
+    ? [
+        {
+          id: 'select',
+          header: ({ table }) => (
+            <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="전체 선택"
+              />
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="행 선택"
+              />
+            </div>
+          ),
+          size: CHECKBOX_COL_WIDTH,
+          minSize: CHECKBOX_COL_WIDTH,
+          maxSize: CHECKBOX_COL_WIDTH,
+          enableSorting: false,
+          enableHiding: false,
+        },
+        ...columns,
+      ]
+    : columns;
 
   const table = useReactTable({
     data,
-    columns,
+    columns: columnsWithCheckbox,
     state: {
       sorting,
       globalFilter,
-      pagination,
+      rowSelection: effectiveRowSelection,
     },
-    autoResetPageIndex: false,
+    enableRowSelection: hasCheckbox,
     onSortingChange: setSorting,
-    onPaginationChange: setPagination,
+    onRowSelectionChange: (updater) => {
+      const newSelection = typeof updater === 'function' ? updater(effectiveRowSelection) : updater;
+      if (onRowSelectionChange) {
+        onRowSelectionChange(newSelection);
+      } else {
+        setInternalRowSelection(newSelection);
+      }
+    },
+    getRowId: (row) => String(row.id),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
   const handleScrollLeft = () => {
@@ -181,24 +206,28 @@ export function AttendanceDataTable<TData>({
     scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' });
   };
 
-  const columnCount = columns.length;
+  const columnCount = columnsWithCheckbox.length;
   const lastTwoStart = columnCount - 2;
+  const nameColIndex = hasCheckbox ? 1 : 0;
+
+  // 오늘 날짜 컬럼 ID
+  const todayColumnId = useMemo(() => `date-${getTodayISO()}`, []);
 
   // 컬럼 size 합계로 테이블 최소 너비 계산
-  const tableMinWidth = columns.reduce((sum, col) => {
+  const tableMinWidth = columnsWithCheckbox.reduce((sum, col) => {
     const colDef = col as { size?: number; minSize?: number };
     return sum + (colDef.size ?? colDef.minSize ?? 50);
   }, 0);
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col rounded-xl border bg-white shadow-sm">
+    <div className="h-full flex flex-col rounded-xl border bg-white shadow-sm">
       {/* 스크롤 버튼 */}
-      <div className="relative z-30 flex items-center justify-center gap-2 py-1 border-b bg-muted/30 pointer-events-auto">
+      <div className="relative z-30 flex items-center justify-center gap-2 py-1 border-b bg-muted/30">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-6 px-2 text-xs hover:bg-muted pointer-events-auto"
+          className="h-6 px-2 text-xs hover:bg-muted"
           onClick={handleScrollLeft}
         >
           <ChevronLeft className="h-3 w-3 mr-1" />
@@ -209,7 +238,7 @@ export function AttendanceDataTable<TData>({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-6 px-2 text-xs hover:bg-muted pointer-events-auto"
+          className="h-6 px-2 text-xs hover:bg-muted"
           onClick={handleScrollRight}
         >
           다음
@@ -223,24 +252,31 @@ export function AttendanceDataTable<TData>({
           wrapperClassName="h-full overflow-x-auto overflow-y-auto"
           style={{ minWidth: `${tableMinWidth}px` }}
         >
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-20 bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header, index) => {
-                  let className = '';
+                  const isToday = header.column.id === todayColumnId;
+                  let className = isToday ? 'bg-primary/10' : 'bg-muted/50';
                   let style: React.CSSProperties = { width: header.column.columnDef.size };
 
-                  // 첫 번째 컬럼 (이름) - 왼쪽 고정
-                  if (index === 0) {
-                    className = 'sticky left-0 z-20 bg-muted/50';
-                    style = { ...style, minWidth: NAME_COL_WIDTH, boxShadow: '2px 0 0 0 hsl(var(--border))' };
+                  // 체크박스 컬럼 - 왼쪽 고정
+                  if (hasCheckbox && index === 0) {
+                    className = 'sticky left-0 z-30 bg-muted/50';
+                    style = { ...style, minWidth: CHECKBOX_COL_WIDTH };
+                  }
+                  // 이름 컬럼 - 왼쪽 고정
+                  else if (index === nameColIndex) {
+                    className = 'sticky z-30 bg-muted/50';
+                    const leftOffset = hasCheckbox ? CHECKBOX_COL_WIDTH : 0;
+                    style = { ...style, left: leftOffset, minWidth: NAME_COL_WIDTH, boxShadow: '2px 0 0 0 hsl(var(--border))' };
                   }
                   // 마지막 두 컬럼 (출석률, 상세) - 오른쪽 고정
                   else if (index === lastTwoStart) {
-                    className = 'sticky z-20 bg-muted/50';
+                    className = 'sticky z-30 bg-muted/50';
                     style = { ...style, right: SUMMARY_COL_WIDTH, minWidth: RATE_COL_WIDTH, boxShadow: '-2px 0 0 0 hsl(var(--border))' };
                   } else if (index === lastTwoStart + 1) {
-                    className = 'sticky z-20 bg-muted/50';
+                    className = 'sticky z-30 bg-muted/50';
                     style = { ...style, right: 0, minWidth: SUMMARY_COL_WIDTH };
                   }
 
@@ -257,7 +293,7 @@ export function AttendanceDataTable<TData>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableSkeleton columnCount={columnCount} rowCount={pageSize} />
+              <TableSkeleton columnCount={columnCount} rowCount={10} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <MemoizedRow
@@ -265,6 +301,8 @@ export function AttendanceDataTable<TData>({
                   row={row}
                   onRowClick={onRowClick}
                   columnCount={columnCount}
+                  hasCheckbox={hasCheckbox}
+                  todayColumnId={todayColumnId}
                 />
               ))
             ) : (
@@ -278,50 +316,12 @@ export function AttendanceDataTable<TData>({
         </Table>
       </div>
 
-      {/* 페이지네이션 */}
-      {!isLoading && table.getFilteredRowModel().rows.length > 0 && (
-        <div className="flex items-center justify-center gap-2 border-t px-4 py-3 shrink-0">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          <span className="text-sm text-muted-foreground px-2">
-            {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1}
+      {/* 선택 정보 표시 */}
+      {hasCheckbox && Object.keys(effectiveRowSelection).length > 0 && (
+        <div className="flex items-center justify-between border-t px-4 py-2 bg-muted/30 shrink-0">
+          <span className="text-sm text-muted-foreground">
+            {Object.keys(effectiveRowSelection).length}명 선택됨
           </span>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => table.lastPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
         </div>
       )}
     </div>

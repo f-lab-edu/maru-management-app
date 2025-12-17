@@ -16,10 +16,10 @@ interface AttendanceChartCardProps {
 }
 
 const COLORS = {
-  present: 'hsl(var(--foreground))',
-  absent: 'hsl(var(--muted-foreground) / 0.7)',
-  sick: 'hsl(var(--muted-foreground) / 0.5)',
-  excused: 'hsl(var(--muted-foreground) / 0.3)',
+  present: '#059669', // emerald-600
+  absent: '#ef4444',  // red-500
+  sick: '#f59e0b',    // amber-500
+  excused: '#3b82f6', // blue-500
 };
 
 export function AttendanceChartCard({ data, periodLabel }: AttendanceChartCardProps) {
@@ -38,13 +38,13 @@ export function AttendanceChartCard({ data, periodLabel }: AttendanceChartCardPr
 
   if (total === 0) {
     return (
-      <Card className="border shadow-sm h-full">
-        <CardHeader className="pb-2">
+      <Card className="border shadow-sm h-full flex flex-col">
+        <CardHeader className="pb-2 shrink-0">
           <CardTitle className="text-xs font-medium text-muted-foreground">
             {periodLabel} 출석 현황
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[180px]">
+        <CardContent className="flex-1 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">데이터가 없습니다</p>
         </CardContent>
       </Card>
@@ -52,8 +52,8 @@ export function AttendanceChartCard({ data, periodLabel }: AttendanceChartCardPr
   }
 
   return (
-    <Card className="border shadow-sm h-full">
-      <CardHeader className="pb-2">
+    <Card className="border shadow-sm h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xs font-medium text-muted-foreground">
             {periodLabel} 출석 현황
@@ -61,8 +61,8 @@ export function AttendanceChartCard({ data, periodLabel }: AttendanceChartCardPr
           <span className="text-lg font-bold">{attendanceRate}%</span>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="h-[180px]">
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="h-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

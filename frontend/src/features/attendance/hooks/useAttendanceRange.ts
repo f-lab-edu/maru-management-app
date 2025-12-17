@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { mockRangeAttendance } from '../mocks/attendanceMockData';
+import { attendanceService } from '@/services/attendanceService';
 import type { RangeAttendanceResponse } from '../types';
 
 const QUERY_KEYS = {
@@ -25,14 +25,7 @@ interface UseAttendanceRangeParams {
 export function useAttendanceRange({ dojangId, startDate, endDate }: UseAttendanceRangeParams) {
   return useQuery<RangeAttendanceResponse>({
     queryKey: QUERY_KEYS.range(dojangId ?? 0, startDate, endDate),
-    queryFn: async () => {
-      // TODO: API 연동
-      // const response = await api.get('/api/v1/attendance/range', {
-      //   params: { startDate, endDate }
-      // });
-      // return response.data.data;
-      return mockRangeAttendance;
-    },
+    queryFn: () => attendanceService.getRange(dojangId!, startDate, endDate),
     enabled: !!dojangId && !!startDate && !!endDate,
   });
 }

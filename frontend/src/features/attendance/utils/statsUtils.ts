@@ -1,4 +1,4 @@
-import type { RangeStudentRow, AttendanceStatus } from '../types';
+import type { StudentAttendanceRow, AttendanceStatus } from '../types';
 
 interface AttendanceSummary {
   totalStudents: number;
@@ -12,7 +12,7 @@ interface AttendanceSummary {
  * 기간별 출석 데이터에서 통계 계산
  */
 export function calculateAttendanceSummary(
-  students: RangeStudentRow[],
+  students: StudentAttendanceRow[],
   dates: string[]
 ): AttendanceSummary {
   const summary: AttendanceSummary = {
@@ -53,7 +53,7 @@ export function calculateAttendanceSummary(
  * 오늘 날짜 기준 통계 계산
  */
 export function calculateTodaySummary(
-  students: RangeStudentRow[],
+  students: StudentAttendanceRow[],
   todayDate: string
 ): AttendanceSummary {
   return calculateAttendanceSummary(students, [todayDate]);
@@ -63,7 +63,7 @@ export function calculateTodaySummary(
  * 필터링된 학생 목록에서 특정 상태의 학생 수 계산
  */
 export function countByStatus(
-  students: RangeStudentRow[],
+  students: StudentAttendanceRow[],
   date: string,
   status: AttendanceStatus
 ): number {

@@ -51,7 +51,17 @@ export function createStudentColumns({ onEdit, onDelete, onStatusChange }: Colum
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <StudentNameCell student={row.original} />,
+      cell: ({ row }) => (
+        <div
+          className="cursor-pointer -m-4 p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            row.toggleSelected();
+          }}
+        >
+          <StudentNameCell student={row.original} />
+        </div>
+      ),
     },
     {
       accessorKey: 'birth',

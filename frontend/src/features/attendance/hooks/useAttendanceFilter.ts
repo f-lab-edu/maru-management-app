@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { RangeStudentRow, AttendanceStatus } from '../types';
+import type { StudentAttendanceRow, AttendanceStatus } from '../types';
 
 interface UseAttendanceFilterParams {
-  students: RangeStudentRow[];
+  students: StudentAttendanceRow[];
   searchQuery: string;
   statusFilter: AttendanceStatus | 'ALL';
 }
