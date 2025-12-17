@@ -91,41 +91,14 @@ public class AttendanceService {
     public BulkCheckRes bulkCheckIn(Long dojangId, List<Long> studentIds, CheckMethod method) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
-        Map<Long, Student> studentMap = findStudentsAsMap(studentIds, tenantId);
-        Set<Long> alreadyCheckedSet = findAlreadyCheckedStudentIds(tenantId, dojangId, studentIds);
-
         List<Student> validStudents = new ArrayList<>();
-        List<BulkCheckFailureRes> failureList = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
+        List<BulkCheckFailureRes> failures = new ArrayList<>();
+        validateAndCollectStudentsForCheckIn(tenantId, dojangId, studentIds, validStudents, failures);
 
-        for (Long studentId : studentIds) {
-            validateAndCollectStudent(studentId, dojangId, studentMap, alreadyCheckedSet, validStudents, failureList);
-        }
+        List<Attendance> attendances = createAndSaveBulkAttendances(validStudents, method, dojangId);
 
-        List<Attendance> attendances = validStudents.stream()
-                .map(student -> Attendance.create(student, method, now, null))
-                .toList();
-
-        try {
-            attendanceRepository.saveAll(attendances);
-        } catch (DataIntegrityViolationException e) {
-            log.error("일괄 출석 체크 중복 발생 - dojangId: {}", dojangId, e);
-            throw new BusinessException(AttendanceErrorCode.DUPLICATE);
-        }
-
-        List<AttendanceRes> successList = attendances.stream()
-                .map(AttendanceRes::from)
-                .toList();
-
-        log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}",
-                dojangId, successList.size(), failureList.size());
-
-        return BulkCheckRes.builder()
-                .successCount(successList.size())
-                .failureCount(failureList.size())
-                .successList(successList)
-                .failureList(failureList)
-                .build();
+        log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
+        return buildBulkCheckRes(attendances, failures);
     }
 
     /**
@@ -185,33 +158,13 @@ public class AttendanceService {
     public BulkCheckRes bulkCheckOut(Long dojangId, List<Long> attendanceIds) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
-        List<Attendance> attendances = attendanceRepository
-                .findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(tenantId, dojangId, attendanceIds);
-        Set<Long> foundIds = attendances.stream()
-                .map(Attendance::getId)
-                .collect(Collectors.toSet());
+        List<Attendance> attendances = findCheckableAttendances(tenantId, dojangId, attendanceIds);
+        List<BulkCheckFailureRes> failures = buildNotFoundFailures(attendanceIds, attendances);
 
-        List<BulkCheckFailureRes> failureList = attendanceIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .map(id -> buildFailure(id, AttendanceErrorCode.NOT_FOUND.getMessage()))
-                .toList();
+        processCheckOut(attendances);
 
-        LocalDateTime now = LocalDateTime.now();
-        attendances.forEach(attendance -> attendance.checkOut(now));
-
-        List<AttendanceRes> successList = attendances.stream()
-                .map(AttendanceRes::from)
-                .toList();
-
-        log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}",
-                dojangId, successList.size(), failureList.size());
-
-        return BulkCheckRes.builder()
-                .successCount(successList.size())
-                .failureCount(failureList.size())
-                .successList(successList)
-                .failureList(failureList)
-                .build();
+        log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
+        return buildBulkCheckRes(attendances, failures);
     }
 
     /**
@@ -278,49 +231,15 @@ public class AttendanceService {
     public BulkCheckRes bulkChangeStatus(Long dojangId, List<Long> attendanceIds, AttendanceStatus status, String note) {
         Long tenantId = validateDojangAndGetTenantId(dojangId);
 
-        List<Attendance> attendances = attendanceRepository
-                .findByTenantIdAndDojangIdAndIdIn(tenantId, dojangId, attendanceIds);
-        Set<Long> foundIds = attendances.stream()
-                .map(Attendance::getId)
-                .collect(Collectors.toSet());
+        List<Attendance> attendances = attendanceRepository.findByTenantIdAndDojangIdAndIdIn(tenantId, dojangId, attendanceIds);
 
-        List<BulkCheckFailureRes> failureList = new ArrayList<>();
         List<Attendance> successAttendances = new ArrayList<>();
-
-        for (Long attendanceId : attendanceIds) {
-            if (!foundIds.contains(attendanceId)) {
-                failureList.add(buildFailure(attendanceId, AttendanceErrorCode.NOT_FOUND.getMessage()));
-                continue;
-            }
-
-            Attendance attendance = attendances.stream()
-                    .filter(a -> a.getId().equals(attendanceId))
-                    .findFirst()
-                    .orElse(null);
-
-            if (attendance != null) {
-                if (attendance.getStatus() == status) {
-                    failureList.add(buildFailure(attendanceId, AttendanceErrorCode.SAME_STATUS.getMessage()));
-                } else {
-                    attendance.changeStatus(status, note);
-                    successAttendances.add(attendance);
-                }
-            }
-        }
-
-        List<AttendanceRes> successList = successAttendances.stream()
-                .map(AttendanceRes::from)
-                .toList();
+        List<BulkCheckFailureRes> failures = new ArrayList<>();
+        validateAndChangeStatus(attendanceIds, attendances, status, note, successAttendances, failures);
 
         log.info("일괄 출석 상태 변경 - dojangId: {}, status: {}, success: {}, failure: {}",
-                dojangId, status, successList.size(), failureList.size());
-
-        return BulkCheckRes.builder()
-                .successCount(successList.size())
-                .failureCount(failureList.size())
-                .successList(successList)
-                .failureList(failureList)
-                .build();
+                dojangId, status, successAttendances.size(), failures.size());
+        return buildBulkCheckRes(successAttendances, failures);
     }
 
     /**
@@ -514,5 +433,82 @@ public class AttendanceService {
                 .className(null)
                 .attendances(infoMap)
                 .build();
+    }
+
+    private void validateAndCollectStudentsForCheckIn(Long tenantId, Long dojangId, List<Long> studentIds,
+                                                       List<Student> validStudents, List<BulkCheckFailureRes> failures) {
+        Map<Long, Student> studentMap = findStudentsAsMap(studentIds, tenantId);
+        Set<Long> alreadyCheckedSet = findAlreadyCheckedStudentIds(tenantId, dojangId, studentIds);
+
+        for (Long studentId : studentIds) {
+            validateAndCollectStudent(studentId, dojangId, studentMap, alreadyCheckedSet, validStudents, failures);
+        }
+    }
+
+    private List<Attendance> createAndSaveBulkAttendances(List<Student> students, CheckMethod method, Long dojangId) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Attendance> attendances = students.stream()
+                .map(student -> Attendance.create(student, method, now, null))
+                .toList();
+
+        try {
+            attendanceRepository.saveAll(attendances);
+        } catch (DataIntegrityViolationException e) {
+            log.error("일괄 출석 체크 중복 발생 - dojangId: {}", dojangId, e);
+            throw new BusinessException(AttendanceErrorCode.DUPLICATE);
+        }
+        return attendances;
+    }
+
+    private BulkCheckRes buildBulkCheckRes(List<Attendance> attendances, List<BulkCheckFailureRes> failures) {
+        List<AttendanceRes> successList = attendances.stream()
+                .map(AttendanceRes::from)
+                .toList();
+
+        return BulkCheckRes.builder()
+                .successCount(successList.size())
+                .failureCount(failures.size())
+                .successList(successList)
+                .failureList(failures)
+                .build();
+    }
+
+    private List<Attendance> findCheckableAttendances(Long tenantId, Long dojangId, List<Long> attendanceIds) {
+        return attendanceRepository.findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(tenantId, dojangId, attendanceIds);
+    }
+
+    private List<BulkCheckFailureRes> buildNotFoundFailures(List<Long> requestedIds, List<Attendance> foundAttendances) {
+        Set<Long> foundIds = foundAttendances.stream()
+                .map(Attendance::getId)
+                .collect(Collectors.toSet());
+
+        return requestedIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .map(id -> buildFailure(id, AttendanceErrorCode.NOT_FOUND.getMessage()))
+                .toList();
+    }
+
+    private void processCheckOut(List<Attendance> attendances) {
+        LocalDateTime now = LocalDateTime.now();
+        attendances.forEach(attendance -> attendance.checkOut(now));
+    }
+
+    private void validateAndChangeStatus(List<Long> attendanceIds, List<Attendance> attendances,
+                                          AttendanceStatus status, String note,
+                                          List<Attendance> successAttendances, List<BulkCheckFailureRes> failures) {
+        Map<Long, Attendance> attendanceMap = attendances.stream()
+                .collect(Collectors.toMap(Attendance::getId, a -> a));
+
+        for (Long attendanceId : attendanceIds) {
+            Attendance attendance = attendanceMap.get(attendanceId);
+            if (attendance == null) {
+                failures.add(buildFailure(attendanceId, AttendanceErrorCode.NOT_FOUND.getMessage()));
+            } else if (attendance.getStatus() == status) {
+                failures.add(buildFailure(attendanceId, AttendanceErrorCode.SAME_STATUS.getMessage()));
+            } else {
+                attendance.changeStatus(status, note);
+                successAttendances.add(attendance);
+            }
+        }
     }
 }
