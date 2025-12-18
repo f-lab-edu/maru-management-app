@@ -5,9 +5,12 @@ import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.exception.AttendanceErrorCode;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.message.MessageQueue;
+import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.message.MessageQueueRepository;
+import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class NotificationService {
     private final AttendanceRepository attendanceRepository;
     private final GuardianshipRepository guardianshipRepository;
     private final MessageQueueRepository messageQueueRepository;
+    private final DojangRepository dojangRepository;
 
     /**
      * 출석(체크인) 알림 메시지 생성
@@ -33,13 +37,14 @@ public class NotificationService {
      */
     @Transactional
     public List<Long> createCheckinNotification(Long attendanceId) {
-        Attendance attendance = findAttendance(attendanceId);
+        Attendance attendance = findAttendanceWithStudent(attendanceId);
+        String dojangName = findDojangName(attendance.getDojangId());
         String studentName = attendance.getStudent().getName();
 
         return createNotification(
                 attendance,
                 "출석 알림",
-                studentName + " 수련생이 출석했습니다."
+                "[" + dojangName + "] " + studentName + " 수련생이 출석했습니다."
         );
     }
 
@@ -51,13 +56,14 @@ public class NotificationService {
      */
     @Transactional
     public List<Long> createCheckoutNotification(Long attendanceId) {
-        Attendance attendance = findAttendance(attendanceId);
+        Attendance attendance = findAttendanceWithStudent(attendanceId);
+        String dojangName = findDojangName(attendance.getDojangId());
         String studentName = attendance.getStudent().getName();
 
         return createNotification(
                 attendance,
                 "하원 알림",
-                studentName + " 수련생이 하원했습니다."
+                "[" + dojangName + "] " + studentName + " 수련생이 하원했습니다."
         );
     }
 
@@ -79,9 +85,15 @@ public class NotificationService {
         return messageIds;
     }
 
-    private Attendance findAttendance(Long attendanceId) {
-        return attendanceRepository.findById(attendanceId)
+    private Attendance findAttendanceWithStudent(Long attendanceId) {
+        return attendanceRepository.findByIdWithStudent(attendanceId)
                 .orElseThrow(() -> new BusinessException(AttendanceErrorCode.NOT_FOUND));
+    }
+
+    private String findDojangName(Long dojangId) {
+        return dojangRepository.findById(dojangId)
+                .map(Dojang::getName)
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
     }
 
     private List<Guardian> findGuardians(Long studentId) {

@@ -84,4 +84,11 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
             @Param("ids") List<Long> ids);
+
+    @Query("""
+        SELECT a FROM Attendance a
+        JOIN FETCH a.student
+        WHERE a.id = :id
+        """)
+    Optional<Attendance> findByIdWithStudent(@Param("id") Long id);
 }
