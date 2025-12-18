@@ -27,6 +27,9 @@ public class MessageQueue extends BaseEntity {
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
+    @Column(name = "dojang_id", nullable = false)
+    private Long dojangId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guardian_id", nullable = false)
     private Guardian guardian;
