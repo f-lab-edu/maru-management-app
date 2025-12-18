@@ -2,7 +2,6 @@ package com.maru.service.attendance;
 
 import com.maru.domain.attendance.event.AttendanceCheckedEvent;
 import com.maru.domain.message.event.MessageReadyEvent;
-import com.maru.security.TenantContextHolder;
 import com.maru.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,7 @@ public class AttendanceEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onAttendanceChecked(AttendanceCheckedEvent event) {
-        try (AutoCloseable ignored = TenantContextHolder.withTenant(event.tenantId())) {
+        try {
             List<Long> messageIds = createNotificationMessages(event);
             triggerAsyncDispatch(messageIds, event.tenantId());
             logSuccess(event, messageIds.size());
