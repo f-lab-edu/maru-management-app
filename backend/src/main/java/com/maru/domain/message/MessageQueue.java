@@ -1,7 +1,9 @@
 package com.maru.domain.message;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
 import com.maru.domain.guardian.Guardian;
+import com.maru.domain.message.exception.MessageQueueErrorCode;
 import com.maru.domain.student.Student;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -96,12 +98,12 @@ public class MessageQueue extends BaseEntity {
     /**
      * 출결 알림 메시지 생성
      *
-     * @param tenantId  테넌트 ID
-     * @param dojangId  도장 ID
-     * @param guardian  수신자 학부모
-     * @param student   수련생
-     * @param title     알림 제목
-     * @param body      알림 본문
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
+     * @param guardian 수신자 학부모
+     * @param student  수련생
+     * @param title    알림 제목
+     * @param body     알림 본문
      * @return 생성된 MessageQueue
      */
     public static MessageQueue createAttendanceNotification(
@@ -112,6 +114,11 @@ public class MessageQueue extends BaseEntity {
             String title,
             String body
     ) {
+        DomainAssert.notNull(guardian, MessageQueueErrorCode.GUARDIAN_REQUIRED);
+        DomainAssert.notNull(student, MessageQueueErrorCode.STUDENT_REQUIRED);
+        DomainAssert.hasText(title, MessageQueueErrorCode.TITLE_REQUIRED);
+        DomainAssert.hasText(body, MessageQueueErrorCode.BODY_REQUIRED);
+
         MessageQueue message = new MessageQueue();
         message.tenantId = tenantId;
         message.dojangId = dojangId;
