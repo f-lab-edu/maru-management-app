@@ -66,4 +66,18 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             @Param("ids") List<Long> ids,
             @Param("tenantId") Long tenantId,
             @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT s FROM Student s
+        JOIN FETCH s.dojang d
+        WHERE s.status = 'ACTIVE'
+          AND s.deletedAt IS NULL
+          AND d.deletedAt IS NULL
+          AND d.isActive = true
+          AND NOT EXISTS (
+              SELECT 1 FROM Attendance a
+              WHERE a.student.id = s.id AND a.attendanceDate = :date
+          )
+        """)
+    List<Student> findAllActiveStudentsWithoutAttendance(@Param("date") LocalDate date);
 }

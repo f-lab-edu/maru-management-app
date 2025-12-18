@@ -293,6 +293,28 @@ public class AttendanceService {
                 .toList();
     }
 
+    /**
+     * 자동 결석 처리
+     *
+     * @param date 처리할 날짜
+     * @return 처리된 결석 건수
+     */
+    @Transactional
+    public int processAutoAbsence(LocalDate date) {
+        List<Student> students = studentRepository.findAllActiveStudentsWithoutAttendance(date);
+
+        if (students.isEmpty()) {
+            log.info("자동 결석 처리 대상 없음: date={}", date);
+            return 0;
+        }
+
+        List<Attendance> absences = createAbsenceRecords(students, date);
+        attendanceRepository.saveAll(absences);
+
+        log.info("자동 결석 처리 완료: date={}, count={}", date, absences.size());
+        return absences.size();
+    }
+
     private Long validateDojangAndGetTenantId(Long dojangId) {
         Long tenantId = TenantContextHolder.getTenantId();
         Dojang dojang = dojangRepository.findById(dojangId)
@@ -510,5 +532,11 @@ public class AttendanceService {
                 successAttendances.add(attendance);
             }
         }
+    }
+
+    private List<Attendance> createAbsenceRecords(List<Student> students, LocalDate date) {
+        return students.stream()
+                .map(student -> Attendance.createAutoAbsent(student, date))
+                .toList();
     }
 }
