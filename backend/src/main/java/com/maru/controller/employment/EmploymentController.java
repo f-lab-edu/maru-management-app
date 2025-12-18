@@ -1,7 +1,7 @@
 package com.maru.controller.employment;
 
+import com.maru.common.exception.AuthErrorCode;
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
 import com.maru.domain.employment.Employment;
@@ -66,7 +66,7 @@ public class EmploymentController {
     @GetMapping("/pending")
     public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId Long userId) {
         Dojang dojang = dojangRepository.findByOwnerId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_ACCESS_DENIED));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCESS_DENIED));
 
         List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
                 .stream()

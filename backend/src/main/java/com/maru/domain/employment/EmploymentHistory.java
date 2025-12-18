@@ -1,13 +1,13 @@
 package com.maru.domain.employment;
 
-import com.maru.domain.common.BaseEntity;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseTimeEntity;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -54,7 +54,7 @@ public class EmploymentHistory extends BaseTimeEntity {
     }
 
     private void validateNotNull(Employment employment, EmploymentStatus toStatus) {
-        Assert.notNull(employment, "employment는 필수입니다.");
-        Assert.notNull(toStatus, "toStatus는 필수입니다.");
+        DomainAssert.notNull(employment, EmploymentErrorCode.EMPLOYMENT_REQUIRED);
+        DomainAssert.notNull(toStatus, EmploymentErrorCode.STATUS_REQUIRED);
     }
 }

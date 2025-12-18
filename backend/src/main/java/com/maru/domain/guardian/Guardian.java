@@ -1,6 +1,8 @@
 package com.maru.domain.guardian;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.guardian.exception.GuardianErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
@@ -8,7 +10,6 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
@@ -58,7 +59,7 @@ public class Guardian extends SoftDeletableEntity {
     }
 
     public void updatePhone(String phone) {
-        Assert.hasText(phone, "phone은 필수입니다.");
+        DomainAssert.hasText(phone, GuardianErrorCode.PHONE_REQUIRED);
         this.phone = phone;
     }
 
@@ -73,7 +74,7 @@ public class Guardian extends SoftDeletableEntity {
     }
 
     private void validateInput(String phone, String name) {
-        Assert.hasText(phone, "phone은 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
+        DomainAssert.hasText(phone, GuardianErrorCode.PHONE_REQUIRED);
+        DomainAssert.hasText(name, GuardianErrorCode.NAME_REQUIRED);
     }
 }

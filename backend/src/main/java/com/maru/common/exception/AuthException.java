@@ -6,14 +6,14 @@ import org.springframework.security.core.AuthenticationException;
 @Getter
 public class AuthException extends AuthenticationException {
 
-    private final ErrorCode errorCode;
+    private final BaseErrorCode errorCode;
 
-    public AuthException(ErrorCode errorCode) {
+    public AuthException(BaseErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
 
-    public AuthException(ErrorCode errorCode, Throwable cause) {
+    public AuthException(BaseErrorCode errorCode, Throwable cause) {
         super(errorCode.getMessage(), cause);
         this.errorCode = errorCode;
     }

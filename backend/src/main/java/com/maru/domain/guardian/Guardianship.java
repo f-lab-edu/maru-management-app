@@ -1,12 +1,13 @@
 package com.maru.domain.guardian;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.guardian.exception.GuardianErrorCode;
 import com.maru.domain.student.Student;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
 @Table(
@@ -59,7 +60,7 @@ public class Guardianship extends SoftDeletableEntity {
     }
 
     private void validateInput(Guardian guardian, Student student) {
-        Assert.notNull(guardian, "guardian은 필수입니다.");
-        Assert.notNull(student, "student는 필수입니다.");
+        DomainAssert.notNull(guardian, GuardianErrorCode.GUARDIAN_REQUIRED);
+        DomainAssert.notNull(student, GuardianErrorCode.STUDENT_REQUIRED);
     }
 }

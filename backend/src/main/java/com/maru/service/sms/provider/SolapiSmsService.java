@@ -1,10 +1,9 @@
 package com.maru.service.sms.provider;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.SmsErrorCode;
 import com.maru.config.properties.SmsProperties;
 import com.maru.service.sms.SmsService;
-
-import static com.maru.common.exception.ErrorCode.*;
 import com.solapi.sdk.SolapiClient;
 import com.solapi.sdk.message.model.Message;
 import com.solapi.sdk.message.service.DefaultMessageService;
@@ -64,7 +63,7 @@ public class SolapiSmsService implements SmsService {
             log.info("SMS 발송 완료: to={}", phone);
         } catch (Exception e) {
             log.error("SMS 발송 실패: to={}, error={}", phone, e.getMessage());
-            throw new BusinessException(SMS_SEND_FAILED);
+            throw new BusinessException(SmsErrorCode.SEND_FAILED);
         }
     }
 

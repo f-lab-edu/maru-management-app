@@ -3,8 +3,10 @@ package com.maru.service.employment;
 import com.maru.common.exception.BusinessException;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.repository.employment.EmploymentRepository;
@@ -16,8 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -38,7 +38,7 @@ public class EmploymentService {
     @Transactional
     public Employment requestApproval(Long userId, Long dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
         return employmentRepository.findByUserIdAndDojangId(userId, dojangId)
                 .map(existing -> handleExistingEmployment(existing, dojang.getName()))
@@ -56,7 +56,7 @@ public class EmploymentService {
         }
 
         log.warn("재요청 불가: employmentId={}, status={}", employment.getId(), status);
-        throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
+        throw new BusinessException(EmploymentErrorCode.ALREADY_EXISTS);
     }
 
     private Employment createNewEmployment(Long userId, Dojang dojang) {
@@ -166,13 +166,13 @@ public class EmploymentService {
         if (!employment.getUser().getId().equals(userId)) {
             log.warn("본인이 아닌 사용자가 취소 시도: employmentId={}, requesterId={}, actualUserId={}",
                     employment.getId(), userId, employment.getUser().getId());
-            throw new BusinessException(EMPLOYMENT_NOT_REQUESTER);
+            throw new BusinessException(EmploymentErrorCode.NOT_REQUESTER);
         }
     }
 
     private Employment getEmploymentById(Long employmentId) {
         return employmentRepository.findById(employmentId)
-                .orElseThrow(() -> new BusinessException(EMPLOYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(EmploymentErrorCode.NOT_FOUND));
     }
 
     private void validateOwnerPermission(Employment employment, Long ownerId) {
@@ -180,7 +180,7 @@ public class EmploymentService {
         if (!dojangOwnerId.equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
                     employment.getId(), ownerId, dojangOwnerId);
-            throw new BusinessException(EMPLOYMENT_NOT_OWNER);
+            throw new BusinessException(EmploymentErrorCode.NOT_OWNER);
         }
     }
 
@@ -188,7 +188,7 @@ public class EmploymentService {
         if (employment.getStatus() != EmploymentStatus.PENDING) {
             log.warn("PENDING 상태가 아닌 요청 처리 시도: employmentId={}, currentStatus={}",
                     employment.getId(), employment.getStatus());
-            throw new BusinessException(EMPLOYMENT_NOT_PENDING);
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
     }
 

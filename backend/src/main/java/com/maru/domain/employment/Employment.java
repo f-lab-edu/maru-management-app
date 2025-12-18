@@ -1,8 +1,11 @@
 package com.maru.domain.employment;
 
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
-import com.maru.domain.permission.converter.PermissionSetConverter;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
+import com.maru.domain.permission.converter.PermissionSetConverter;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.User;
@@ -11,7 +14,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -84,35 +86,35 @@ public class Employment extends BaseEntity {
 
     public void approve() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new IllegalStateException("대기 상태의 고용만 승인할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void reject() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new IllegalStateException("대기 상태의 고용만 거부할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.REJECTED;
     }
 
     public void suspend() {
         if (this.status != EmploymentStatus.ACTIVE) {
-            throw new IllegalStateException("활성 상태의 고용만 정지할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE);
         }
         this.status = EmploymentStatus.SUSPENDED;
     }
 
     public void reactivate() {
         if (this.status != EmploymentStatus.SUSPENDED) {
-            throw new IllegalStateException("정지 상태의 고용만 재활성화할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_SUSPENDED);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void leave() {
         if (this.status != EmploymentStatus.ACTIVE && this.status != EmploymentStatus.SUSPENDED) {
-            throw new IllegalStateException("활성 또는 정지 상태의 고용만 퇴사 처리할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE_OR_SUSPENDED);
         }
         this.status = EmploymentStatus.LEFT;
         this.endedAt = LocalDateTime.now();
@@ -120,7 +122,7 @@ public class Employment extends BaseEntity {
 
     public void rejoin() {
         if (this.status != EmploymentStatus.LEFT && this.status != EmploymentStatus.REJECTED) {
-            throw new IllegalStateException("퇴사 또는 거절 상태의 고용만 재입사 처리할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_LEFT_OR_REJECTED);
         }
 
         this.status = EmploymentStatus.PENDING;
@@ -145,15 +147,15 @@ public class Employment extends BaseEntity {
         return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }
 
-    private void validateNotNull(User user, Tenant tenant, Dojang dojang){
-        Assert.notNull(user, "user는 필수입니다.");
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(dojang, "dojang은 필수입니다.");
+    private void validateNotNull(User user, Tenant tenant, Dojang dojang) {
+        DomainAssert.notNull(user, EmploymentErrorCode.USER_REQUIRED);
+        DomainAssert.notNull(tenant, EmploymentErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(dojang, EmploymentErrorCode.DOJANG_REQUIRED);
     }
 
-    private void validateTenantIntegrity(Tenant tenant, Dojang dojang){
-        if(!dojang.getTenant().getId().equals(tenant.getId())){
-            throw new IllegalStateException("도장의 Tenant와 입력된 Tenant가 일치하지 않습니다.");
+    private void validateTenantIntegrity(Tenant tenant, Dojang dojang) {
+        if (!dojang.getTenant().getId().equals(tenant.getId())) {
+            throw new BusinessException(EmploymentErrorCode.TENANT_MISMATCH);
         }
     }
 }
