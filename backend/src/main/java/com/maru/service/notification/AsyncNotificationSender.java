@@ -1,7 +1,6 @@
 package com.maru.service.notification;
 
 import com.maru.domain.message.MessageQueue;
-import com.maru.domain.message.MessageStatus;
 import com.maru.repository.message.MessageQueueRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -53,25 +52,13 @@ public class AsyncNotificationSender {
         }
     }
 
-    /**
-     * 메시지 선점 (짧은 트랜잭션)
-     *
-     * @return 선점 성공 시 MessageQueue, 실패 시 null
-     */
     private MessageQueue acquireMessage(Long messageId) {
         return transactionTemplate.execute(status -> {
-            int acquired = messageQueueRepository.tryTransitionStatus(
-                    messageId,
-                    MessageStatus.PENDING,
-                    MessageStatus.PROCESSING
-            );
-
-            if (acquired == 0) {
-                log.debug("메시지 선점 실패 (이미 처리 중): messageId={}", messageId);
-                return null;
+            MessageQueue message = messageQueueRepository.findById(messageId).orElse(null);
+            if (message != null) {
+                message.markAsProcessing();
             }
-
-            return messageQueueRepository.findById(messageId).orElse(null);
+            return message;
         });
     }
 

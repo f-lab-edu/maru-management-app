@@ -51,15 +51,7 @@ public class MessageQueueRetryWorker {
 
     private void processRetry(MessageQueue message) {
         try {
-            int updated = messageQueueRepository.tryTransitionStatus(
-                    message.getId(),
-                    MessageStatus.PENDING,
-                    MessageStatus.PROCESSING
-            );
-            if (updated == 0) {
-                return;
-            }
-
+            message.markAsProcessing();
             messageSender.send(message);
             message.markAsSent();
             log.info("재시도 발송 성공: messageId={}", message.getId());
