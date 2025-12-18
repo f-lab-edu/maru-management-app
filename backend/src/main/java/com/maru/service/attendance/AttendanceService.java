@@ -5,6 +5,7 @@ import com.maru.controller.attendance.dto.*;
 import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.AttendanceStatus;
 import com.maru.domain.attendance.CheckMethod;
+import com.maru.domain.attendance.event.AttendanceCheckedEvent;
 import com.maru.domain.attendance.exception.AttendanceErrorCode;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
@@ -17,6 +18,7 @@ import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 단일 원생 출석 기록 생성
@@ -72,6 +75,8 @@ public class AttendanceService {
 
         Attendance attendance = saveAttendanceWithDuplicateCheck(student, method, targetStatus, targetCheckinAt, note);
 
+        publishCheckedEvent(attendance, tenantId, true);
+
         log.info("출석 기록 생성 - attendanceId: {}, studentId: {}, status: {}, dojangId: {}",
                 attendance.getId(), studentId, targetStatus, dojangId);
         return AttendanceRes.from(attendance);
@@ -97,6 +102,8 @@ public class AttendanceService {
 
         List<Attendance> attendances = createAndSaveBulkAttendances(validStudents, method, dojangId);
 
+        publishBulkCheckedEvents(attendances, tenantId, true);
+
         log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
         return buildBulkCheckRes(attendances, failures);
     }
@@ -118,6 +125,8 @@ public class AttendanceService {
         Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
 
         attendance.checkOut(LocalDateTime.now());
+
+        publishCheckedEvent(attendance, tenantId, false);
 
         log.info("퇴관 처리 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
         return AttendanceRes.from(attendance);
@@ -162,6 +171,8 @@ public class AttendanceService {
         List<BulkCheckFailureRes> failures = buildNotFoundFailures(attendanceIds, attendances);
 
         processCheckOut(attendances);
+
+        publishBulkCheckedEvents(attendances, tenantId, false);
 
         log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
         return buildBulkCheckRes(attendances, failures);
@@ -538,5 +549,20 @@ public class AttendanceService {
         return students.stream()
                 .map(student -> Attendance.createAutoAbsent(student, date))
                 .toList();
+    }
+
+    private void publishCheckedEvent(Attendance attendance, Long tenantId, boolean isCheckin) {
+        eventPublisher.publishEvent(new AttendanceCheckedEvent(
+                attendance.getId(),
+                attendance.getStudent().getId(),
+                tenantId,
+                isCheckin
+        ));
+    }
+
+    private void publishBulkCheckedEvents(List<Attendance> attendances, Long tenantId, boolean isCheckin) {
+        for (Attendance attendance : attendances) {
+            publishCheckedEvent(attendance, tenantId, isCheckin);
+        }
     }
 }
