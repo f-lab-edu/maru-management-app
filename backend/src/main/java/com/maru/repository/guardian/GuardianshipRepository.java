@@ -21,8 +21,12 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Long
             SELECT g.guardian
             FROM Guardianship g
             WHERE g.student.id = :studentId
+              AND (:primaryOnly = false OR g.isPrimary = true)
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
             """)
-    List<Guardian> findGuardiansByStudentId(@Param("studentId") Long studentId);
+    List<Guardian> findGuardiansByStudentId(
+            @Param("studentId") Long studentId,
+            @Param("primaryOnly") boolean primaryOnly
+    );
 }

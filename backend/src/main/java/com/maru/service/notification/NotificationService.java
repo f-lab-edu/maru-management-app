@@ -85,7 +85,11 @@ public class NotificationService {
     }
 
     private List<Guardian> findGuardians(Long studentId) {
-        return guardianshipRepository.findGuardiansByStudentId(studentId);
+        return guardianshipRepository.findGuardiansByStudentId(studentId, true);
+    }
+
+    private List<Guardian> findGuardians(Long studentId, boolean primaryOnly) {
+        return guardianshipRepository.findGuardiansByStudentId(studentId, primaryOnly);
     }
 
     private List<MessageQueue> createMessages(Attendance attendance, List<Guardian> guardians,
