@@ -13,6 +13,5 @@ public record PaymentRes(
         BigDecimal amount,
         PaymentMethod method,
         PaymentStatus status,
-        LocalDateTime paidAt,
-        String note
+        LocalDateTime paidAt
 ) {}

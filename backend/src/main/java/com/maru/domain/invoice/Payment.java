@@ -55,10 +55,7 @@ public class Payment extends BaseTimeEntity {
     @Column(name = "received_by")
     private Long receivedBy;
 
-    @Column(name = "note", length = 500)
-    private String note;
-
-    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy, String note) {
+    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy) {
         validatePayment(invoice, amount);
 
         this.tenantId = invoice.getTenantId();
@@ -69,11 +66,10 @@ public class Payment extends BaseTimeEntity {
         this.status = PaymentStatus.PAID;
         this.paidAt = LocalDateTime.now();
         this.receivedBy = receivedBy;
-        this.note = note;
     }
 
-    public static Payment create(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy, String note) {
-        return new Payment(invoice, amount, method, receivedBy, note);
+    public static Payment create(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy) {
+        return new Payment(invoice, amount, method, receivedBy);
     }
 
     private void validatePayment(Invoice invoice, BigDecimal amount) {
