@@ -101,6 +101,11 @@ public class Invoice extends BaseEntity {
         this.status = calculateStatus();
     }
 
+    public void subtractPayment(BigDecimal paymentAmount) {
+        this.paidAmount = this.paidAmount.subtract(paymentAmount);
+        this.status = calculateStatus();
+    }
+
     public BigDecimal getRemainingAmount() {
         return this.amount.subtract(this.paidAmount);
     }
