@@ -3,6 +3,7 @@ package com.maru.scheduler;
 import com.maru.domain.message.MessageQueue;
 import com.maru.domain.message.MessageStatus;
 import com.maru.repository.message.MessageQueueRepository;
+import com.maru.service.notification.MessageAcquirer;
 import com.maru.service.notification.MessageSender;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,6 +38,9 @@ class MessageQueueRetryWorkerTest {
 
     @Mock
     MessageSender messageSender;
+
+    @Mock
+    MessageAcquirer messageAcquirer;
 
     @InjectMocks
     MessageQueueRetryWorker worker;
@@ -73,12 +78,13 @@ class MessageQueueRetryWorkerTest {
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message));
+            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message));
 
             // when
             worker.retryFailedMessages();
 
             // then
-            then(message).should().markAsProcessing();
+            then(messageAcquirer).should().acquire(1L);
             then(messageSender).should().send(message);
         }
 
@@ -93,6 +99,7 @@ class MessageQueueRetryWorkerTest {
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message));
+            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message));
 
             // when
             worker.retryFailedMessages();
@@ -112,6 +119,7 @@ class MessageQueueRetryWorkerTest {
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message));
+            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message));
             doThrow(new RuntimeException("발송 실패")).when(messageSender).send(message);
 
             // when
@@ -134,6 +142,7 @@ class MessageQueueRetryWorkerTest {
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message));
+            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message));
             doThrow(new RuntimeException("발송 실패")).when(messageSender).send(message);
 
             // when
@@ -141,6 +150,26 @@ class MessageQueueRetryWorkerTest {
 
             // then
             then(message).should().markAsFailed("발송 실패");
+        }
+
+        @Test
+        @DisplayName("이미 다른 스레드가 선점한 메시지는 스킵한다")
+        void skipsAlreadyAcquiredMessage() {
+            // given
+            MessageQueue message = createMockMessage(1L, 0);
+            given(messageQueueRepository.findRetryTargets(
+                    eq(MessageStatus.PENDING),
+                    any(LocalDateTime.class),
+                    eq(3),
+                    any(PageRequest.class)
+            )).willReturn(List.of(message));
+            given(messageAcquirer.acquire(1L)).willReturn(Optional.empty());
+
+            // when
+            worker.retryFailedMessages();
+
+            // then
+            then(messageSender).shouldHaveNoInteractions();
         }
     }
 
