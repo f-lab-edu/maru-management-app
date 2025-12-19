@@ -1,0 +1,326 @@
+package com.maru.service.invoice;
+
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.InvoiceErrorCode;
+import com.maru.common.exception.PaymentErrorCode;
+import com.maru.controller.invoice.dto.*;
+import com.maru.domain.guardian.Guardian;
+import com.maru.domain.invoice.Invoice;
+import com.maru.domain.invoice.Payment;
+import com.maru.domain.invoice.PaymentStatus;
+import com.maru.domain.student.Student;
+import com.maru.domain.student.exception.StudentErrorCode;
+import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.guardian.GuardianshipRepository;
+import com.maru.repository.invoice.InvoiceRepository;
+import com.maru.repository.invoice.PaymentRepository;
+import com.maru.repository.student.StudentRepository;
+import com.maru.repository.tenant.DojangRepository;
+import com.maru.security.TenantContextHolder;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PaymentService {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private final PaymentRepository paymentRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final DojangRepository dojangRepository;
+    private final StudentRepository studentRepository;
+    private final GuardianshipRepository guardianshipRepository;
+
+    /**
+     * 수납 기록
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceId 청구서 ID
+     * @param request 수납 기록 요청
+     * @param userId 현재 사용자 ID
+     * @return 수납 기록 후 청구서 상세 정보
+     * @throws BusinessException AMOUNT_EXCEEDS_REMAINING - 수납 금액이 남은 금액 초과
+     */
+    @Transactional
+    public InvoiceDetailRes recordPayment(Long dojangId, Long invoiceId, PaymentRecordReq request, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Payment payment = createAndSavePayment(invoice, request, userId);
+        invoice.addPayment(payment.getAmount());
+
+        log.info("수납 기록 완료: invoiceId={}, amount={}, method={}, userId={}",
+                invoiceId, request.amount(), request.method(), userId);
+
+        return buildInvoiceDetailRes(invoice, invoiceId);
+    }
+
+    /**
+     * 수납 취소 (환불)
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceId 청구서 ID
+     * @param paymentId 수납 ID
+     * @param userId 현재 사용자 ID
+     * @return 환불 후 청구서 상세 정보
+     * @throws BusinessException NOT_FOUND - 수납 내역을 찾을 수 없음
+     * @throws BusinessException ALREADY_REFUNDED - 이미 환불된 수납
+     */
+    @Transactional
+    public InvoiceDetailRes cancelPayment(Long dojangId, Long invoiceId, Long paymentId, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Payment payment = findPaymentAndValidate(paymentId, invoiceId, tenantId, dojangId);
+
+        processRefund(payment, invoice);
+
+        log.info("수납 취소 완료: paymentId={}, invoiceId={}, amount={}, userId={}",
+                paymentId, invoiceId, payment.getAmount(), userId);
+
+        return buildInvoiceDetailRes(invoice, invoiceId);
+    }
+
+    /**
+     * 미납자 목록 조회
+     *
+     * @param dojangId 도장 ID
+     * @return 미납 청구서 목록 (연체일 포함)
+     */
+    @Transactional(readOnly = true)
+    public List<UnpaidListRes> getUnpaidList(Long dojangId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        List<Invoice> unpaidInvoices = invoiceRepository.findUnpaidInvoices(tenantId, dojangId);
+
+        return buildUnpaidListResponses(unpaidInvoices);
+    }
+
+    /**
+     * 수납 통계 조회
+     *
+     * @param dojangId 도장 ID
+     * @param startDate 시작일 (null이면 이번 달 1일)
+     * @param endDate 종료일 (null이면 오늘)
+     * @return 수납 통계 (완납/미납/부분납 건수 및 금액)
+     */
+    @Transactional(readOnly = true)
+    public PaymentStatisticsRes getPaymentStatistics(Long dojangId, LocalDate startDate, LocalDate endDate) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        LocalDateTime[] dateRange = calculateDateRange(startDate, endDate);
+        BigDecimal totalPaidAmount = paymentRepository.sumByTenantIdAndPeriod(
+                tenantId, dojangId, dateRange[0], dateRange[1]);
+
+        List<Invoice> invoices = invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, null);
+
+        return buildPaymentStatisticsRes(totalPaidAmount, invoices);
+    }
+
+    /**
+     * 원생별 납부 내역 조회
+     *
+     * @param dojangId 도장 ID
+     * @param studentId 원생 ID
+     * @return 원생의 납부 이력
+     * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
+     */
+    @Transactional(readOnly = true)
+    public StudentPaymentHistoryRes getStudentPaymentHistory(Long dojangId, Long studentId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Student student = findStudentAndValidate(studentId, dojangId);
+        List<Payment> payments = paymentRepository.findByStudentIdOrderByPaidAtDesc(tenantId, dojangId, studentId);
+
+        return buildStudentPaymentHistoryRes(student, payments);
+    }
+
+    private void validateDojangAccess(Long dojangId, Long tenantId) {
+        Dojang dojang = dojangRepository.findById(dojangId)
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+
+        if (!dojang.getTenant().getId().equals(tenantId)) {
+            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
+        }
+    }
+
+    private Invoice findInvoiceWithStudent(Long invoiceId, Long tenantId, Long dojangId) {
+        return invoiceRepository.findByIdAndDojangIdWithStudent(invoiceId, tenantId, dojangId)
+                .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
+    }
+
+    private Payment createAndSavePayment(Invoice invoice, PaymentRecordReq request, Long userId) {
+        Payment payment = Payment.create(invoice, request.amount(), request.method(), userId);
+        return paymentRepository.save(payment);
+    }
+
+    private Payment findPaymentAndValidate(Long paymentId, Long invoiceId, Long tenantId, Long dojangId) {
+        Payment payment = paymentRepository.findByIdAndTenantIdAndDojangId(paymentId, tenantId, dojangId)
+                .orElseThrow(() -> new BusinessException(PaymentErrorCode.NOT_FOUND));
+
+        if (!payment.getInvoice().getId().equals(invoiceId)) {
+            throw new BusinessException(PaymentErrorCode.NOT_FOUND);
+        }
+
+        if (payment.getStatus() == PaymentStatus.REFUNDED) {
+            throw new BusinessException(PaymentErrorCode.ALREADY_REFUNDED);
+        }
+
+        return payment;
+    }
+
+    private void processRefund(Payment payment, Invoice invoice) {
+        payment.refund();
+        invoice.subtractPayment(payment.getAmount());
+    }
+
+    private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice, Long invoiceId) {
+        List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(invoiceId)
+                .stream()
+                .map(PaymentRes::from)
+                .toList();
+
+        return InvoiceDetailRes.from(invoice, payments);
+    }
+
+    private List<UnpaidListRes> buildUnpaidListResponses(List<Invoice> unpaidInvoices) {
+        LocalDate today = LocalDate.now();
+
+        return unpaidInvoices.stream()
+                .map(invoice -> buildUnpaidListRes(invoice, today))
+                .toList();
+    }
+
+    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today) {
+        Student student = invoice.getStudent();
+        Guardian primaryGuardian = findPrimaryGuardian(student.getId());
+
+        return UnpaidListRes.builder()
+                .invoiceId(invoice.getId())
+                .studentName(student.getName())
+                .guardianName(primaryGuardian != null ? primaryGuardian.getName() : null)
+                .guardianPhone(primaryGuardian != null ? primaryGuardian.getPhone() : null)
+                .amount(invoice.getAmount())
+                .paidAmount(invoice.getPaidAmount())
+                .remainingAmount(invoice.getRemainingAmount())
+                .dueDate(invoice.getDueDate())
+                .overdueDays(calculateOverdueDays(invoice.getDueDate(), today))
+                .build();
+    }
+
+    private Guardian findPrimaryGuardian(Long studentId) {
+        List<Guardian> guardians = guardianshipRepository.findGuardiansByStudentId(studentId, true);
+        return guardians.isEmpty() ? null : guardians.get(0);
+    }
+
+    private int calculateOverdueDays(LocalDate dueDate, LocalDate today) {
+        if (dueDate.isBefore(today)) {
+            return (int) ChronoUnit.DAYS.between(dueDate, today);
+        }
+        return 0;
+    }
+
+    private LocalDateTime[] calculateDateRange(LocalDate startDate, LocalDate endDate) {
+        LocalDate effectiveStartDate = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
+        LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
+
+        return new LocalDateTime[] {
+                effectiveStartDate.atStartOfDay(),
+                effectiveEndDate.plusDays(1).atStartOfDay()
+        };
+    }
+
+    private PaymentStatisticsRes buildPaymentStatisticsRes(BigDecimal totalPaidAmount, List<Invoice> invoices) {
+        int paidCount = 0;
+        int unpaidCount = 0;
+        int partialCount = 0;
+        BigDecimal totalUnpaidAmount = BigDecimal.ZERO;
+
+        for (Invoice invoice : invoices) {
+            switch (invoice.getStatus()) {
+                case PAID -> paidCount++;
+                case OPEN -> {
+                    unpaidCount++;
+                    totalUnpaidAmount = totalUnpaidAmount.add(invoice.getRemainingAmount());
+                }
+                case PARTIAL -> {
+                    partialCount++;
+                    totalUnpaidAmount = totalUnpaidAmount.add(invoice.getRemainingAmount());
+                }
+                default -> {
+                }
+            }
+        }
+
+        return PaymentStatisticsRes.builder()
+                .totalPaidAmount(totalPaidAmount)
+                .totalUnpaidAmount(totalUnpaidAmount)
+                .paidInvoiceCount(paidCount)
+                .unpaidInvoiceCount(unpaidCount)
+                .partialInvoiceCount(partialCount)
+                .build();
+    }
+
+    private Student findStudentAndValidate(Long studentId, Long dojangId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+
+        if (!student.getDojang().getId().equals(dojangId)) {
+            throw new BusinessException(StudentErrorCode.NOT_FOUND);
+        }
+
+        return student;
+    }
+
+    private StudentPaymentHistoryRes buildStudentPaymentHistoryRes(Student student, List<Payment> payments) {
+        BigDecimal totalPaidAmount = calculateTotalPaidAmount(payments);
+        List<StudentPaymentHistoryRes.PaymentHistoryItem> historyItems = buildPaymentHistoryItems(payments);
+
+        return StudentPaymentHistoryRes.builder()
+                .studentId(student.getId())
+                .studentName(student.getName())
+                .totalPaidAmount(totalPaidAmount)
+                .payments(historyItems)
+                .build();
+    }
+
+    private BigDecimal calculateTotalPaidAmount(List<Payment> payments) {
+        return payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private List<StudentPaymentHistoryRes.PaymentHistoryItem> buildPaymentHistoryItems(List<Payment> payments) {
+        return payments.stream()
+                .map(this::toPaymentHistoryItem)
+                .toList();
+    }
+
+    private StudentPaymentHistoryRes.PaymentHistoryItem toPaymentHistoryItem(Payment payment) {
+        return StudentPaymentHistoryRes.PaymentHistoryItem.builder()
+                .paymentId(payment.getId())
+                .invoiceId(payment.getInvoice().getId())
+                .amount(payment.getAmount())
+                .method(payment.getMethod() != null ? payment.getMethod().name() : null)
+                .paidAt(payment.getPaidAt() != null ? payment.getPaidAt().format(DATE_TIME_FORMATTER) : null)
+                .build();
+    }
+}
