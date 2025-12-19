@@ -6,11 +6,11 @@ import com.maru.security.CurrentUserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -55,15 +55,13 @@ public class InvoiceController {
      *
      * @param dojangId 도장 ID
      * @param status 청구서 상태 필터 (선택)
-     * @param pageable 페이징 정보
      * @param userId 현재 인증된 사용자 ID
      * @return 청구서 목록
      */
     @GetMapping
-    public ResponseEntity<Page<InvoiceListRes>> getInvoices(
+    public ResponseEntity<List<InvoiceListRes>> getInvoices(
             @RequestParam Long dojangId,
             @RequestParam(required = false) InvoiceStatus status,
-            Pageable pageable,
             @CurrentUserId Long userId) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }

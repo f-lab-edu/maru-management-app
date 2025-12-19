@@ -11,10 +11,10 @@ import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -69,11 +69,10 @@ public class InvoiceService {
      *
      * @param dojangId 도장 ID
      * @param status 상태 필터 (null이면 전체)
-     * @param pageable 페이징 정보
-     * @return 청구서 목록 (페이징)
+     * @return 청구서 목록
      */
     @Transactional(readOnly = true)
-    public Page<InvoiceListRes> getInvoices(Long dojangId, InvoiceStatus status, Pageable pageable) {
+    public List<InvoiceListRes> getInvoices(Long dojangId, InvoiceStatus status) {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
