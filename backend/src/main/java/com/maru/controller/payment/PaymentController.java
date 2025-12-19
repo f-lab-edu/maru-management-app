@@ -4,10 +4,10 @@ import com.maru.controller.invoice.dto.PaymentStatisticsRes;
 import com.maru.controller.invoice.dto.StudentPaymentHistoryRes;
 import com.maru.controller.invoice.dto.UnpaidListRes;
 import com.maru.security.CurrentUserId;
+import com.maru.service.invoice.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PaymentController {
 
+    private final PaymentService paymentService;
+
     /**
      * 미납자 목록 조회 API
      *
@@ -31,7 +33,8 @@ public class PaymentController {
     public ResponseEntity<List<UnpaidListRes>> getUnpaidList(
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        List<UnpaidListRes> response = paymentService.getUnpaidList(dojangId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -46,10 +49,11 @@ public class PaymentController {
     @GetMapping("/statistics")
     public ResponseEntity<PaymentStatisticsRes> getPaymentStatistics(
             @RequestParam Long dojangId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, startDate, endDate);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -65,6 +69,7 @@ public class PaymentController {
             @PathVariable Long studentId,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        StudentPaymentHistoryRes response = paymentService.getStudentPaymentHistory(dojangId, studentId);
+        return ResponseEntity.ok(response);
     }
 }
