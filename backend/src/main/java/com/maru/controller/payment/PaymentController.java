@@ -1,11 +1,14 @@
 package com.maru.controller.payment;
 
+import com.maru.controller.invoice.dto.UnpaidListRes;
 import com.maru.security.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -21,7 +24,7 @@ public class PaymentController {
      * @return 미납자 목록
      */
     @GetMapping("/unpaid")
-    public ResponseEntity<Void> getUnpaidList(
+    public ResponseEntity<List<UnpaidListRes>> getUnpaidList(
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
