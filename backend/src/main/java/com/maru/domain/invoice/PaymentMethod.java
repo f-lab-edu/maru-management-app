@@ -4,5 +4,6 @@ public enum PaymentMethod {
     CASH,
     CARD,
     TRANSFER,
+    PG,
     OTHER
 }

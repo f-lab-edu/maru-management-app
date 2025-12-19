@@ -19,7 +19,7 @@ import java.time.LocalDate;
     indexes = {
         @Index(name = "idx_invoice_tenant_status_due", columnList = "tenant_id, status, due_date"),
         @Index(name = "idx_invoice_student_status", columnList = "student_id, status"),
-        @Index(name = "idx_invoice_dojang_issue", columnList = "dojang_id, issue_date")
+        @Index(name = "idx_invoice_tenant_dojang_issue", columnList = "tenant_id, dojang_id, issue_date")
     }
 )
 @Getter
@@ -39,7 +39,7 @@ public class Invoice extends BaseEntity {
     @Column(name = "issued_by")
     private Long issuedBy;
 
-    @Column(name = "issue_date", nullable = false)
+    @Column(name = "issue_date")
     private LocalDate issueDate;
 
     @Column(name = "due_date", nullable = false)
@@ -66,7 +66,7 @@ public class Invoice extends BaseEntity {
         this.tenantId = student.getTenantId();
         this.dojangId = student.getDojang().getId();
         this.student = student;
-        this.issueDate = LocalDate.now();
+        this.issueDate = null;
         this.dueDate = dueDate;
         this.status = InvoiceStatus.DRAFT;
         this.amount = amount;
@@ -84,6 +84,7 @@ public class Invoice extends BaseEntity {
         }
         this.status = InvoiceStatus.OPEN;
         this.issuedBy = issuedBy;
+        this.issueDate = LocalDate.now();
     }
 
     public void markAsVoid() {
@@ -97,11 +98,20 @@ public class Invoice extends BaseEntity {
     }
 
     public void addPayment(BigDecimal paymentAmount) {
+        if (this.status == InvoiceStatus.VOID) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_PAY_VOID_INVOICE);
+        }
+        if (this.status == InvoiceStatus.DRAFT) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_PAY_DRAFT_INVOICE);
+        }
         this.paidAmount = this.paidAmount.add(paymentAmount);
         this.status = calculateStatus();
     }
 
     public void subtractPayment(BigDecimal paymentAmount) {
+        if (this.status == InvoiceStatus.VOID) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_REFUND_VOID_INVOICE);
+        }
         this.paidAmount = this.paidAmount.subtract(paymentAmount);
         this.status = calculateStatus();
     }
