@@ -3,6 +3,7 @@ package com.maru.service.invoice;
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.InvoiceErrorCode;
 import com.maru.common.exception.PaymentErrorCode;
+import com.maru.common.util.DateRange;
 import com.maru.controller.invoice.dto.*;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.invoice.Invoice;
@@ -18,6 +19,7 @@ import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
+import com.maru.service.invoice.dto.InvoiceStatistics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -126,13 +127,20 @@ public class PaymentService {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        LocalDateTime[] dateRange = calculateDateRange(startDate, endDate);
+        DateRange range = DateRange.ofWithDefaults(startDate, endDate);
         BigDecimal totalPaidAmount = paymentRepository.sumByTenantIdAndPeriod(
-                tenantId, dojangId, dateRange[0], dateRange[1]);
+                tenantId, dojangId, range.start(), range.end());
 
-        List<Invoice> invoices = invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, null);
+        InvoiceStatistics statistics = invoiceRepository.getStatistics(
+                tenantId, dojangId, range.start().toLocalDate(), range.end().toLocalDate());
 
-        return buildPaymentStatisticsRes(totalPaidAmount, invoices);
+        return PaymentStatisticsRes.builder()
+                .totalPaidAmount(totalPaidAmount)
+                .totalUnpaidAmount(statistics.totalUnpaidAmount())
+                .paidInvoiceCount((int) statistics.paidCount())
+                .unpaidInvoiceCount((int) statistics.unpaidCount())
+                .partialInvoiceCount((int) statistics.partialCount())
+                .build();
     }
 
     /**
@@ -251,47 +259,6 @@ public class PaymentService {
             return (int) ChronoUnit.DAYS.between(dueDate, today);
         }
         return 0;
-    }
-
-    private LocalDateTime[] calculateDateRange(LocalDate startDate, LocalDate endDate) {
-        LocalDate effectiveStartDate = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
-        LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
-
-        return new LocalDateTime[] {
-                effectiveStartDate.atStartOfDay(),
-                effectiveEndDate.plusDays(1).atStartOfDay()
-        };
-    }
-
-    private PaymentStatisticsRes buildPaymentStatisticsRes(BigDecimal totalPaidAmount, List<Invoice> invoices) {
-        int paidCount = 0;
-        int unpaidCount = 0;
-        int partialCount = 0;
-        BigDecimal totalUnpaidAmount = BigDecimal.ZERO;
-
-        for (Invoice invoice : invoices) {
-            switch (invoice.getStatus()) {
-                case PAID -> paidCount++;
-                case OPEN -> {
-                    unpaidCount++;
-                    totalUnpaidAmount = totalUnpaidAmount.add(invoice.getRemainingAmount());
-                }
-                case PARTIAL -> {
-                    partialCount++;
-                    totalUnpaidAmount = totalUnpaidAmount.add(invoice.getRemainingAmount());
-                }
-                default -> {
-                }
-            }
-        }
-
-        return PaymentStatisticsRes.builder()
-                .totalPaidAmount(totalPaidAmount)
-                .totalUnpaidAmount(totalUnpaidAmount)
-                .paidInvoiceCount(paidCount)
-                .unpaidInvoiceCount(unpaidCount)
-                .partialInvoiceCount(partialCount)
-                .build();
     }
 
     private Student findStudentAndValidate(Long studentId, Long dojangId) {
