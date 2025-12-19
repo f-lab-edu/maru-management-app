@@ -151,4 +151,38 @@ public class InvoiceController {
             @CurrentUserId Long userId) {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
+
+    /**
+     * 수납 취소 API (환불 처리)
+     *
+     * @param invoiceId 청구서 ID
+     * @param paymentId 수납 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 인증된 사용자 ID
+     * @return 수정된 청구서 상세 정보
+     */
+    @DeleteMapping("/{invoiceId}/payments/{paymentId}")
+    public ResponseEntity<InvoiceDetailRes> cancelPayment(
+            @PathVariable Long invoiceId,
+            @PathVariable Long paymentId,
+            @RequestParam Long dojangId,
+            @CurrentUserId Long userId) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
+
+    /**
+     * 청구서 일괄 발행 API (DRAFT → OPEN)
+     *
+     * @param dojangId 도장 ID
+     * @param request 일괄 발행 요청
+     * @param userId 현재 인증된 사용자 ID
+     * @return 발행 결과
+     */
+    @PostMapping("/bulk-issue")
+    public ResponseEntity<BulkIssueRes> bulkIssueInvoices(
+            @RequestParam Long dojangId,
+            @Valid @RequestBody BulkIssueReq request,
+            @CurrentUserId Long userId) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    }
 }

@@ -1,5 +1,6 @@
 package com.maru.controller.invoice.dto;
 
+import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
 import lombok.Builder;
 
@@ -20,4 +21,21 @@ public record InvoiceDetailRes(
         LocalDate issueDate,
         String note,
         List<PaymentRes> payments
-) {}
+) {
+
+    public static InvoiceDetailRes from(Invoice invoice, List<PaymentRes> payments) {
+        return InvoiceDetailRes.builder()
+                .id(invoice.getId())
+                .studentId(invoice.getStudent().getId())
+                .studentName(invoice.getStudent().getName())
+                .amount(invoice.getAmount())
+                .paidAmount(invoice.getPaidAmount())
+                .remainingAmount(invoice.getRemainingAmount())
+                .status(invoice.getStatus())
+                .dueDate(invoice.getDueDate())
+                .issueDate(invoice.getIssueDate())
+                .note(invoice.getNote())
+                .payments(payments)
+                .build();
+    }
+}
