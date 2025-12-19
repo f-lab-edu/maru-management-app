@@ -3,10 +3,11 @@ package com.maru.controller.invoice;
 import com.maru.controller.invoice.dto.*;
 import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.security.CurrentUserId;
+import com.maru.service.invoice.InvoiceService;
+import com.maru.service.invoice.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,9 @@ import java.util.List;
 @RequestMapping("/api/v1/invoices")
 @RequiredArgsConstructor
 public class InvoiceController {
+
+    private final InvoiceService invoiceService;
+    private final PaymentService paymentService;
 
     /**
      * 청구서 생성 API
@@ -31,7 +35,8 @@ public class InvoiceController {
             @RequestParam Long dojangId,
             @Valid @RequestBody InvoiceCreateReq request,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = invoiceService.createInvoice(dojangId, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -47,7 +52,8 @@ public class InvoiceController {
             @RequestParam Long dojangId,
             @Valid @RequestBody InvoiceBulkCreateReq request,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        BulkCreateRes response = invoiceService.createBulkInvoices(dojangId, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -63,7 +69,8 @@ public class InvoiceController {
             @RequestParam Long dojangId,
             @RequestParam(required = false) InvoiceStatus status,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        List<InvoiceListRes> response = invoiceService.getInvoices(dojangId, status);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -79,7 +86,8 @@ public class InvoiceController {
             @PathVariable Long id,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = invoiceService.getInvoice(dojangId, id);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -97,7 +105,8 @@ public class InvoiceController {
             @RequestParam Long dojangId,
             @Valid @RequestBody InvoiceUpdateReq request,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = invoiceService.updateInvoice(dojangId, id, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -113,7 +122,8 @@ public class InvoiceController {
             @PathVariable Long id,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = invoiceService.issueInvoice(dojangId, id, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -129,7 +139,8 @@ public class InvoiceController {
             @PathVariable Long id,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = invoiceService.voidInvoice(dojangId, id, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -139,15 +150,16 @@ public class InvoiceController {
      * @param dojangId 도장 ID
      * @param request 수납 기록 요청
      * @param userId 현재 인증된 사용자 ID
-     * @return 수납 기록
+     * @return 청구서 상세 정보 (수납 내역 포함)
      */
     @PostMapping("/{id}/payments")
-    public ResponseEntity<PaymentRes> recordPayment(
+    public ResponseEntity<InvoiceDetailRes> recordPayment(
             @PathVariable Long id,
             @RequestParam Long dojangId,
             @Valid @RequestBody PaymentRecordReq request,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = paymentService.recordPayment(dojangId, id, request, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -165,7 +177,8 @@ public class InvoiceController {
             @PathVariable Long paymentId,
             @RequestParam Long dojangId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        InvoiceDetailRes response = paymentService.cancelPayment(dojangId, invoiceId, paymentId, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -181,6 +194,7 @@ public class InvoiceController {
             @RequestParam Long dojangId,
             @Valid @RequestBody BulkIssueReq request,
             @CurrentUserId Long userId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        BulkIssueRes response = invoiceService.bulkIssueInvoices(dojangId, request, userId);
+        return ResponseEntity.ok(response);
     }
 }
