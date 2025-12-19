@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -201,16 +203,35 @@ public class PaymentService {
     }
 
     private List<UnpaidListRes> buildUnpaidListResponses(List<Invoice> unpaidInvoices) {
+        if (unpaidInvoices.isEmpty()) {
+            return List.of();
+        }
+
         LocalDate today = LocalDate.now();
+        Map<Long, Guardian> guardianMap = fetchPrimaryGuardiansAsMap(unpaidInvoices);
 
         return unpaidInvoices.stream()
-                .map(invoice -> buildUnpaidListRes(invoice, today))
+                .map(invoice -> buildUnpaidListRes(invoice, today, guardianMap))
                 .toList();
     }
 
-    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today) {
+    private Map<Long, Guardian> fetchPrimaryGuardiansAsMap(List<Invoice> invoices) {
+        List<Long> studentIds = invoices.stream()
+                .map(invoice -> invoice.getStudent().getId())
+                .toList();
+
+        return guardianshipRepository.findPrimaryGuardianshipsByStudentIds(studentIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        g -> g.getStudent().getId(),
+                        g -> g.getGuardian(),
+                        (g1, g2) -> g1
+                ));
+    }
+
+    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today, Map<Long, Guardian> guardianMap) {
         Student student = invoice.getStudent();
-        Guardian primaryGuardian = findPrimaryGuardian(student.getId());
+        Guardian primaryGuardian = guardianMap.get(student.getId());
 
         return UnpaidListRes.builder()
                 .invoiceId(invoice.getId())
@@ -223,11 +244,6 @@ public class PaymentService {
                 .dueDate(invoice.getDueDate())
                 .overdueDays(calculateOverdueDays(invoice.getDueDate(), today))
                 .build();
-    }
-
-    private Guardian findPrimaryGuardian(Long studentId) {
-        List<Guardian> guardians = guardianshipRepository.findGuardiansByStudentId(studentId, true);
-        return guardians.isEmpty() ? null : guardians.get(0);
     }
 
     private int calculateOverdueDays(LocalDate dueDate, LocalDate today) {

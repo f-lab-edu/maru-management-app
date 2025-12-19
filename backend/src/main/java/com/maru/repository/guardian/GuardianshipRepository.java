@@ -29,4 +29,14 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Long
             @Param("studentId") Long studentId,
             @Param("primaryOnly") boolean primaryOnly
     );
+
+    @Query("""
+            SELECT g FROM Guardianship g
+            JOIN FETCH g.guardian
+            WHERE g.student.id IN :studentIds
+              AND g.isPrimary = true
+              AND g.deletedAt IS NULL
+              AND g.guardian.deletedAt IS NULL
+            """)
+    List<Guardianship> findPrimaryGuardianshipsByStudentIds(@Param("studentIds") List<Long> studentIds);
 }

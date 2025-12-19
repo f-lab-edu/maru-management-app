@@ -105,4 +105,5 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             @Param("id") Long id,
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId);
+
 }
