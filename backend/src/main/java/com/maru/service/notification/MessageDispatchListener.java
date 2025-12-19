@@ -10,7 +10,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class MessageDispatchListener {
 
-    private final AsyncNotificationSender asyncNotificationSender;
+    private final MessageDispatcher messageDispatcher;
 
     /**
      * 메시지 저장 커밋 후 비동기 발송 트리거
@@ -19,6 +19,6 @@ public class MessageDispatchListener {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMessageReady(MessageReadyEvent event) {
-        asyncNotificationSender.sendAsync(event.messageId(), event.tenantId());
+        messageDispatcher.sendAsync(event.messageId(), event.tenantId());
     }
 }

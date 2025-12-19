@@ -12,10 +12,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AsyncNotificationSender {
+public class MessageDispatcher {
 
     private final MessageQueueRepository messageQueueRepository;
     private final MessageSender messageSender;
+    private final MessageAcquirer messageAcquirer;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -37,8 +38,9 @@ public class AsyncNotificationSender {
     }
 
     private void trySendMessage(Long messageId) {
-        MessageQueue message = acquireMessage(messageId);
+        MessageQueue message = messageAcquirer.acquire(messageId).orElse(null);
         if (message == null) {
+            log.debug("메시지 선점 실패 (이미 처리 중): messageId={}", messageId);
             return;
         }
 
@@ -50,16 +52,6 @@ public class AsyncNotificationSender {
             log.warn("즉시 발송 실패 (스케줄러가 재시도): messageId={}, error={}", messageId, e.getMessage());
             markAsPendingWithFailure(messageId, e.getMessage());
         }
-    }
-
-    private MessageQueue acquireMessage(Long messageId) {
-        return transactionTemplate.execute(status -> {
-            MessageQueue message = messageQueueRepository.findById(messageId).orElse(null);
-            if (message != null) {
-                message.markAsProcessing();
-            }
-            return message;
-        });
     }
 
     /**
