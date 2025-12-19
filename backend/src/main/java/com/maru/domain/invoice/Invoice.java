@@ -111,13 +111,17 @@ public class Invoice extends BaseEntity {
     }
 
     private InvoiceStatus calculateStatus() {
+        if (this.status == InvoiceStatus.VOID) {
+            return InvoiceStatus.VOID;
+        }
+
         int comparison = this.paidAmount.compareTo(this.amount);
         if (comparison >= 0) {
             return InvoiceStatus.PAID;
         } else if (this.paidAmount.compareTo(BigDecimal.ZERO) > 0) {
             return InvoiceStatus.PARTIAL;
         }
-        return this.status;
+        return InvoiceStatus.OPEN;
     }
 
     public void update(BigDecimal amount, LocalDate dueDate, String note) {

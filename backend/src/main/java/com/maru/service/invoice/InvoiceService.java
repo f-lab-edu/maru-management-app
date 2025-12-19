@@ -20,8 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,9 +53,9 @@ public class InvoiceService {
 
         Student student = findStudentAndValidate(request.studentId(), dojangId);
         validateNoDuplicateInvoice(tenantId, dojangId, request.studentId());
-        validateAmountRequired(request.amount());
 
-        Invoice invoice = createAndSaveInvoice(student, request);
+        BigDecimal amount = resolveAmount(request.amount());
+        Invoice invoice = createAndSaveInvoice(student, amount, request);
 
         log.info("청구서 생성 완료: invoiceId={}, studentId={}, amount={}",
                 invoice.getId(), request.studentId(), request.amount());
@@ -74,10 +75,10 @@ public class InvoiceService {
     public BulkCreateRes createBulkInvoices(Long dojangId, InvoiceBulkCreateReq request, Long userId) {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
-        validateAmountRequired(request.defaultAmount());
 
+        BigDecimal amount = resolveAmount(request.defaultAmount());
         List<Student> targetStudents = findTargetStudentsForBulkCreate(tenantId, dojangId, request);
-        int createdCount = createInvoicesForStudents(targetStudents, request);
+        int createdCount = createInvoicesForStudents(targetStudents, amount, request);
 
         int totalActiveStudents = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
         int skippedCount = totalActiveStudents - createdCount;
@@ -209,14 +210,16 @@ public class InvoiceService {
         validateDojangAccess(dojangId, tenantId);
 
         List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, request.invoiceIds());
-        int[] result = issueInvoicesAndCountResult(invoices, userId);
+        List<BulkIssueRes.FailedInvoice> failedInvoices = new ArrayList<>();
+        int issuedCount = issueInvoicesAndCollectFailures(invoices, userId, failedInvoices);
 
         log.info("일괄 발행 완료: dojangId={}, issued={}, failed={}",
-                dojangId, result[0], result[1]);
+                dojangId, issuedCount, failedInvoices.size());
 
         return BulkIssueRes.builder()
-                .issuedCount(result[0])
-                .failedCount(result[1])
+                .issuedCount(issuedCount)
+                .failedCount(failedInvoices.size())
+                .failedInvoices(failedInvoices)
                 .build();
     }
 
@@ -250,14 +253,12 @@ public class InvoiceService {
         }
     }
 
-    private void validateAmountRequired(java.math.BigDecimal amount) {
-        if (amount == null) {
-            throw new BusinessException(InvoiceErrorCode.AMOUNT_REQUIRED);
-        }
+    private BigDecimal resolveAmount(BigDecimal amount) {
+        return amount != null ? amount : BigDecimal.ZERO;
     }
 
-    private Invoice createAndSaveInvoice(Student student, InvoiceCreateReq request) {
-        Invoice invoice = Invoice.create(student, request.amount(), request.dueDate(), request.note());
+    private Invoice createAndSaveInvoice(Student student, BigDecimal amount, InvoiceCreateReq request) {
+        Invoice invoice = Invoice.create(student, amount, request.dueDate(), request.note());
         return invoiceRepository.save(invoice);
     }
 
@@ -283,14 +284,12 @@ public class InvoiceService {
         return excludeIds;
     }
 
-    private int createInvoicesForStudents(List<Student> students, InvoiceBulkCreateReq request) {
-        int createdCount = 0;
-        for (Student student : students) {
-            Invoice invoice = Invoice.create(student, request.defaultAmount(), request.dueDate(), request.note());
-            invoiceRepository.save(invoice);
-            createdCount++;
-        }
-        return createdCount;
+    private int createInvoicesForStudents(List<Student> students, BigDecimal amount, InvoiceBulkCreateReq request) {
+        List<Invoice> invoices = students.stream()
+                .map(student -> Invoice.create(student, amount, request.dueDate(), request.note()))
+                .toList();
+        invoiceRepository.saveAll(invoices);
+        return invoices.size();
     }
 
     private Invoice findInvoiceWithStudent(Long invoiceId, Long tenantId, Long dojangId) {
@@ -307,28 +306,30 @@ public class InvoiceService {
         return InvoiceDetailRes.from(invoice, payments);
     }
 
-    private int[] issueInvoicesAndCountResult(List<Invoice> invoices, Long userId) {
+    private int issueInvoicesAndCollectFailures(List<Invoice> invoices, Long userId,
+                                                  List<BulkIssueRes.FailedInvoice> failedInvoices) {
         int issuedCount = 0;
-        int failedCount = 0;
-
         for (Invoice invoice : invoices) {
-            if (tryIssueInvoice(invoice, userId)) {
+            String failureReason = tryIssueInvoice(invoice, userId);
+            if (failureReason == null) {
                 issuedCount++;
             } else {
-                failedCount++;
+                failedInvoices.add(BulkIssueRes.FailedInvoice.builder()
+                        .invoiceId(invoice.getId())
+                        .reason(failureReason)
+                        .build());
             }
         }
-
-        return new int[] { issuedCount, failedCount };
+        return issuedCount;
     }
 
-    private boolean tryIssueInvoice(Invoice invoice, Long userId) {
+    private String tryIssueInvoice(Invoice invoice, Long userId) {
         try {
             invoice.issue(userId);
-            return true;
+            return null;
         } catch (BusinessException e) {
             log.warn("청구서 발행 실패: invoiceId={}, reason={}", invoice.getId(), e.getMessage());
-            return false;
+            return e.getMessage();
         }
     }
 }
