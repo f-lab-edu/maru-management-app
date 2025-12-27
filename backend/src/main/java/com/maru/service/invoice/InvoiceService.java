@@ -80,17 +80,17 @@ public class InvoiceService {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        LocalDate now = LocalDate.now();
-        int billingYear = request.billingYear() != null ? request.billingYear() : now.getYear();
-        int billingMonth = request.billingMonth() != null ? request.billingMonth() : now.getMonthValue();
-
+        int billingYear = resolveBillingYear(request.billingYear());
+        int billingMonth = resolveBillingMonth(request.billingMonth());
         BigDecimal amount = resolveAmount(request.defaultAmount());
-        List<Student> targetStudents = findTargetStudentsForBulkCreate(tenantId, dojangId, request, billingYear, billingMonth);
-        int createdCount = createInvoicesForStudents(targetStudents, billingYear, billingMonth, amount, request.dueDate(), request.note());
 
-        int totalTargetCount = request.studentIds() != null ? request.studentIds().size()
-                : studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
-        int skippedCount = totalTargetCount - createdCount;
+        TargetStudentsResult targetResult = findAllTargetStudents(tenantId, dojangId, request);
+        List<Student> eligibleStudents = excludeAlreadyInvoiced(
+                targetResult.students, tenantId, dojangId, billingYear, billingMonth);
+
+        int createdCount = createInvoicesForStudents(
+                eligibleStudents, billingYear, billingMonth, amount, request.dueDate(), request.note());
+        int skippedCount = targetResult.totalCount - createdCount;
 
         log.info("일괄 청구서 생성 완료: dojangId={}, billingYear={}, billingMonth={}, created={}, skipped={}",
                 dojangId, billingYear, billingMonth, createdCount, skippedCount);
@@ -319,7 +319,7 @@ public class InvoiceService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
-        if (!student.getDojang().getId().equals(dojangId)) {
+        if (!dojangId.equals(student.getDojang().getId())) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
 
@@ -330,6 +330,41 @@ public class InvoiceService {
         return amount != null ? amount : BigDecimal.ZERO;
     }
 
+    private int resolveBillingYear(Integer year) {
+        return year != null ? year : LocalDate.now().getYear();
+    }
+
+    private int resolveBillingMonth(Integer month) {
+        return month != null ? month : LocalDate.now().getMonthValue();
+    }
+
+    private record TargetStudentsResult(List<Student> students, int totalCount) {}
+
+    private TargetStudentsResult findAllTargetStudents(Long tenantId, Long dojangId, InvoiceBulkCreateReq request) {
+        if (request.studentIds() != null && !request.studentIds().isEmpty()) {
+            int totalCount = request.studentIds().size();
+            List<Student> students = studentRepository.findAllActiveByIds(
+                    request.studentIds(), tenantId, StudentStatus.WITHDRAWN).stream()
+                    .filter(s -> dojangId.equals(s.getDojang().getId()))
+                    .toList();
+            return new TargetStudentsResult(students, totalCount);
+        }
+
+        List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+        return new TargetStudentsResult(students, students.size());
+    }
+
+    private List<Student> excludeAlreadyInvoiced(List<Student> students, Long tenantId, Long dojangId,
+                                                  int billingYear, int billingMonth) {
+        List<Long> existingStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearAndMonth(
+                tenantId, dojangId, billingYear, billingMonth);
+        Set<Long> excludeIds = new HashSet<>(existingStudentIds);
+
+        return students.stream()
+                .filter(student -> !excludeIds.contains(student.getId()))
+                .toList();
+    }
+
     private Invoice createAndSaveInvoice(Student student, int billingYear, int billingMonth,
                                          BigDecimal amount, LocalDate dueDate, String note) {
         Invoice invoice = Invoice.create(student, billingYear, billingMonth, amount, dueDate, note);
@@ -338,29 +373,6 @@ public class InvoiceService {
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(InvoiceErrorCode.DUPLICATE_INVOICE);
         }
-    }
-
-    private List<Student> findTargetStudentsForBulkCreate(Long tenantId, Long dojangId,
-                                                          InvoiceBulkCreateReq request,
-                                                          int billingYear, int billingMonth) {
-        List<Student> targetStudents;
-
-        if (request.studentIds() != null && !request.studentIds().isEmpty()) {
-            targetStudents = studentRepository.findAllById(request.studentIds()).stream()
-                    .filter(s -> s.getDojang().getId().equals(dojangId))
-                    .filter(s -> s.getStatus() != StudentStatus.WITHDRAWN)
-                    .toList();
-        } else {
-            targetStudents = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
-        }
-
-        List<Long> existingInvoiceStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearAndMonth(
-                tenantId, dojangId, billingYear, billingMonth);
-        Set<Long> excludeIds = new HashSet<>(existingInvoiceStudentIds);
-
-        return targetStudents.stream()
-                .filter(student -> !excludeIds.contains(student.getId()))
-                .toList();
     }
 
     private int createInvoicesForStudents(List<Student> students, int billingYear, int billingMonth,
