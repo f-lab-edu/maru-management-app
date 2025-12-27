@@ -16,14 +16,19 @@ public enum InvoiceErrorCode implements BaseErrorCode {
     DUE_DATE_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_102", "납부 마감일은 필수입니다"),
     AMOUNT_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_103", "청구 금액은 필수입니다"),
 
+    // 검증 실패
+    INVALID_BILLING_MONTH(HttpStatus.BAD_REQUEST, "INVOICE_201", "청구 월은 1-12 사이여야 합니다"),
+
     // 비즈니스 규칙 위반
     DUPLICATE_INVOICE(HttpStatus.CONFLICT, "INVOICE_301", "해당 월에 이미 청구서가 존재합니다"),
     INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "INVOICE_302", "잘못된 상태 변경입니다"),
     CANNOT_VOID_PAID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_303", "완납된 청구서는 무효화할 수 없습니다"),
     CANNOT_UPDATE_NON_DRAFT(HttpStatus.BAD_REQUEST, "INVOICE_304", "초안 상태의 청구서만 수정할 수 있습니다"),
-    CANNOT_PAY_VOID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_305", "무효화된 청구서에는 결제할 수 없습니다"),
-    CANNOT_PAY_DRAFT_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_306", "초안 상태의 청구서에는 결제할 수 없습니다"),
-    CANNOT_REFUND_VOID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_307", "무효화된 청구서에는 환불할 수 없습니다");
+    CANNOT_RESTORE_NON_VOID(HttpStatus.BAD_REQUEST, "INVOICE_305", "VOID 상태의 청구서만 복구할 수 있습니다"),
+    CANNOT_DELETE_NON_DRAFT(HttpStatus.BAD_REQUEST, "INVOICE_306", "DRAFT 상태의 청구서만 삭제할 수 있습니다"),
+    CANNOT_PAY_VOID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_307", "무효화된 청구서에는 결제할 수 없습니다"),
+    CANNOT_PAY_DRAFT_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_308", "초안 상태의 청구서에는 결제할 수 없습니다"),
+    CANNOT_REFUND_VOID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_309", "무효화된 청구서에는 환불할 수 없습니다");
 
     private final HttpStatus status;
     private final String code;
