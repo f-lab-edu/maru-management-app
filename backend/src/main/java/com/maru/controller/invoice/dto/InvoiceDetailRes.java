@@ -20,6 +20,8 @@ public record InvoiceDetailRes(
         LocalDate dueDate,
         LocalDate issueDate,
         String note,
+        int billingYear,
+        int billingMonth,
         List<PaymentRes> payments
 ) {
 
@@ -35,6 +37,8 @@ public record InvoiceDetailRes(
                 .dueDate(invoice.getDueDate())
                 .issueDate(invoice.getIssueDate())
                 .note(invoice.getNote())
+                .billingYear(invoice.getBillingYear())
+                .billingMonth(invoice.getBillingMonth())
                 .payments(payments)
                 .build();
     }

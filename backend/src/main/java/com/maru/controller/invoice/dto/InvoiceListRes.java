@@ -16,7 +16,9 @@ public record InvoiceListRes(
         BigDecimal remainingAmount,
         InvoiceStatus status,
         LocalDate dueDate,
-        LocalDate issueDate
+        LocalDate issueDate,
+        int billingYear,
+        int billingMonth
 ) {
 
     public static InvoiceListRes from(Invoice invoice) {
@@ -29,6 +31,8 @@ public record InvoiceListRes(
                 .status(invoice.getStatus())
                 .dueDate(invoice.getDueDate())
                 .issueDate(invoice.getIssueDate())
+                .billingYear(invoice.getBillingYear())
+                .billingMonth(invoice.getBillingMonth())
                 .build();
     }
 }
