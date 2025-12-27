@@ -3,7 +3,6 @@ package com.maru.service.invoice;
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.InvoiceErrorCode;
 import com.maru.common.exception.PaymentErrorCode;
-import com.maru.common.util.DateRange;
 import com.maru.controller.invoice.dto.*;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.invoice.Invoice;
@@ -27,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -115,24 +115,26 @@ public class PaymentService {
     }
 
     /**
-     * 수납 통계 조회
+     * 수납 통계 조회 (청구 연월 기준)
      *
      * @param dojangId 도장 ID
-     * @param startDate 시작일 (null이면 이번 달 1일)
-     * @param endDate 종료일 (null이면 오늘)
+     * @param year 청구 연도
+     * @param month 청구 월 (1-12)
      * @return 수납 통계 (완납/미납/부분납 건수 및 금액)
      */
     @Transactional(readOnly = true)
-    public PaymentStatisticsRes getPaymentStatistics(Long dojangId, LocalDate startDate, LocalDate endDate) {
+    public PaymentStatisticsRes getPaymentStatistics(Long dojangId, int year, int month) {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        DateRange range = DateRange.ofWithDefaults(startDate, endDate);
+        LocalDateTime startOfMonth = LocalDate.of(year, month, 1).atStartOfDay();
+        LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
+
         BigDecimal totalPaidAmount = paymentRepository.sumByTenantIdAndPeriod(
-                tenantId, dojangId, range.start(), range.end());
+                tenantId, dojangId, startOfMonth, startOfNextMonth);
 
         InvoiceStatistics statistics = invoiceRepository.getStatistics(
-                tenantId, dojangId, range.start().toLocalDate(), range.end().toLocalDate());
+                tenantId, dojangId, year, month);
 
         return PaymentStatisticsRes.builder()
                 .totalPaidAmount(totalPaidAmount)

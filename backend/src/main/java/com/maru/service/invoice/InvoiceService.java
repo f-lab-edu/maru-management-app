@@ -17,6 +17,7 @@ import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,13 +53,16 @@ public class InvoiceService {
         validateDojangAccess(dojangId, tenantId);
 
         Student student = findStudentAndValidate(request.studentId(), dojangId);
-        validateNoDuplicateInvoice(tenantId, dojangId, request.studentId());
+
+        LocalDate now = LocalDate.now();
+        int billingYear = request.billingYear() != null ? request.billingYear() : now.getYear();
+        int billingMonth = request.billingMonth() != null ? request.billingMonth() : now.getMonthValue();
 
         BigDecimal amount = resolveAmount(request.amount());
-        Invoice invoice = createAndSaveInvoice(student, amount, request);
+        Invoice invoice = createAndSaveInvoice(student, billingYear, billingMonth, amount, request.dueDate(), request.note());
 
-        log.info("청구서 생성 완료: invoiceId={}, studentId={}, amount={}",
-                invoice.getId(), request.studentId(), request.amount());
+        log.info("청구서 생성 완료: invoiceId={}, studentId={}, billingYear={}, billingMonth={}",
+                invoice.getId(), request.studentId(), billingYear, billingMonth);
 
         return buildInvoiceDetailRes(invoice);
     }
@@ -76,15 +80,20 @@ public class InvoiceService {
         Long tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
+        LocalDate now = LocalDate.now();
+        int billingYear = request.billingYear() != null ? request.billingYear() : now.getYear();
+        int billingMonth = request.billingMonth() != null ? request.billingMonth() : now.getMonthValue();
+
         BigDecimal amount = resolveAmount(request.defaultAmount());
-        List<Student> targetStudents = findTargetStudentsForBulkCreate(tenantId, dojangId, request);
-        int createdCount = createInvoicesForStudents(targetStudents, amount, request);
+        List<Student> targetStudents = findTargetStudentsForBulkCreate(tenantId, dojangId, request, billingYear, billingMonth);
+        int createdCount = createInvoicesForStudents(targetStudents, billingYear, billingMonth, amount, request.dueDate(), request.note());
 
-        int totalActiveStudents = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
-        int skippedCount = totalActiveStudents - createdCount;
+        int totalTargetCount = request.studentIds() != null ? request.studentIds().size()
+                : studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN).size();
+        int skippedCount = totalTargetCount - createdCount;
 
-        log.info("일괄 청구서 생성 완료: dojangId={}, created={}, skipped={}",
-                dojangId, createdCount, skippedCount);
+        log.info("일괄 청구서 생성 완료: dojangId={}, billingYear={}, billingMonth={}, created={}, skipped={}",
+                dojangId, billingYear, billingMonth, createdCount, skippedCount);
 
         return BulkCreateRes.builder()
                 .createdCount(createdCount)
@@ -197,6 +206,50 @@ public class InvoiceService {
     }
 
     /**
+     * 청구서 복구 (VOID → DRAFT)
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceId 청구서 ID
+     * @param userId 현재 사용자 ID
+     * @return 복구된 청구서 상세 정보
+     * @throws BusinessException CANNOT_RESTORE_NON_VOID - VOID 상태가 아닌 경우
+     */
+    @Transactional
+    public InvoiceDetailRes restoreInvoice(Long dojangId, Long invoiceId, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        invoice.restore();
+
+        log.info("청구서 복구 완료: invoiceId={}, userId={}", invoiceId, userId);
+
+        return buildInvoiceDetailRes(invoice);
+    }
+
+    /**
+     * 청구서 삭제 (DRAFT 상태만 가능)
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceId 청구서 ID
+     * @param userId 현재 사용자 ID
+     * @throws BusinessException CANNOT_DELETE_NON_DRAFT - DRAFT 상태가 아닌 경우
+     */
+    @Transactional
+    public void deleteInvoice(Long dojangId, Long invoiceId, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_DELETE_NON_DRAFT);
+        }
+
+        invoiceRepository.delete(invoice);
+        log.info("청구서 삭제 완료: invoiceId={}, userId={}", invoiceId, userId);
+    }
+
+    /**
      * 청구서 일괄 발행 (DRAFT → OPEN)
      *
      * @param dojangId 도장 ID
@@ -223,6 +276,36 @@ public class InvoiceService {
                 .build();
     }
 
+    /**
+     * 청구서 일괄 수정 (DRAFT 상태만 가능)
+     *
+     * @param dojangId 도장 ID
+     * @param request 일괄 수정 요청
+     * @param userId 현재 사용자 ID
+     * @return 수정 결과 (전체 수, 성공 수, 스킵 수)
+     */
+    @Transactional
+    public BulkUpdateRes bulkUpdateInvoices(Long dojangId, InvoiceBulkUpdateReq request, Long userId) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, request.invoiceIds());
+
+        int updatedCount = 0;
+        for (Invoice invoice : invoices) {
+            if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+                continue;
+            }
+            invoice.update(request.amount(), request.dueDate(), request.note());
+            updatedCount++;
+        }
+
+        log.info("일괄 수정 완료: dojangId={}, updated={}, skipped={}",
+                dojangId, updatedCount, request.invoiceIds().size() - updatedCount);
+
+        return BulkUpdateRes.of(request.invoiceIds().size(), updatedCount);
+    }
+
     private void validateDojangAccess(Long dojangId, Long tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
@@ -243,50 +326,47 @@ public class InvoiceService {
         return student;
     }
 
-    private void validateNoDuplicateInvoice(Long tenantId, Long dojangId, Long studentId) {
-        LocalDate now = LocalDate.now();
-        boolean exists = invoiceRepository.existsByDojangIdAndStudentIdAndIssueMonth(
-                tenantId, dojangId, studentId, now.getYear(), now.getMonthValue());
-
-        if (exists) {
-            throw new BusinessException(InvoiceErrorCode.DUPLICATE_INVOICE);
-        }
-    }
-
     private BigDecimal resolveAmount(BigDecimal amount) {
         return amount != null ? amount : BigDecimal.ZERO;
     }
 
-    private Invoice createAndSaveInvoice(Student student, BigDecimal amount, InvoiceCreateReq request) {
-        Invoice invoice = Invoice.create(student, amount, request.dueDate(), request.note());
-        return invoiceRepository.save(invoice);
+    private Invoice createAndSaveInvoice(Student student, int billingYear, int billingMonth,
+                                         BigDecimal amount, LocalDate dueDate, String note) {
+        Invoice invoice = Invoice.create(student, billingYear, billingMonth, amount, dueDate, note);
+        try {
+            return invoiceRepository.save(invoice);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(InvoiceErrorCode.DUPLICATE_INVOICE);
+        }
     }
 
-    private List<Student> findTargetStudentsForBulkCreate(Long tenantId, Long dojangId, InvoiceBulkCreateReq request) {
-        List<Student> activeStudents = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+    private List<Student> findTargetStudentsForBulkCreate(Long tenantId, Long dojangId,
+                                                          InvoiceBulkCreateReq request,
+                                                          int billingYear, int billingMonth) {
+        List<Student> targetStudents;
 
-        LocalDate now = LocalDate.now();
-        List<Long> existingInvoiceStudentIds = invoiceRepository.findStudentIdsWithInvoice(
-                tenantId, dojangId, now.getYear(), now.getMonthValue());
+        if (request.studentIds() != null && !request.studentIds().isEmpty()) {
+            targetStudents = studentRepository.findAllById(request.studentIds()).stream()
+                    .filter(s -> s.getDojang().getId().equals(dojangId))
+                    .filter(s -> s.getStatus() != StudentStatus.WITHDRAWN)
+                    .toList();
+        } else {
+            targetStudents = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+        }
 
-        Set<Long> excludeIds = buildExcludeStudentIds(request.excludeStudentIds(), existingInvoiceStudentIds);
+        List<Long> existingInvoiceStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearAndMonth(
+                tenantId, dojangId, billingYear, billingMonth);
+        Set<Long> excludeIds = new HashSet<>(existingInvoiceStudentIds);
 
-        return activeStudents.stream()
+        return targetStudents.stream()
                 .filter(student -> !excludeIds.contains(student.getId()))
                 .toList();
     }
 
-    private Set<Long> buildExcludeStudentIds(List<Long> requestExcludeIds, List<Long> existingInvoiceStudentIds) {
-        Set<Long> excludeIds = new HashSet<>(existingInvoiceStudentIds);
-        if (requestExcludeIds != null) {
-            excludeIds.addAll(requestExcludeIds);
-        }
-        return excludeIds;
-    }
-
-    private int createInvoicesForStudents(List<Student> students, BigDecimal amount, InvoiceBulkCreateReq request) {
+    private int createInvoicesForStudents(List<Student> students, int billingYear, int billingMonth,
+                                          BigDecimal amount, LocalDate dueDate, String note) {
         List<Invoice> invoices = students.stream()
-                .map(student -> Invoice.create(student, amount, request.dueDate(), request.note()))
+                .map(student -> Invoice.create(student, billingYear, billingMonth, amount, dueDate, note))
                 .toList();
         invoiceRepository.saveAll(invoices);
         return invoices.size();
