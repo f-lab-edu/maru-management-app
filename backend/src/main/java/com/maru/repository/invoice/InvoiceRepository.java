@@ -59,44 +59,28 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.student.id = :studentId
-          AND i.issueDate >= :startDate
-          AND i.issueDate < :endDate
-          AND i.status != 'VOID'
+          AND i.billingYear = :year
+          AND i.billingMonth = :month
         """)
-    boolean existsByIssueDateRange(
+    boolean existsByBillingYearAndMonth(
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
             @Param("studentId") Long studentId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
-
-    default boolean existsByDojangIdAndStudentIdAndIssueMonth(
-            Long tenantId, Long dojangId, Long studentId, int year, int month) {
-        LocalDate startDate = LocalDate.of(year, month, 1);
-        LocalDate endDate = startDate.plusMonths(1);
-        return existsByIssueDateRange(tenantId, dojangId, studentId, startDate, endDate);
-    }
+            @Param("year") int year,
+            @Param("month") int month);
 
     @Query("""
         SELECT i.student.id FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.issueDate >= :startDate
-          AND i.issueDate < :endDate
-          AND i.status != 'VOID'
+          AND i.billingYear = :year
+          AND i.billingMonth = :month
         """)
-    List<Long> findStudentIdsInDateRange(
+    List<Long> findStudentIdsWithInvoiceByBillingYearAndMonth(
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
-
-    default List<Long> findStudentIdsWithInvoice(
-            Long tenantId, Long dojangId, int year, int month) {
-        LocalDate startDate = LocalDate.of(year, month, 1);
-        LocalDate endDate = startDate.plusMonths(1);
-        return findStudentIdsInDateRange(tenantId, dojangId, startDate, endDate);
-    }
+            @Param("year") int year,
+            @Param("month") int month);
 
     @Query("""
         SELECT i FROM Invoice i
@@ -130,13 +114,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.issueDate >= :startDate
-          AND i.issueDate < :endDate
+          AND i.billingYear = :year
+          AND i.billingMonth = :month
           AND i.status != 'VOID'
         """)
     InvoiceStatistics getStatistics(
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("year") int year,
+            @Param("month") int month);
 }
