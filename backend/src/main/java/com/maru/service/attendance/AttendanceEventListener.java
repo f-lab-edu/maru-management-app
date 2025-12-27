@@ -20,7 +20,7 @@ import java.util.List;
 public class AttendanceEventListener {
 
     private final NotificationService notificationService;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 출석/하원 체크 시 알림 생성 및 즉시 발송 트리거
@@ -33,7 +33,7 @@ public class AttendanceEventListener {
         try {
             List<Long> messageIds = createNotificationMessages(event);
             triggerAsyncDispatch(messageIds, event.tenantId());
-            logSuccess(event, messageIds.size());
+            log.info("출석 알림 생성 완료: attendanceId={}, isCheckin={}, messageCount={}", event.attendanceId(), event.isCheckin(), messageIds.size());
         } catch (Exception e) {
             log.error("알림 생성 실패 (출석 기록 보존됨): attendanceId={}", event.attendanceId(), e);
         }
@@ -47,12 +47,7 @@ public class AttendanceEventListener {
 
     private void triggerAsyncDispatch(List<Long> messageIds, Long tenantId) {
         for (Long messageId : messageIds) {
-            applicationEventPublisher.publishEvent(new MessageReadyEvent(messageId, tenantId));
+            eventPublisher.publishEvent(new MessageReadyEvent(messageId, tenantId));
         }
-    }
-
-    private void logSuccess(AttendanceCheckedEvent event, int messageCount) {
-        log.info("출석 알림 생성 완료: attendanceId={}, isCheckin={}, messageCount={}",
-                event.attendanceId(), event.isCheckin(), messageCount);
     }
 }

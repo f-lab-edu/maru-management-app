@@ -2,7 +2,7 @@ package com.maru.repository.invoice;
 
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
-import com.maru.service.invoice.dto.InvoiceStatistics;
+import com.maru.repository.invoice.projection.InvoiceStatistics;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -122,23 +122,21 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
             @Param("dojangId") Long dojangId);
 
     @Query("""
-        SELECT new com.maru.service.invoice.dto.InvoiceStatistics(
-            COUNT(CASE WHEN i.status = com.maru.domain.invoice.InvoiceStatus.PAID THEN 1 END),
-            COUNT(CASE WHEN i.status = com.maru.domain.invoice.InvoiceStatus.PARTIAL THEN 1 END),
-            COUNT(CASE WHEN i.status IN (com.maru.domain.invoice.InvoiceStatus.OPEN, com.maru.domain.invoice.InvoiceStatus.PARTIAL) THEN 1 END),
-            COALESCE(SUM(CASE WHEN i.status IN (com.maru.domain.invoice.InvoiceStatus.OPEN, com.maru.domain.invoice.InvoiceStatus.PARTIAL) THEN i.amount - i.paidAmount ELSE 0 END), 0)
-        )
+        SELECT
+            COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) AS paidCount,
+            COUNT(CASE WHEN i.status = 'PARTIAL' THEN 1 END) AS partialCount,
+            COUNT(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN 1 END) AS unpaidCount,
+            COALESCE(SUM(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN i.amount - i.paidAmount ELSE 0 END), 0) AS totalUnpaidAmount
         FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.issueDate >= :startDate
           AND i.issueDate < :endDate
-          AND i.status != com.maru.domain.invoice.InvoiceStatus.VOID
+          AND i.status != 'VOID'
         """)
     InvoiceStatistics getStatistics(
             @Param("tenantId") Long tenantId,
             @Param("dojangId") Long dojangId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
-
 }

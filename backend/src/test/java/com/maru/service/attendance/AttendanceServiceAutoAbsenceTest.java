@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -133,7 +134,7 @@ class AttendanceServiceAutoAbsenceTest {
     }
 
     private List<Student> createMockStudents(int count) {
-        return java.util.stream.IntStream.rangeClosed(1, count)
+        return IntStream.rangeClosed(1, count)
                 .mapToObj(i -> createMockStudent((long) i, "원생" + i))
                 .toList();
     }

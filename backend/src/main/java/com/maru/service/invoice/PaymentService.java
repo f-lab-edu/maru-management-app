@@ -16,10 +16,10 @@ import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
+import com.maru.repository.invoice.projection.InvoiceStatistics;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
-import com.maru.service.invoice.dto.InvoiceStatistics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -136,10 +136,10 @@ public class PaymentService {
 
         return PaymentStatisticsRes.builder()
                 .totalPaidAmount(totalPaidAmount)
-                .totalUnpaidAmount(statistics.totalUnpaidAmount())
-                .paidInvoiceCount((int) statistics.paidCount())
-                .unpaidInvoiceCount((int) statistics.unpaidCount())
-                .partialInvoiceCount((int) statistics.partialCount())
+                .totalUnpaidAmount(statistics.getTotalUnpaidAmount())
+                .paidInvoiceCount((int) statistics.getPaidCount())
+                .unpaidInvoiceCount((int) statistics.getUnpaidCount())
+                .partialInvoiceCount((int) statistics.getPartialCount())
                 .build();
     }
 
