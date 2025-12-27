@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Entity
 @Table(
@@ -19,7 +20,14 @@ import java.time.LocalDate;
     indexes = {
         @Index(name = "idx_invoice_tenant_status_due", columnList = "tenant_id, status, due_date"),
         @Index(name = "idx_invoice_student_status", columnList = "student_id, status"),
-        @Index(name = "idx_invoice_tenant_dojang_issue", columnList = "tenant_id, dojang_id, issue_date")
+        @Index(name = "idx_invoice_tenant_dojang_issue", columnList = "tenant_id, dojang_id, issue_date"),
+        @Index(name = "idx_invoice_billing", columnList = "tenant_id, dojang_id, billing_year, billing_month")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_invoice_billing",
+            columnNames = {"tenant_id", "dojang_id", "student_id", "billing_year", "billing_month"}
+        )
     }
 )
 @Getter
@@ -35,6 +43,12 @@ public class Invoice extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
+
+    @Column(name = "billing_year", nullable = false)
+    private int billingYear;
+
+    @Column(name = "billing_month", nullable = false)
+    private int billingMonth;
 
     @Column(name = "issued_by")
     private Long issuedBy;
@@ -58,14 +72,18 @@ public class Invoice extends BaseEntity {
     @Column(name = "note", length = 500)
     private String note;
 
-    private Invoice(Student student, BigDecimal amount, LocalDate dueDate, String note) {
+    private Invoice(Student student, int billingYear, int billingMonth,
+                    BigDecimal amount, LocalDate dueDate, String note) {
         DomainAssert.notNull(student, InvoiceErrorCode.STUDENT_REQUIRED);
         DomainAssert.notNull(dueDate, InvoiceErrorCode.DUE_DATE_REQUIRED);
         DomainAssert.notNull(amount, InvoiceErrorCode.AMOUNT_REQUIRED);
+        validateBillingMonth(billingMonth);
 
         this.tenantId = student.getTenantId();
         this.dojangId = student.getDojang().getId();
         this.student = student;
+        this.billingYear = billingYear;
+        this.billingMonth = billingMonth;
         this.issueDate = null;
         this.dueDate = dueDate;
         this.status = InvoiceStatus.DRAFT;
@@ -74,8 +92,15 @@ public class Invoice extends BaseEntity {
         this.note = note;
     }
 
-    public static Invoice create(Student student, BigDecimal amount, LocalDate dueDate, String note) {
-        return new Invoice(student, amount, dueDate, note);
+    public static Invoice create(Student student, int billingYear, int billingMonth,
+                                 BigDecimal amount, LocalDate dueDate, String note) {
+        return new Invoice(student, billingYear, billingMonth, amount, dueDate, note);
+    }
+
+    private void validateBillingMonth(int billingMonth) {
+        if (billingMonth < 1 || billingMonth > 12) {
+            throw new BusinessException(InvoiceErrorCode.INVALID_BILLING_MONTH);
+        }
     }
 
     public void issue(Long issuedBy) {
@@ -91,10 +116,19 @@ public class Invoice extends BaseEntity {
         if (this.status == InvoiceStatus.PAID) {
             throw new BusinessException(InvoiceErrorCode.CANNOT_VOID_PAID_INVOICE);
         }
-        if (this.status != InvoiceStatus.DRAFT && this.status != InvoiceStatus.OPEN) {
+        if (this.status != InvoiceStatus.DRAFT && this.status != InvoiceStatus.OPEN && this.status != InvoiceStatus.PARTIAL) {
             throw new BusinessException(InvoiceErrorCode.INVALID_STATUS_TRANSITION);
         }
         this.status = InvoiceStatus.VOID;
+    }
+
+    public void restore() {
+        if (this.status != InvoiceStatus.VOID) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_RESTORE_NON_VOID);
+        }
+        this.status = InvoiceStatus.DRAFT;
+        this.issueDate = null;
+        this.issuedBy = null;
     }
 
     public void addPayment(BigDecimal paymentAmount) {
@@ -138,14 +172,8 @@ public class Invoice extends BaseEntity {
         if (this.status != InvoiceStatus.DRAFT) {
             throw new BusinessException(InvoiceErrorCode.CANNOT_UPDATE_NON_DRAFT);
         }
-        if (amount != null) {
-            this.amount = amount;
-        }
-        if (dueDate != null) {
-            this.dueDate = dueDate;
-        }
-        if (note != null) {
-            this.note = note;
-        }
+        Optional.ofNullable(amount).ifPresent(a -> this.amount = a);
+        Optional.ofNullable(dueDate).ifPresent(d -> this.dueDate = d);
+        Optional.ofNullable(note).ifPresent(n -> this.note = n);
     }
 }
