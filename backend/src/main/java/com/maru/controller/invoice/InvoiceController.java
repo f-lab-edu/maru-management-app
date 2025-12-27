@@ -143,6 +143,40 @@ public class InvoiceController {
         return ResponseEntity.ok(response);
     }
 
+
+    /**
+     * 청구서 복구 API (VOID → DRAFT)
+     *
+     * @param id 청구서 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 인증된 사용자 ID
+     * @return 복구된 청구서
+     */
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<InvoiceDetailRes> restoreInvoice(
+            @PathVariable Long id,
+            @RequestParam Long dojangId,
+            @CurrentUserId Long userId) {
+        InvoiceDetailRes response = invoiceService.restoreInvoice(dojangId, id, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 청구서 삭제 API (DRAFT 상태만 삭제 가능)
+     *
+     * @param id 청구서 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 인증된 사용자 ID
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInvoice(
+            @PathVariable Long id,
+            @RequestParam Long dojangId,
+            @CurrentUserId Long userId) {
+        invoiceService.deleteInvoice(dojangId, id, userId);
+        return ResponseEntity.noContent().build();
+    }
+
     /**
      * 수납 기록 API
      *
@@ -195,6 +229,24 @@ public class InvoiceController {
             @Valid @RequestBody BulkIssueReq request,
             @CurrentUserId Long userId) {
         BulkIssueRes response = invoiceService.bulkIssueInvoices(dojangId, request, userId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * 청구서 일괄 수정 API (DRAFT 상태만 수정 가능)
+     *
+     * @param dojangId 도장 ID
+     * @param request 일괄 수정 요청
+     * @param userId 현재 인증된 사용자 ID
+     * @return 수정 결과
+     */
+    @PatchMapping("/bulk-update")
+    public ResponseEntity<BulkUpdateRes> bulkUpdateInvoices(
+            @RequestParam Long dojangId,
+            @Valid @RequestBody InvoiceBulkUpdateReq request,
+            @CurrentUserId Long userId) {
+        BulkUpdateRes response = invoiceService.bulkUpdateInvoices(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
 }

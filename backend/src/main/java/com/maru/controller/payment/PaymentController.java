@@ -38,21 +38,21 @@ public class PaymentController {
     }
 
     /**
-     * 수납 통계 조회 API
+     * 수납 통계 조회 API (청구 연월 기준)
      *
      * @param dojangId 도장 ID
-     * @param startDate 조회 시작일
-     * @param endDate 조회 종료일
+     * @param year 청구 연도
+     * @param month 청구 월 (1-12)
      * @param userId 현재 인증된 사용자 ID
      * @return 수납 통계
      */
     @GetMapping("/statistics")
     public ResponseEntity<PaymentStatisticsRes> getPaymentStatistics(
             @RequestParam Long dojangId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam int year,
+            @RequestParam int month,
             @CurrentUserId Long userId) {
-        PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, startDate, endDate);
+        PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, year, month);
         return ResponseEntity.ok(response);
     }
 
