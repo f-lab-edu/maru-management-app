@@ -169,11 +169,17 @@ public class Invoice extends BaseEntity {
     }
 
     public void update(BigDecimal amount, LocalDate dueDate, String note) {
-        if (this.status != InvoiceStatus.DRAFT) {
-            throw new BusinessException(InvoiceErrorCode.CANNOT_UPDATE_NON_DRAFT);
+        // DRAFT, OPEN만 수정 가능 (OPEN = 아직 수납 없음)
+        if (this.status != InvoiceStatus.DRAFT && this.status != InvoiceStatus.OPEN) {
+            throw new BusinessException(InvoiceErrorCode.CANNOT_UPDATE_ISSUED_INVOICE);
         }
         Optional.ofNullable(amount).ifPresent(a -> this.amount = a);
         Optional.ofNullable(dueDate).ifPresent(d -> this.dueDate = d);
         Optional.ofNullable(note).ifPresent(n -> this.note = n);
+    }
+
+
+    public boolean isEditable() {
+        return this.status == InvoiceStatus.DRAFT || this.status == InvoiceStatus.OPEN;
     }
 }

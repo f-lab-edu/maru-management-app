@@ -277,7 +277,7 @@ public class InvoiceService {
     }
 
     /**
-     * 청구서 일괄 수정 (DRAFT 상태만 가능)
+     * 청구서 일괄 수정 (DRAFT, OPEN 상태만 가능)
      *
      * @param dojangId 도장 ID
      * @param request 일괄 수정 요청
@@ -293,7 +293,7 @@ public class InvoiceService {
 
         int updatedCount = 0;
         for (Invoice invoice : invoices) {
-            if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            if (!invoice.isEditable()) {
                 continue;
             }
             invoice.update(request.amount(), request.dueDate(), request.note());
