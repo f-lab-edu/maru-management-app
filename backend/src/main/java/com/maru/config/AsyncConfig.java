@@ -19,7 +19,7 @@ public class AsyncConfig {
      * @return Executor
      */
     @Bean
-    public Executor asyncExecutor() {
+    public Executor taskExecutor() {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
 }
