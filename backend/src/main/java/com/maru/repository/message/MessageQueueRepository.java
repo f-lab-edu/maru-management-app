@@ -69,7 +69,7 @@ public interface MessageQueueRepository extends JpaRepository<MessageQueue, Long
             UPDATE MessageQueue m
             SET m.status = 'PENDING'
             WHERE m.status = 'PROCESSING'
-              AND m.scheduledAt < :threshold
+              AND m.updatedAt < :threshold
             """)
     int recoverStuckProcessing(@Param("threshold") LocalDateTime threshold);
 }

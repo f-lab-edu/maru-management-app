@@ -11,8 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -27,6 +29,7 @@ public class MessageQueueRetryWorker {
     private final MessageQueueRepository messageQueueRepository;
     private final MessageSender messageSender;
     private final MessageAcquirer messageAcquirer;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 즉시 발송 실패 건 재시도 (10초마다)
@@ -45,40 +48,53 @@ public class MessageQueueRetryWorker {
         }
 
         log.info("재시도 대상 메시지: {}건", messages.size());
-
-        for (MessageQueue message : messages) {
-            processRetry(message.getId());
-        }
+        processBatchRetry(messages);
     }
 
-    private void processRetry(Long messageId) {
-        MessageQueue message = messageAcquirer.acquire(messageId).orElse(null);
-        if (message == null) {
-            log.debug("메시지 선점 실패 (이미 처리 중): messageId={}", messageId);
+    private void processBatchRetry(List<MessageQueue> messages) {
+        List<MessageQueue> acquiredMessages = new ArrayList<>();
+
+        for (MessageQueue message : messages) {
+            messageAcquirer.acquire(message.getId()).ifPresent(acquiredMessages::add);
+        }
+
+        if (acquiredMessages.isEmpty()) {
+            log.debug("선점된 메시지 없음");
             return;
         }
 
         try {
-            messageSender.send(message);
-            message.markAsSent();
-            messageQueueRepository.save(message);
-            log.info("재시도 발송 성공: messageId={}", messageId);
+            messageSender.sendBatch(acquiredMessages);
+            markAllAsSent(acquiredMessages);
+            log.info("재시도 배치 발송 성공: {}건", acquiredMessages.size());
         } catch (Exception e) {
-            handleSendFailure(message, e);
+            log.warn("재시도 배치 발송 실패: {}건, error={}", acquiredMessages.size(), e.getMessage());
+            handleBatchSendFailure(acquiredMessages, e.getMessage());
         }
     }
 
-    private void handleSendFailure(MessageQueue message, Exception e) {
-        log.warn("재시도 발송 실패: messageId={}, failedCount={}",
-                message.getId(), message.getFailedCount() + 1);
-        message.incrementFailedCount();
-        if (message.getFailedCount() >= MAX_RETRY) {
-            message.markAsFailed(e.getMessage());
-            log.error("최종 발송 실패 (재시도 횟수 초과): messageId={}", message.getId());
-        } else {
-            message.markAsPending();
-        }
-        messageQueueRepository.save(message);
+    private void markAllAsSent(List<MessageQueue> messages) {
+        transactionTemplate.executeWithoutResult(status -> {
+            for (MessageQueue message : messages) {
+                message.markAsSent();
+            }
+            messageQueueRepository.saveAll(messages);
+        });
+    }
+
+    private void handleBatchSendFailure(List<MessageQueue> messages, String errorMessage) {
+        transactionTemplate.executeWithoutResult(status -> {
+            for (MessageQueue message : messages) {
+                message.incrementFailedCount();
+                if (message.getFailedCount() >= MAX_RETRY) {
+                    message.markAsFailed(errorMessage);
+                    log.error("최종 발송 실패 (재시도 횟수 초과): messageId={}", message.getId());
+                } else {
+                    message.markAsPending();
+                }
+            }
+            messageQueueRepository.saveAll(messages);
+        });
     }
 
     /**
