@@ -1,11 +1,10 @@
 package com.maru.service.attendance;
 
 import com.maru.domain.attendance.event.AttendanceCheckedEvent;
-import com.maru.domain.message.event.MessageReadyEvent;
+import com.maru.service.notification.MessageDispatcher;
 import com.maru.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +19,10 @@ import java.util.List;
 public class AttendanceEventListener {
 
     private final NotificationService notificationService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final MessageDispatcher messageDispatcher;
 
     /**
-     * 출석/하원 체크 시 알림 생성 및 즉시 발송 트리거
+     * 출석/하원 체크 시 알림 생성 및 배치 발송 트리거
      *
      * @param event 출석 체크 완료 이벤트
      */
@@ -32,7 +31,7 @@ public class AttendanceEventListener {
     public void onAttendanceChecked(AttendanceCheckedEvent event) {
         try {
             List<Long> messageIds = createNotificationMessages(event);
-            triggerAsyncDispatch(messageIds, event.tenantId());
+            messageDispatcher.sendBatchAsync(messageIds, event.tenantId());
             log.info("출석 알림 생성 완료: attendanceId={}, isCheckin={}, messageCount={}", event.attendanceId(), event.isCheckin(), messageIds.size());
         } catch (Exception e) {
             log.error("알림 생성 실패 (출석 기록 보존됨): attendanceId={}", event.attendanceId(), e);
@@ -43,11 +42,5 @@ public class AttendanceEventListener {
         return event.isCheckin()
                 ? notificationService.createCheckinNotification(event.attendanceId())
                 : notificationService.createCheckoutNotification(event.attendanceId());
-    }
-
-    private void triggerAsyncDispatch(List<Long> messageIds, Long tenantId) {
-        for (Long messageId : messageIds) {
-            eventPublisher.publishEvent(new MessageReadyEvent(messageId, tenantId));
-        }
     }
 }
