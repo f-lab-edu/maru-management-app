@@ -300,12 +300,17 @@ public class PaymentService {
     }
 
     private StudentPaymentHistoryRes.PaymentHistoryItem toPaymentHistoryItem(Payment payment) {
+        Invoice invoice = payment.getInvoice();
         return StudentPaymentHistoryRes.PaymentHistoryItem.builder()
                 .paymentId(payment.getId())
-                .invoiceId(payment.getInvoice().getId())
+                .invoiceId(invoice.getId())
+                .billingYear(invoice.getBillingYear())
+                .billingMonth(invoice.getBillingMonth())
                 .amount(payment.getAmount())
                 .method(payment.getMethod() != null ? payment.getMethod().name() : null)
+                .status(payment.getStatus() != null ? payment.getStatus().name() : null)
                 .paidAt(payment.getPaidAt() != null ? payment.getPaidAt().format(DATE_TIME_FORMATTER) : null)
+                .refundedAt(payment.getRefundedAt() != null ? payment.getRefundedAt().format(DATE_TIME_FORMATTER) : null)
                 .build();
     }
 }

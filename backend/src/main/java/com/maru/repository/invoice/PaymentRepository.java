@@ -34,7 +34,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         WHERE p.tenantId = :tenantId
           AND p.dojangId = :dojangId
           AND i.student.id = :studentId
-          AND p.status = 'PAID'
         ORDER BY p.paidAt DESC
         """)
     List<Payment> findByStudentIdOrderByPaidAtDesc(

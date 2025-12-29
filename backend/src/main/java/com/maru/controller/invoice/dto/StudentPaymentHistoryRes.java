@@ -17,8 +17,12 @@ public record StudentPaymentHistoryRes(
     public record PaymentHistoryItem(
             Long paymentId,
             Long invoiceId,
+            Integer billingYear,
+            Integer billingMonth,
             BigDecimal amount,
             String method,
-            String paidAt
+            String status,
+            String paidAt,
+            String refundedAt
     ) {}
 }
