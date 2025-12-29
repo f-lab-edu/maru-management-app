@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -44,6 +47,26 @@ public class SolapiSmsService implements SmsService {
         sendWithErrorHandling(smsMessage, phone);
     }
 
+    /**
+     * Solapi를 통해 SMS 메시지 배치 발송
+     *
+     * @param recipients 수신자 목록 (전화번호, 메시지 쌍)
+     * @throws BusinessException SMS_SEND_FAILED - 발송 실패 시
+     */
+    @Override
+    public void sendBatch(List<SmsRecipient> recipients) {
+        if (recipients == null || recipients.isEmpty()) {
+            return;
+        }
+
+        ArrayList<Message> messages = new ArrayList<>();
+        for (SmsRecipient recipient : recipients) {
+            messages.add(buildMessage(recipient.phone(), recipient.message()));
+        }
+
+        sendBatchWithErrorHandling(messages);
+    }
+
     @Override
     public String getProviderName() {
         return PROVIDER;
@@ -63,6 +86,16 @@ public class SolapiSmsService implements SmsService {
             log.info("SMS 발송 완료: to={}", phone);
         } catch (Exception e) {
             log.error("SMS 발송 실패: to={}, error={}", phone, e.getMessage());
+            throw new BusinessException(SmsErrorCode.SEND_FAILED);
+        }
+    }
+
+    private void sendBatchWithErrorHandling(ArrayList<Message> messages) {
+        try {
+            messageService.send(messages);
+            log.info("SMS 배치 발송 완료: {}건", messages.size());
+        } catch (Exception e) {
+            log.error("SMS 배치 발송 실패: {}건, error={}", messages.size(), e.getMessage());
             throw new BusinessException(SmsErrorCode.SEND_FAILED);
         }
     }
