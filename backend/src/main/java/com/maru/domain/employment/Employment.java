@@ -20,19 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(
-    name = "employment",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_employment_user_dojang",
-            columnNames = {"user_id", "dojang_id"}
-        )
-    },
-    indexes = {
-        @Index(name = "idx_employment_tenant_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_employment_dojang_status", columnList = "dojang_id, status")
-    }
-)
+@Table(name = "employment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Employment extends BaseEntity {
@@ -56,11 +44,10 @@ public class Employment extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime joinedAt;
 
-    @Column
     private LocalDateTime endedAt;
 
     @Convert(converter = PermissionSetConverter.class)
-    @Column(name = "permissions", columnDefinition = "json")
+    @Column(columnDefinition = "json")
     private Set<PermissionType> permissions = new HashSet<>();
 
     private Employment(User user, Tenant tenant, Dojang dojang) {

@@ -14,13 +14,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "guardian",
-    indexes = {
-        @Index(name = "idx_guardian_phone", columnList = "phone"),
-        @Index(name = "idx_guardian_verified", columnList = "is_verified")
-    }
-)
+@Table(name = "guardian")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Guardian extends SoftDeletableEntity {
@@ -31,16 +25,13 @@ public class Guardian extends SoftDeletableEntity {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "is_verified")
     private Boolean isVerified = false;
 
-    @Column
     private LocalDateTime verifiedAt;
 
     @Column(length = 500)
     private String pushToken;
 
-    @Column
     private LocalDateTime pushTokenUpdatedAt;
 
     private Guardian(String phone, String name) {

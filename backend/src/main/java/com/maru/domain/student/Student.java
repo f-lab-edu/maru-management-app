@@ -12,14 +12,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
-@Table(
-    name = "student",
-    indexes = {
-        @Index(name = "idx_student_tenant_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_student_dojang_status", columnList = "dojang_id, status"),
-        @Index(name = "idx_student_tenant_name", columnList = "tenant_id, name")
-    }
-)
+@Table(name = "student")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Student extends SoftDeletableEntity {
@@ -40,14 +33,12 @@ public class Student extends SoftDeletableEntity {
     @Column(length = 20)
     private String phone;
 
-    @Column
     private LocalDate birth;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StudentStatus status;
 
-    @Column
     private LocalDate enrolledAt;
 
     private Student(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {

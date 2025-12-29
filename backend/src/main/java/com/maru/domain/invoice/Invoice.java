@@ -15,61 +15,45 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Entity
-@Table(
-    name = "invoice",
-    indexes = {
-        @Index(name = "idx_invoice_tenant_status_due", columnList = "tenant_id, status, due_date"),
-        @Index(name = "idx_invoice_student_status", columnList = "student_id, status"),
-        @Index(name = "idx_invoice_tenant_dojang_issue", columnList = "tenant_id, dojang_id, issue_date"),
-        @Index(name = "idx_invoice_billing", columnList = "tenant_id, dojang_id, billing_year, billing_month")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_invoice_billing",
-            columnNames = {"tenant_id", "dojang_id", "student_id", "billing_year", "billing_month"}
-        )
-    }
-)
+@Table(name = "invoice")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Invoice extends BaseEntity {
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(nullable = false)
     private Long tenantId;
 
-    @Column(name = "dojang_id", nullable = false)
+    @Column(nullable = false)
     private Long dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @Column(name = "billing_year", nullable = false)
+    @Column(nullable = false)
     private int billingYear;
 
-    @Column(name = "billing_month", nullable = false)
+    @Column(nullable = false)
     private int billingMonth;
 
-    @Column(name = "issued_by")
     private Long issuedBy;
 
-    @Column(name = "issue_date")
     private LocalDate issueDate;
 
-    @Column(name = "due_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate dueDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private InvoiceStatus status;
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "paid_amount", nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal paidAmount;
 
-    @Column(name = "note", length = 500)
+    @Column(length = 500)
     private String note;
 
     private Invoice(Student student, int billingYear, int billingMonth,

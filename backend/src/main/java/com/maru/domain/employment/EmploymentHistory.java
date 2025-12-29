@@ -10,13 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(
-    name = "employment_history",
-    indexes = {
-        @Index(name = "idx_employment_history_employment_created", columnList = "employment_id, created_at"),
-        @Index(name = "idx_employment_history_to_status_created", columnList = "to_status, created_at")
-    }
-)
+@Table(name = "employment_history")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmploymentHistory extends BaseTimeEntity {
@@ -26,11 +20,11 @@ public class EmploymentHistory extends BaseTimeEntity {
     private Employment employment;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "from_status", length = 20)
+    @Column(length = 20)
     private EmploymentStatus fromStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "to_status", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private EmploymentStatus toStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)

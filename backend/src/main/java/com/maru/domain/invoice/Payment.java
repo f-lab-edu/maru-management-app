@@ -13,22 +13,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "payment",
-    indexes = {
-        @Index(name = "idx_payment_tenant_paid_at", columnList = "tenant_id, paid_at"),
-        @Index(name = "idx_payment_invoice", columnList = "invoice_id"),
-        @Index(name = "idx_payment_status", columnList = "status")
-    }
-)
+@Table(name = "payment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseTimeEntity {
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(nullable = false)
     private Long tenantId;
 
-    @Column(name = "dojang_id", nullable = false)
+    @Column(nullable = false)
     private Long dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,23 +29,20 @@ public class Payment extends BaseTimeEntity {
     private Invoice invoice;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private PaymentStatus status;
 
-    @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "method", length = 20)
+    @Column(length = 20)
     private PaymentMethod method;
 
-    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "received_by")
     private Long receivedBy;
 
     private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy) {

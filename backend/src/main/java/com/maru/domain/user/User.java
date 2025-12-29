@@ -11,14 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "users",
-    indexes = {
-        @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_phone", columnList = "phone"),
-        @Index(name = "idx_user_role", columnList = "role")
-    }
-)
+@Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends SoftDeletableEntity {
@@ -40,7 +33,6 @@ public class User extends SoftDeletableEntity {
     @Column(nullable = false, length = 30)
     private OnboardingStep onboardingStep;
 
-    @Column
     private LocalDateTime lastLoginAt;
 
     private User(String name, String email, String phone, UserRole role, OnboardingStep initialStep) {

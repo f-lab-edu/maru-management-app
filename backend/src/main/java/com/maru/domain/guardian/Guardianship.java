@@ -10,16 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(
-    name = "guardianship",
-    indexes = {
-        @Index(name = "idx_guardianship_guardian_id", columnList = "guardian_id"),
-        @Index(name = "idx_guardianship_student_id", columnList = "student_id")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_guardianship_guardian_student", columnNames = {"guardian_id", "student_id"})
-    }
-)
+@Table(name = "guardianship")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Guardianship extends SoftDeletableEntity {
@@ -36,7 +27,6 @@ public class Guardianship extends SoftDeletableEntity {
     @Column(length = 20)
     private GuardianRelation relation;
 
-    @Column(name = "is_primary")
     private Boolean isPrimary = false;
 
     private Guardianship(Guardian guardian, Student student, GuardianRelation relation, boolean isPrimary) {

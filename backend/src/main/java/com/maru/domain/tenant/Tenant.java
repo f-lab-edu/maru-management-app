@@ -12,13 +12,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(
-    name = "tenant",
-    indexes = {
-        @Index(name = "idx_tenant_user_id", columnList = "user_id"),
-        @Index(name = "idx_tenant_slug", columnList = "slug")
-    }
-)
+@Table(name = "tenant")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Tenant extends SoftDeletableEntity {

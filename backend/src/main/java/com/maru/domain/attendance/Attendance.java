@@ -14,52 +14,40 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "attendance",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_attendance_student_date",
-        columnNames = {"tenant_id", "student_id", "attendance_date"}
-    ),
-    indexes = {
-        @Index(name = "idx_attendance_tenant_date", columnList = "tenant_id, attendance_date"),
-        @Index(name = "idx_attendance_student_date", columnList = "student_id, attendance_date")
-    }
-)
+@Table(name = "attendance")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Attendance extends BaseEntity {
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(nullable = false)
     private Long tenantId;
 
-    @Column(name = "dojang_id", nullable = false)
+    @Column(nullable = false)
     private Long dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @Column(name = "checked_by")
     private Long checkedBy;
 
-    @Column(name = "attendance_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate attendanceDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private AttendanceStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "method", nullable = false, length = 20)
+    @Column(nullable = false, length = 20)
     private CheckMethod method;
 
-    @Column(name = "checkin_at", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime checkinAt;
 
-    @Column(name = "checkout_at")
     private LocalDateTime checkoutAt;
 
-    @Column(name = "note", length = 500)
+    @Column(length = 500)
     private String note;
 
     private Attendance(Student student, CheckMethod method, AttendanceStatus status, LocalDateTime checkinAt, String note) {
