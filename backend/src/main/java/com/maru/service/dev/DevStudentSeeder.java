@@ -59,7 +59,7 @@ public class DevStudentSeeder {
      * @return 생성된 학생 수
      */
     @Transactional
-    public int seedStudents(Long tenantId, Long dojangId) {
+    public int seedStudents(String tenantId, String dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 

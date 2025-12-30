@@ -6,12 +6,12 @@ import lombok.Builder;
 
 @Builder
 public record MyDojangRes(
-        Long dojangId,
+        String dojangId,
         String dojangName,
-        Long tenantId,
+        String tenantId,
         UserRole role
 ) {
-    public static MyDojangRes from(Employment employment, Long userId) {
+    public static MyDojangRes from(Employment employment, String userId) {
         return MyDojangRes.builder()
                 .dojangId(employment.getDojang().getId())
                 .dojangName(employment.getDojang().getName())

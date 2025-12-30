@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 @Builder
 public record InvoiceListRes(
-        Long id,
+        String id,
         String studentName,
         BigDecimal amount,
         BigDecimal paidAmount,

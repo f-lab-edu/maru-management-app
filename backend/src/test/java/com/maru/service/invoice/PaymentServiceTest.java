@@ -54,9 +54,9 @@ class PaymentServiceTest {
     @InjectMocks
     private PaymentService paymentService;
 
-    private static final Long TENANT_ID = 1L;
-    private static final Long DOJANG_ID = 1L;
-    private static final Long USER_ID = 1L;
+    private static final String TENANT_ID = "tenant1";
+    private static final String DOJANG_ID = "dojang1";
+    private static final String USER_ID = "user1";
 
     @Nested
     @DisplayName("수납 기록")
@@ -71,17 +71,17 @@ class PaymentServiceTest {
 
                 Dojang mockDojang = createMockDojang();
                 BigDecimal amount = new BigDecimal("100000");
-                Invoice invoice = createInvoice(1L, InvoiceStatus.OPEN, amount, mockDojang);
+                Invoice invoice = createInvoice("inv1", InvoiceStatus.OPEN, amount, mockDojang);
 
                 given(dojangRepository.findById(DOJANG_ID)).willReturn(Optional.of(mockDojang));
-                given(invoiceRepository.findByIdAndDojangIdWithStudent(TENANT_ID, DOJANG_ID, 1L))
+                given(invoiceRepository.findByIdAndDojangIdWithStudent("inv1", TENANT_ID, DOJANG_ID))
                         .willReturn(Optional.of(invoice));
                 given(paymentRepository.save(any(Payment.class))).willAnswer(invocation -> {
                     Payment payment = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(payment, "id", 1L);
+                    ReflectionTestUtils.setField(payment, "id", "pay1");
                     return payment;
                 });
-                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc(1L))
+                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc("inv1"))
                         .willReturn(List.of());
 
                 PaymentRecordReq request = PaymentRecordReq.builder()
@@ -90,7 +90,7 @@ class PaymentServiceTest {
                         .build();
 
                 // When
-                InvoiceDetailRes result = paymentService.recordPayment(DOJANG_ID, 1L, request, USER_ID);
+                InvoiceDetailRes result = paymentService.recordPayment(DOJANG_ID, "inv1", request, USER_ID);
 
                 // Then
                 assertThat(result.status()).isEqualTo(InvoiceStatus.PAID);
@@ -109,17 +109,17 @@ class PaymentServiceTest {
                 Dojang mockDojang = createMockDojang();
                 BigDecimal amount = new BigDecimal("100000");
                 BigDecimal partialAmount = new BigDecimal("50000");
-                Invoice invoice = createInvoice(1L, InvoiceStatus.OPEN, amount, mockDojang);
+                Invoice invoice = createInvoice("inv1", InvoiceStatus.OPEN, amount, mockDojang);
 
                 given(dojangRepository.findById(DOJANG_ID)).willReturn(Optional.of(mockDojang));
-                given(invoiceRepository.findByIdAndDojangIdWithStudent(TENANT_ID, DOJANG_ID, 1L))
+                given(invoiceRepository.findByIdAndDojangIdWithStudent("inv1", TENANT_ID, DOJANG_ID))
                         .willReturn(Optional.of(invoice));
                 given(paymentRepository.save(any(Payment.class))).willAnswer(invocation -> {
                     Payment payment = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(payment, "id", 1L);
+                    ReflectionTestUtils.setField(payment, "id", "pay1");
                     return payment;
                 });
-                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc(1L))
+                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc("inv1"))
                         .willReturn(List.of());
 
                 PaymentRecordReq request = PaymentRecordReq.builder()
@@ -128,7 +128,7 @@ class PaymentServiceTest {
                         .build();
 
                 // When
-                InvoiceDetailRes result = paymentService.recordPayment(DOJANG_ID, 1L, request, USER_ID);
+                InvoiceDetailRes result = paymentService.recordPayment(DOJANG_ID, "inv1", request, USER_ID);
 
                 // Then
                 assertThat(result.status()).isEqualTo(InvoiceStatus.PARTIAL);
@@ -153,21 +153,21 @@ class PaymentServiceTest {
                 BigDecimal amount = new BigDecimal("100000");
 
                 InvoiceWithPayment invoiceWithPayment = createPaidInvoiceWithPayment(
-                        1L, amount, mockDojang, 1L
+                        "inv1", amount, mockDojang, "pay1"
                 );
                 Invoice invoice = invoiceWithPayment.invoice();
                 Payment payment = invoiceWithPayment.payment();
 
                 given(dojangRepository.findById(DOJANG_ID)).willReturn(Optional.of(mockDojang));
-                given(invoiceRepository.findByIdAndDojangIdWithStudent(TENANT_ID, DOJANG_ID, 1L))
+                given(invoiceRepository.findByIdAndDojangIdWithStudent("inv1", TENANT_ID, DOJANG_ID))
                         .willReturn(Optional.of(invoice));
-                given(paymentRepository.findByIdAndTenantIdAndDojangId(1L, TENANT_ID, DOJANG_ID))
+                given(paymentRepository.findByIdAndTenantIdAndDojangId("pay1", TENANT_ID, DOJANG_ID))
                         .willReturn(Optional.of(payment));
-                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc(1L))
+                given(paymentRepository.findByInvoiceIdOrderByPaidAtDesc("inv1"))
                         .willReturn(List.of());
 
                 // When
-                InvoiceDetailRes result = paymentService.cancelPayment(DOJANG_ID, 1L, 1L, USER_ID);
+                InvoiceDetailRes result = paymentService.cancelPayment(DOJANG_ID, "inv1", "pay1", USER_ID);
 
                 // Then
                 assertThat(result.status()).isEqualTo(InvoiceStatus.OPEN);
@@ -190,7 +190,7 @@ class PaymentServiceTest {
         return mockDojang;
     }
 
-    private Student createMockStudent(Long id, String name, Dojang dojang) {
+    private Student createMockStudent(String id, String name, Dojang dojang) {
         Student mockStudent = mock(Student.class);
         lenient().when(mockStudent.getId()).thenReturn(id);
         lenient().when(mockStudent.getTenantId()).thenReturn(TENANT_ID);
@@ -200,8 +200,8 @@ class PaymentServiceTest {
         return mockStudent;
     }
 
-    private Invoice createInvoice(Long id, InvoiceStatus status, BigDecimal amount, Dojang dojang) {
-        Student student = createMockStudent(100L, "테스트학생", dojang);
+    private Invoice createInvoice(String id, InvoiceStatus status, BigDecimal amount, Dojang dojang) {
+        Student student = createMockStudent("student100", "테스트학생", dojang);
 
         Invoice invoice = Invoice.create(
                 student, 2025, 1,
@@ -236,12 +236,12 @@ class PaymentServiceTest {
     }
 
     private InvoiceWithPayment createPaidInvoiceWithPayment(
-            Long invoiceId,
+            String invoiceId,
             BigDecimal amount,
             Dojang dojang,
-            Long paymentId
+            String paymentId
     ) {
-        Student student = createMockStudent(100L, "테스트학생", dojang);
+        Student student = createMockStudent("student100", "테스트학생", dojang);
 
         Invoice invoice = Invoice.create(
                 student, 2025, 1,

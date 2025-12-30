@@ -33,7 +33,7 @@ public class UserController {
      * @return 사용자 정보
      */
     @GetMapping("/me")
-    public ResponseEntity<UserMeRes> getCurrentUser(@CurrentUserId Long userId) {
+    public ResponseEntity<UserMeRes> getCurrentUser(@CurrentUserId String userId) {
         User user = userService.getCurrentUser(userId);
         OAuthProvider provider = userService.getOAuthProvider(userId);
 
@@ -49,7 +49,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/profile")
     public ResponseEntity<OnboardingProfileRes> updateOnboardingProfile(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingProfileReq request) {
         User user = userService.updateOnboardingProfile(
                 userId,
@@ -70,7 +70,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/role")
     public ResponseEntity<OnboardingRoleRes> updateOnboardingRole(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingRoleReq request) {
         User user = userService.updateOnboardingRole(userId, request.role());
 
@@ -86,7 +86,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/dojang")
     public ResponseEntity<OnboardingDojangRes> createDojang(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingDojangReq request) {
         Dojang dojang = tenantService.createTenantWithDojang(
                 userId,
@@ -107,7 +107,7 @@ public class UserController {
      * @return 업데이트된 사용자 정보
      */
     @PostMapping("/onboarding/step/previous")
-    public ResponseEntity<UserMeRes> rollbackOnboardingStep(@CurrentUserId Long userId) {
+    public ResponseEntity<UserMeRes> rollbackOnboardingStep(@CurrentUserId String userId) {
         User user = userService.rollbackOnboardingStep(userId);
         OAuthProvider provider = userService.getOAuthProvider(userId);
 
@@ -121,7 +121,7 @@ public class UserController {
      * @return 도장 목록 및 개수
      */
     @GetMapping("/me/dojangs")
-    public ResponseEntity<MyDojangsRes> getMyDojangs(@CurrentUserId Long userId) {
+    public ResponseEntity<MyDojangsRes> getMyDojangs(@CurrentUserId String userId) {
         List<MyDojangRes> dojangs = employmentService.getMyDojangs(userId).stream()
                 .map(employment -> MyDojangRes.from(employment, userId))
                 .toList();

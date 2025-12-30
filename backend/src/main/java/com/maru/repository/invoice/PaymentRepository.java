@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
+public interface PaymentRepository extends JpaRepository<Payment, String> {
 
-    List<Payment> findByInvoiceIdOrderByPaidAtDesc(Long invoiceId);
+    List<Payment> findByInvoiceIdOrderByPaidAtDesc(String invoiceId);
 
     @Query("""
         SELECT COALESCE(SUM(p.amount), 0) FROM Payment p
@@ -23,8 +23,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
           AND p.paidAt < :endDateTime
         """)
     BigDecimal sumByTenantIdAndPeriod(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);
 
@@ -37,11 +37,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         ORDER BY p.paidAt DESC
         """)
     List<Payment> findByStudentIdOrderByPaidAtDesc(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("studentId") Long studentId);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentId") String studentId);
 
-    Optional<Payment> findByIdAndTenantIdAndDojangId(Long id, Long tenantId, Long dojangId);
+    Optional<Payment> findByIdAndTenantIdAndDojangId(String id, String tenantId, String dojangId);
 
     @Query("""
         SELECT COUNT(p) FROM Payment p
@@ -52,8 +52,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
           AND p.paidAt < :endDateTime
         """)
     int countByTenantIdAndPeriod(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);
 }

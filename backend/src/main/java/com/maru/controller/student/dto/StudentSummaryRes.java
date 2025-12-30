@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Builder
 public record StudentSummaryRes(
-        Long id,
+        String id,
         String name,
         LocalDate birth,
         String photoUrl,

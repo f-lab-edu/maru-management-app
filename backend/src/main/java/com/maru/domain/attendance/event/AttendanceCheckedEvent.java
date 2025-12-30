@@ -9,9 +9,9 @@ package com.maru.domain.attendance.event;
  * @param isCheckin 출석 체크 여부 (true: 출석, false: 하원)
  */
 public record AttendanceCheckedEvent(
-        Long attendanceId,
-        Long studentId,
-        Long tenantId,
+        String attendanceId,
+        String studentId,
+        String tenantId,
         boolean isCheckin
 ) {
 }

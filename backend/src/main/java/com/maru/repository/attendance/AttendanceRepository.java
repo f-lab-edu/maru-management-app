@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
+public interface AttendanceRepository extends JpaRepository<Attendance, String> {
 
     @Query("""
         SELECT a FROM Attendance a
@@ -19,9 +19,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.attendanceDate BETWEEN :startDate AND :endDate
         """)
     List<Attendance> findByTenantIdAndDojangIdAndStudentIdAndAttendanceDateBetween(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("studentId") Long studentId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentId") String studentId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
@@ -32,9 +32,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.dojangId = :dojangId
         """)
     Optional<Attendance> findByTenantIdAndIdAndDojangId(
-            @Param("tenantId") Long tenantId,
-            @Param("id") Long id,
-            @Param("dojangId") Long dojangId);
+            @Param("tenantId") String tenantId,
+            @Param("id") String id,
+            @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT a.student.id FROM Attendance a
@@ -43,10 +43,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.student.id IN :studentIds
           AND a.attendanceDate = :date
         """)
-    List<Long> findStudentIdsWithAttendanceToday(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("studentIds") List<Long> studentIds,
+    List<String> findStudentIdsWithAttendanceToday(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentIds") List<String> studentIds,
             @Param("date") LocalDate date);
 
     @Query("""
@@ -57,8 +57,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.attendanceDate BETWEEN :startDate AND :endDate
         """)
     List<Attendance> findByTenantIdAndDojangIdAndAttendanceDateBetween(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
@@ -70,9 +70,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.checkoutAt IS NULL
         """)
     List<Attendance> findByTenantIdAndDojangIdAndIdInAndCheckoutAtIsNull(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("ids") List<Long> ids);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("ids") List<String> ids);
 
     @Query("""
         SELECT a FROM Attendance a
@@ -81,14 +81,14 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
           AND a.id IN :ids
         """)
     List<Attendance> findByTenantIdAndDojangIdAndIdIn(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("ids") List<Long> ids);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("ids") List<String> ids);
 
     @Query("""
         SELECT a FROM Attendance a
         JOIN FETCH a.student
         WHERE a.id = :id
         """)
-    Optional<Attendance> findByIdWithStudent(@Param("id") Long id);
+    Optional<Attendance> findByIdWithStudent(@Param("id") String id);
 }

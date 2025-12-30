@@ -43,7 +43,7 @@ public class TenantService {
      * @throws BusinessException ONBOARDING_STAGE_INVALID - 온보딩 단계가 DOJANG_INFO가 아닌 경우
      */
     @Transactional
-    public Dojang createTenantWithDojang(Long userId, String dojangName, String address, String phone) {
+    public Dojang createTenantWithDojang(String userId, String dojangName, String address, String phone) {
         User user = userService.getUserById(userId);
         validateOwnerRole(user);
         validateOnboardingStep(user);

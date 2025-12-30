@@ -12,7 +12,7 @@ public record BulkIssueRes(
 ) {
     @Builder
     public record FailedInvoice(
-            Long invoiceId,
+            String invoiceId,
             String reason
     ) {}
 }

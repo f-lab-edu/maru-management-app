@@ -31,8 +31,8 @@ public class PaymentController {
      */
     @GetMapping("/unpaid")
     public ResponseEntity<List<UnpaidListRes>> getUnpaidList(
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         List<UnpaidListRes> response = paymentService.getUnpaidList(dojangId);
         return ResponseEntity.ok(response);
     }
@@ -48,10 +48,10 @@ public class PaymentController {
      */
     @GetMapping("/statistics")
     public ResponseEntity<PaymentStatisticsRes> getPaymentStatistics(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @RequestParam int year,
             @RequestParam int month,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, year, month);
         return ResponseEntity.ok(response);
     }
@@ -66,9 +66,9 @@ public class PaymentController {
      */
     @GetMapping("/students/{studentId}/history")
     public ResponseEntity<StudentPaymentHistoryRes> getStudentPaymentHistory(
-            @PathVariable Long studentId,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String studentId,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         StudentPaymentHistoryRes response = paymentService.getStudentPaymentHistory(dojangId, studentId);
         return ResponseEntity.ok(response);
     }

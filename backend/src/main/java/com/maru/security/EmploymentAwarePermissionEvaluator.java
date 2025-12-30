@@ -34,7 +34,7 @@ public class EmploymentAwarePermissionEvaluator implements PermissionEvaluator {
 
         try {
             Object principal = authentication.getPrincipal();
-            if (!(principal instanceof JwtClaims(Long userId, Long tenantId, Long dojangId, String role))) {
+            if (!(principal instanceof JwtClaims(String userId, String tenantId, String dojangId, String role))) {
                 log.warn("Principal이 JwtClaims 타입이 아닙니다: {}", principal.getClass());
                 return false;
             }

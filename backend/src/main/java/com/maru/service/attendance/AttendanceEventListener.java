@@ -30,7 +30,7 @@ public class AttendanceEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onAttendanceChecked(AttendanceCheckedEvent event) {
         try {
-            List<Long> messageIds = createNotificationMessages(event);
+            List<String> messageIds = createNotificationMessages(event);
             messageDispatcher.sendBatchAsync(messageIds, event.tenantId());
             log.info("출석 알림 생성 완료: attendanceId={}, isCheckin={}, messageCount={}", event.attendanceId(), event.isCheckin(), messageIds.size());
         } catch (Exception e) {
@@ -38,7 +38,7 @@ public class AttendanceEventListener {
         }
     }
 
-    private List<Long> createNotificationMessages(AttendanceCheckedEvent event) {
+    private List<String> createNotificationMessages(AttendanceCheckedEvent event) {
         return event.isCheckin()
                 ? notificationService.createCheckinNotification(event.attendanceId())
                 : notificationService.createCheckoutNotification(event.attendanceId());

@@ -33,7 +33,7 @@ public class UserService {
      * @throws BusinessException USER_NOT_FOUND - 사용자가 존재하지 않을 경우
      */
     @Transactional(readOnly = true)
-    public User getUserById(Long userId) {
+    public User getUserById(String userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND));
     }
@@ -45,7 +45,7 @@ public class UserService {
      * @return 사용자 엔티티
      */
     @Transactional(readOnly = true)
-    public User getCurrentUser(Long userId) {
+    public User getCurrentUser(String userId) {
         return getUserById(userId);
     }
 
@@ -56,7 +56,7 @@ public class UserService {
      * @return OAuth 프로바이더 (없으면 null)
      */
     @Transactional(readOnly = true)
-    public OAuthProvider getOAuthProvider(Long userId) {
+    public OAuthProvider getOAuthProvider(String userId) {
         return oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
             .map(OAuthAccount::getProvider)
             .orElse(null);
@@ -74,7 +74,7 @@ public class UserService {
      * @throws BusinessException ONBOARDING_PHONE_NOT_VERIFIED - 전화번호 인증 미완료
      */
     @Transactional
-    public User updateOnboardingProfile(Long userId, String name, String email, String phone) {
+    public User updateOnboardingProfile(String userId, String name, String email, String phone) {
         User user = getUserById(userId);
         validateOnboardingStep(user, OnboardingStep.PROFILE_INPUT);
         validatePhoneVerified(user, phone);
@@ -102,7 +102,7 @@ public class UserService {
      * @throws BusinessException USER_INVALID_ROLE - 역할이 null일 경우
      */
     @Transactional
-    public User updateOnboardingRole(Long userId, UserRole role) {
+    public User updateOnboardingRole(String userId, UserRole role) {
         User user = getUserById(userId);
         validateOnboardingStep(user, OnboardingStep.ROLE_SELECT);
         validateRole(role);
@@ -153,7 +153,7 @@ public class UserService {
      * @return 인증 결과 (userId, isExistingUser)
      */
     @Transactional
-    public PhoneVerificationRes verifyPhoneAndMerge(Long userId, String phone, String code) {
+    public PhoneVerificationRes verifyPhoneAndMerge(String userId, String phone, String code) {
         phoneVerificationService.verifyCode(phone, code, userId);
 
         return findExistingUserByPhone(phone, userId)
@@ -161,24 +161,24 @@ public class UserService {
             .orElseGet(() -> assignPhoneAndReturnResult(userId, phone));
     }
 
-    private Optional<User> findExistingUserByPhone(String phone, Long currentUserId) {
+    private Optional<User> findExistingUserByPhone(String phone, String currentUserId) {
         return findByPhone(phone)
             .filter(user -> !user.getId().equals(currentUserId));
     }
 
-    private PhoneVerificationRes mergeAndReturnResult(Long currentUserId, User existingUser) {
+    private PhoneVerificationRes mergeAndReturnResult(String currentUserId, User existingUser) {
         mergeOAuthAccount(currentUserId, existingUser.getId());
         log.info("계정 통합 완료: currentUserId={} → existingUserId={}", currentUserId, existingUser.getId());
         return new PhoneVerificationRes(existingUser.getId(), true);
     }
 
-    private void mergeOAuthAccount(Long currentUserId, Long existingUserId) {
+    private void mergeOAuthAccount(String currentUserId, String existingUserId) {
         moveOAuthAccountToExistingUser(currentUserId, existingUserId);
         deleteCurrentUser(currentUserId);
     }
 
 
-    private void moveOAuthAccountToExistingUser(Long currentUserId, Long existingUserId) {
+    private void moveOAuthAccountToExistingUser(String currentUserId, String existingUserId) {
         OAuthAccount oAuthAccount = oAuthAccountRepository.findTopByUserIdOrderByCreatedAtDesc(currentUserId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND));
         User existingUser = getUserById(existingUserId);
@@ -187,12 +187,12 @@ public class UserService {
         log.info("OAuth 계정 이동: userId {} → {}", currentUserId, existingUserId);
     }
 
-    private void deleteCurrentUser(Long userId) {
+    private void deleteCurrentUser(String userId) {
         userRepository.deleteById(userId);
         log.info("사용자 삭제: userId={}", userId);
     }
 
-    private PhoneVerificationRes assignPhoneAndReturnResult(Long userId, String phone) {
+    private PhoneVerificationRes assignPhoneAndReturnResult(String userId, String phone) {
         User user = getUserById(userId);
         user.updateProfile(user.getName(), user.getEmail(), phone);
         log.info("전화번호 설정: userId={}, phone={}", userId, MaskingUtil.phone(phone));
@@ -207,7 +207,7 @@ public class UserService {
      * @throws BusinessException ONBOARDING_STAGE_INVALID - 롤백 불가능한 단계
      */
     @Transactional
-    public User rollbackOnboardingStep(Long userId) {
+    public User rollbackOnboardingStep(String userId) {
         User user = getUserById(userId);
         OnboardingStep currentStep = user.getOnboardingStep();
         OnboardingStep previousStep = getPreviousStep(currentStep);

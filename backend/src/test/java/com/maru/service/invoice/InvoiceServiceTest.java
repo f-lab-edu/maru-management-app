@@ -50,9 +50,9 @@ class InvoiceServiceTest {
     @InjectMocks
     private InvoiceService invoiceService;
 
-    private static final Long TENANT_ID = 1L;
-    private static final Long DOJANG_ID = 1L;
-    private static final Long USER_ID = 1L;
+    private static final String TENANT_ID = "tenant1";
+    private static final String DOJANG_ID = "dojang1";
+    private static final String USER_ID = "user1";
 
     @Nested
     @DisplayName("일괄 청구서 발행")
@@ -66,16 +66,16 @@ class InvoiceServiceTest {
                 mockedStatic.when(TenantContextHolder::getTenantId).thenReturn(TENANT_ID);
 
                 Dojang mockDojang = createMockDojang();
-                Invoice draftInvoice1 = createInvoice(1L, InvoiceStatus.DRAFT, mockDojang);
-                Invoice draftInvoice2 = createInvoice(2L, InvoiceStatus.DRAFT, mockDojang);
-                Invoice openInvoice = createInvoice(3L, InvoiceStatus.OPEN, mockDojang);  // 이미 발행됨
+                Invoice draftInvoice1 = createInvoice("inv1", InvoiceStatus.DRAFT, mockDojang);
+                Invoice draftInvoice2 = createInvoice("inv2", InvoiceStatus.DRAFT, mockDojang);
+                Invoice openInvoice = createInvoice("inv3", InvoiceStatus.OPEN, mockDojang);  // 이미 발행됨
 
                 given(dojangRepository.findById(DOJANG_ID)).willReturn(Optional.of(mockDojang));
-                given(invoiceRepository.findAllByDojangIdAndIdIn(TENANT_ID, DOJANG_ID, List.of(1L, 2L, 3L)))
+                given(invoiceRepository.findAllByDojangIdAndIdIn(TENANT_ID, DOJANG_ID, List.of("inv1", "inv2", "inv3")))
                         .willReturn(List.of(draftInvoice1, draftInvoice2, openInvoice));
 
                 BulkIssueReq request = BulkIssueReq.builder()
-                        .invoiceIds(List.of(1L, 2L, 3L))
+                        .invoiceIds(List.of("inv1", "inv2", "inv3"))
                         .build();
 
                 // When
@@ -85,7 +85,7 @@ class InvoiceServiceTest {
                 assertThat(result.issuedCount()).isEqualTo(2);
                 assertThat(result.failedCount()).isEqualTo(1);
                 assertThat(result.failedInvoices()).hasSize(1);
-                assertThat(result.failedInvoices().getFirst().invoiceId()).isEqualTo(3L);
+                assertThat(result.failedInvoices().getFirst().invoiceId()).isEqualTo("inv3");
 
                 assertThat(draftInvoice1.getStatus()).isEqualTo(InvoiceStatus.OPEN);
                 assertThat(draftInvoice2.getStatus()).isEqualTo(InvoiceStatus.OPEN);
@@ -105,18 +105,18 @@ class InvoiceServiceTest {
                 mockedStatic.when(TenantContextHolder::getTenantId).thenReturn(TENANT_ID);
 
                 Dojang mockDojang = createMockDojang();
-                Invoice draftInvoice = createInvoice(1L, InvoiceStatus.DRAFT, mockDojang);
-                Invoice openInvoice = createInvoice(2L, InvoiceStatus.OPEN, mockDojang);
-                Invoice partialInvoice = createInvoice(3L, InvoiceStatus.PARTIAL, mockDojang);
-                Invoice paidInvoice = createInvoice(4L, InvoiceStatus.PAID, mockDojang);
+                Invoice draftInvoice = createInvoice("inv1", InvoiceStatus.DRAFT, mockDojang);
+                Invoice openInvoice = createInvoice("inv2", InvoiceStatus.OPEN, mockDojang);
+                Invoice partialInvoice = createInvoice("inv3", InvoiceStatus.PARTIAL, mockDojang);
+                Invoice paidInvoice = createInvoice("inv4", InvoiceStatus.PAID, mockDojang);
 
                 given(dojangRepository.findById(DOJANG_ID)).willReturn(Optional.of(mockDojang));
-                given(invoiceRepository.findAllByDojangIdAndIdIn(TENANT_ID, DOJANG_ID, List.of(1L, 2L, 3L, 4L)))
+                given(invoiceRepository.findAllByDojangIdAndIdIn(TENANT_ID, DOJANG_ID, List.of("inv1", "inv2", "inv3", "inv4")))
                         .willReturn(List.of(draftInvoice, openInvoice, partialInvoice, paidInvoice));
 
                 BigDecimal newAmount = new BigDecimal("90000");
                 InvoiceBulkUpdateReq request = InvoiceBulkUpdateReq.builder()
-                        .invoiceIds(List.of(1L, 2L, 3L, 4L))
+                        .invoiceIds(List.of("inv1", "inv2", "inv3", "inv4"))
                         .amount(newAmount)
                         .note("할인 적용")
                         .build();
@@ -148,7 +148,7 @@ class InvoiceServiceTest {
         return mockDojang;
     }
 
-    private Student createMockStudent(Long id, String name, Dojang dojang) {
+    private Student createMockStudent(String id, String name, Dojang dojang) {
         Student mockStudent = mock(Student.class);
         lenient().when(mockStudent.getId()).thenReturn(id);
         lenient().when(mockStudent.getTenantId()).thenReturn(TENANT_ID);
@@ -158,8 +158,8 @@ class InvoiceServiceTest {
         return mockStudent;
     }
 
-    private Invoice createInvoice(Long id, InvoiceStatus status, Dojang dojang) {
-        Student student = createMockStudent(100L, "테스트학생", dojang);
+    private Invoice createInvoice(String id, InvoiceStatus status, Dojang dojang) {
+        Student student = createMockStudent("student100", "테스트학생", dojang);
         BigDecimal amount = new BigDecimal("100000");
 
         Invoice invoice = Invoice.create(

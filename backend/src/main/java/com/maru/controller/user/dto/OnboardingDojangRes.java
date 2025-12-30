@@ -7,14 +7,14 @@ import lombok.Builder;
 
 @Builder
 public record OnboardingDojangRes(
-        Long userId,
-        Long tenantId,
+        String userId,
+        String tenantId,
         DojangInfo dojang,
         OnboardingStep onboardingStep
 ) {
     @Builder
     public record DojangInfo(
-            Long id,
+            String id,
             String name,
             String address,
             String phone

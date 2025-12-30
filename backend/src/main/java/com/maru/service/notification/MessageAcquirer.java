@@ -12,5 +12,5 @@ public interface MessageAcquirer {
      * @param messageId 메시지 ID
      * @return 선점 성공 시 메시지, 실패 시 empty
      */
-    Optional<MessageQueue> acquire(Long messageId);
+    Optional<MessageQueue> acquire(String messageId);
 }

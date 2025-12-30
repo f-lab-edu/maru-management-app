@@ -22,9 +22,9 @@ public class NoLockMessageAcquirer implements MessageAcquirer {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public Optional<MessageQueue> acquire(Long messageId) {
+    public Optional<MessageQueue> acquire(String messageId) {
         return Optional.ofNullable(transactionTemplate.execute(status -> {
-            MessageQueue message = messageQueueRepository.findById(messageId).orElse(null);
+            MessageQueue message = messageQueueRepository.findByIdWithGuardian(messageId).orElse(null);
             if (message != null) {
                 message.markAsProcessing();
             }

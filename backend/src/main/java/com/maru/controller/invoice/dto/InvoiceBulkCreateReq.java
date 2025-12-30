@@ -13,7 +13,7 @@ import java.util.List;
 
 @Builder
 public record InvoiceBulkCreateReq(
-        List<Long> studentIds,
+        List<String> studentIds,
 
         @NotNull(message = "금액은 필수입니다")
         @Positive(message = "금액은 0보다 커야 합니다")

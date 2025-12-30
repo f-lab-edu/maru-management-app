@@ -63,8 +63,8 @@ public class AuthService {
 
         User user = findUserById(claims.userId());
         Employment employment = findActiveEmployment(claims.userId(), claims.dojangId());
-        Long tenantId = employment != null ? employment.getTenant().getId() : null;
-        Long dojangId = employment != null ? employment.getDojang().getId() : null;
+        String tenantId = employment != null ? employment.getTenant().getId() : null;
+        String dojangId = employment != null ? employment.getDojang().getId() : null;
         String role = resolveRole(user, employment, claims.role());
 
         return generateTokenResponse(user, tenantId, dojangId, role);
@@ -102,12 +102,12 @@ public class AuthService {
      * @return 새로운 Access/Refresh Token
      */
     @Transactional(readOnly = true)
-    public TokenRes selectDojang(Long userId, Long dojangId) {
+    public TokenRes selectDojang(String userId, String dojangId) {
         User user = findUserById(userId);
         Employment employment = findActiveEmployment(userId, dojangId);
 
-        Long tenantId = employment.getTenant().getId();
-        Long resolvedDojangId = employment.getDojang().getId();
+        String tenantId = employment.getTenant().getId();
+        String resolvedDojangId = employment.getDojang().getId();
         String role = resolveRole(user, employment, null);
 
         return generateTokenResponse(user, tenantId, resolvedDojangId, role);
@@ -132,7 +132,7 @@ public class AuthService {
         }
     }
 
-    private User findUserById(Long userId) {
+    private User findUserById(String userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> new AuthException(AuthErrorCode.INVALID_TOKEN));
     }
@@ -141,7 +141,7 @@ public class AuthService {
         return generateTokenResponse(user, null, null, extractRoleString(user));
     }
 
-    private TokenRes generateTokenResponse(User user, Long tenantId, Long dojangId, String role) {
+    private TokenRes generateTokenResponse(User user, String tenantId, String dojangId, String role) {
         String accessToken = jwtUtil.generateAccessToken(
             user.getId(),
             tenantId,
@@ -170,7 +170,7 @@ public class AuthService {
         return user.getRole() != null ? user.getRole().name() : ROLE_PENDING;
     }
 
-    private Employment findActiveEmployment(Long userId, Long dojangId) {
+    private Employment findActiveEmployment(String userId, String dojangId) {
         if (dojangId == null) {
             return null;
         }

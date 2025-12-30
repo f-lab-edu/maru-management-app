@@ -21,7 +21,7 @@ public class CasLockMessageAcquirer implements MessageAcquirer {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public Optional<MessageQueue> acquire(Long messageId) {
+    public Optional<MessageQueue> acquire(String messageId) {
         return Optional.ofNullable(transactionTemplate.execute(status -> {
             int updated = messageQueueRepository.tryTransitionStatus(
                     messageId,
@@ -33,7 +33,7 @@ public class CasLockMessageAcquirer implements MessageAcquirer {
                 return null;
             }
 
-            return messageQueueRepository.findById(messageId).orElse(null);
+            return messageQueueRepository.findByIdWithGuardian(messageId).orElse(null);
         }));
     }
 }

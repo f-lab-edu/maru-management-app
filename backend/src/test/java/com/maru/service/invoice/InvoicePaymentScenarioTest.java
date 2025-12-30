@@ -20,10 +20,10 @@ class InvoicePaymentScenarioTest {
 
     private Student student;
 
-    private static final Long TENANT_ID = 1L;
-    private static final Long DOJANG_ID = 1L;
-    private static final Long STUDENT_ID = 1L;
-    private static final Long USER_ID = 1L;
+    private static final String TENANT_ID = "tenant1";
+    private static final String DOJANG_ID = "dojang1";
+    private static final String STUDENT_ID = "student1";
+    private static final String USER_ID = "user1";
     private static final BigDecimal MONTHLY_FEE = new BigDecimal("100000");
 
     @BeforeEach
@@ -45,7 +45,7 @@ class InvoicePaymentScenarioTest {
                     LocalDate.of(2025, 1, 31),
                     "1월 수강료"
             );
-            setInvoiceId(invoice, 1L);
+            setInvoiceId(invoice, "inv1");
 
             // Then: 초기 상태 확인
             assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.DRAFT);
@@ -470,7 +470,7 @@ class InvoicePaymentScenarioTest {
         return mockStudent;
     }
 
-    private void setInvoiceId(Invoice invoice, Long id) {
+    private void setInvoiceId(Invoice invoice, String id) {
         ReflectionTestUtils.setField(invoice, "id", id);
     }
 }

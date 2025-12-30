@@ -10,8 +10,8 @@ import java.util.List;
 
 @Builder
 public record InvoiceDetailRes(
-        Long id,
-        Long studentId,
+        String id,
+        String studentId,
         String studentName,
         BigDecimal amount,
         BigDecimal paidAmount,

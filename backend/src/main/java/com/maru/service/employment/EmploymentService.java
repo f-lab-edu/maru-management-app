@@ -36,7 +36,7 @@ public class EmploymentService {
      * @return 생성 또는 재활용된 Employment
      */
     @Transactional
-    public Employment requestApproval(Long userId, Long dojangId) {
+    public Employment requestApproval(String userId, String dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
@@ -59,7 +59,7 @@ public class EmploymentService {
         throw new BusinessException(EmploymentErrorCode.ALREADY_EXISTS);
     }
 
-    private Employment createNewEmployment(Long userId, Dojang dojang) {
+    private Employment createNewEmployment(String userId, Dojang dojang) {
         User user = userService.getUserById(userId);
         Employment employment = Employment.create(user, dojang.getTenant(), dojang);
         Employment saved = employmentRepository.save(employment);
@@ -76,7 +76,7 @@ public class EmploymentService {
      * @return 대기 중인 Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getPendingRequests(Long dojangId) {
+    public List<Employment> getPendingRequests(String dojangId) {
         return employmentRepository.findByDojangIdAndStatus(dojangId, EmploymentStatus.PENDING);
     }
 
@@ -87,7 +87,7 @@ public class EmploymentService {
      * @return Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getMyRequests(Long userId) {
+    public List<Employment> getMyRequests(String userId) {
         return employmentRepository.findByUserId(userId);
     }
 
@@ -98,7 +98,7 @@ public class EmploymentService {
      * @return Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getMyDojangs(Long userId) {
+    public List<Employment> getMyDojangs(String userId) {
         return employmentRepository.findActiveWithDojangAndTenant(userId, EmploymentStatus.ACTIVE);
     }
 
@@ -110,7 +110,7 @@ public class EmploymentService {
      * @return 승인된 Employment
      */
     @Transactional
-    public Employment approve(Long employmentId, Long ownerId) {
+    public Employment approve(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -133,7 +133,7 @@ public class EmploymentService {
      * @return 거절된 Employment
      */
     @Transactional
-    public Employment reject(Long employmentId, Long ownerId) {
+    public Employment reject(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -152,7 +152,7 @@ public class EmploymentService {
      * @param userId 요청자 ID
      */
     @Transactional
-    public void cancel(Long employmentId, Long userId) {
+    public void cancel(String employmentId, String userId) {
         Employment employment = getEmploymentById(employmentId);
         validateRequesterPermission(employment, userId);
         validatePendingStatus(employment);
@@ -162,7 +162,7 @@ public class EmploymentService {
                 employmentId, userId, employment.getDojang().getId());
     }
 
-    private void validateRequesterPermission(Employment employment, Long userId) {
+    private void validateRequesterPermission(Employment employment, String userId) {
         if (!employment.getUser().getId().equals(userId)) {
             log.warn("본인이 아닌 사용자가 취소 시도: employmentId={}, requesterId={}, actualUserId={}",
                     employment.getId(), userId, employment.getUser().getId());
@@ -170,13 +170,13 @@ public class EmploymentService {
         }
     }
 
-    private Employment getEmploymentById(Long employmentId) {
+    private Employment getEmploymentById(String employmentId) {
         return employmentRepository.findById(employmentId)
                 .orElseThrow(() -> new BusinessException(EmploymentErrorCode.NOT_FOUND));
     }
 
-    private void validateOwnerPermission(Employment employment, Long ownerId) {
-        Long dojangOwnerId = employment.getDojang().getOwner().getId();
+    private void validateOwnerPermission(Employment employment, String ownerId) {
+        String dojangOwnerId = employment.getDojang().getOwner().getId();
         if (!dojangOwnerId.equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
                     employment.getId(), ownerId, dojangOwnerId);

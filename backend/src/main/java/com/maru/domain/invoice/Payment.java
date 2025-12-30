@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseTimeEntity {
 
-    @Column(nullable = false)
-    private Long tenantId;
+    @Column(nullable = false, length = 13)
+    private String tenantId;
 
-    @Column(nullable = false)
-    private Long dojangId;
+    @Column(nullable = false, length = 13)
+    private String dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = false)
@@ -43,9 +43,10 @@ public class Payment extends BaseTimeEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    private Long receivedBy;
+    @Column(length = 13)
+    private String receivedBy;
 
-    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy) {
+    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, String receivedBy) {
         validatePayment(invoice, amount);
 
         this.tenantId = invoice.getTenantId();
@@ -58,7 +59,7 @@ public class Payment extends BaseTimeEntity {
         this.receivedBy = receivedBy;
     }
 
-    public static Payment create(Invoice invoice, BigDecimal amount, PaymentMethod method, Long receivedBy) {
+    public static Payment create(Invoice invoice, BigDecimal amount, PaymentMethod method, String receivedBy) {
         return new Payment(invoice, amount, method, receivedBy);
     }
 

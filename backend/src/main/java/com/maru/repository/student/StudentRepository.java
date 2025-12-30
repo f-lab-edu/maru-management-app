@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface StudentRepository extends JpaRepository<Student, Long> {
+public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("""
         SELECT s FROM Student s
@@ -21,8 +21,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
         ORDER BY s.enrolledAt DESC
         """)
     List<Student> findActiveStudents(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("excludeStatus") StudentStatus excludeStatus);
 
     @Query("""
@@ -33,11 +33,11 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
           AND s.deletedAt IS NULL
         """)
     Optional<Student> findActiveById(
-            @Param("id") Long id,
-            @Param("tenantId") Long tenantId,
+            @Param("id") String id,
+            @Param("tenantId") String tenantId,
             @Param("excludeStatus") StudentStatus excludeStatus);
 
-    Optional<Student> findByDojangIdAndNameAndBirth(Long dojangId, String name, LocalDate birth);
+    Optional<Student> findByDojangIdAndNameAndBirth(String dojangId, String name, LocalDate birth);
 
     @Query("""
         SELECT s FROM Student s
@@ -51,8 +51,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
           )
         """)
     List<Student> findActiveStudentsWithoutAttendance(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("date") LocalDate date);
 
     @Query("""
@@ -63,8 +63,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
           AND s.deletedAt IS NULL
         """)
     List<Student> findAllActiveByIds(
-            @Param("ids") List<Long> ids,
-            @Param("tenantId") Long tenantId,
+            @Param("ids") List<String> ids,
+            @Param("tenantId") String tenantId,
             @Param("excludeStatus") StudentStatus excludeStatus);
 
     @Query("""

@@ -7,7 +7,7 @@ import lombok.Builder;
 
 @Builder
 public record OnboardingRoleRes(
-        Long userId,
+        String userId,
         UserRole role,
         OnboardingStep onboardingStep
 ) {

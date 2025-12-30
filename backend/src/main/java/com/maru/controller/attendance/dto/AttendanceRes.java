@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 
 @Builder
 public record AttendanceRes(
-        Long id,
-        Long studentId,
+        String id,
+        String studentId,
         String studentName,
         AttendanceStatus status,
         CheckMethod method,

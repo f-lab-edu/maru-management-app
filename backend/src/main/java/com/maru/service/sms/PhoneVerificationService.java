@@ -29,7 +29,7 @@ public class PhoneVerificationService {
      * @param userId 요청자 ID
      * @return 만료 시간(초)
      */
-    public int sendVerificationCode(String phone, Long userId) {
+    public int sendVerificationCode(String phone, String userId) {
         validateResendLimit(phone);
         String code = generateAndSaveCode(phone, userId);
         sendSmsWithRollback(phone, code);
@@ -45,7 +45,7 @@ public class PhoneVerificationService {
      * @throws BusinessException SMS_CODE_NOT_FOUND, SMS_CODE_EXPIRED, SMS_MAX_ATTEMPTS_EXCEEDED, SMS_USER_MISMATCH
      * @throws SmsVerificationException SMS_CODE_INVALID (남은 시도 횟수 포함)
      */
-    public void verifyCode(String phone, String code, Long userId) {
+    public void verifyCode(String phone, String code, String userId) {
         String storedCode = getStoredCodeOrThrow(phone);
         validateUserMatch(phone, userId);
 
@@ -62,7 +62,7 @@ public class PhoneVerificationService {
         }
     }
 
-    private String generateAndSaveCode(String phone, Long userId) {
+    private String generateAndSaveCode(String phone, String userId) {
         String code = generateCode();
         Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
         verificationCodeStore.save(phone, code, userId, ttl);
@@ -101,8 +101,8 @@ public class PhoneVerificationService {
         };
     }
 
-    private void validateUserMatch(String phone, Long userId) {
-        Long storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
+    private void validateUserMatch(String phone, String userId) {
+        String storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
         if (storedUserId != null && !storedUserId.equals(userId)) {
             log.warn("인증 요청자 불일치: phone={}, storedUserId={}, requestUserId={}", MaskingUtil.phone(phone), storedUserId, userId);
             throw new BusinessException(SmsErrorCode.USER_MISMATCH);

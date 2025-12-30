@@ -5,6 +5,6 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 public record BulkDeleteReq(
-        @NotEmpty List<Long> studentIds
+        @NotEmpty List<String> studentIds
 ) {
 }

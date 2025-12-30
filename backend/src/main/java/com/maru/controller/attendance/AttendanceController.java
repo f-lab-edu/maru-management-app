@@ -30,9 +30,9 @@ public class AttendanceController {
      */
     @PostMapping("/check")
     public ResponseEntity<AttendanceRes> checkIn(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody AttendanceCheckReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         AttendanceRes response = attendanceService.checkIn(
                 dojangId,
                 request.studentId(),
@@ -54,9 +54,9 @@ public class AttendanceController {
      */
     @PostMapping("/bulk-check")
     public ResponseEntity<BulkCheckRes> bulkCheckIn(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody BulkCheckReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkCheckRes response = attendanceService.bulkCheckIn(
                 dojangId,
                 request.studentIds(),
@@ -74,9 +74,9 @@ public class AttendanceController {
      */
     @PatchMapping("/{id}/checkout")
     public ResponseEntity<AttendanceRes> checkOut(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         AttendanceRes response = attendanceService.checkOut(dojangId, id);
         return ResponseEntity.ok(response);
     }
@@ -91,9 +91,9 @@ public class AttendanceController {
      */
     @PatchMapping("/{id}/cancel-checkout")
     public ResponseEntity<AttendanceRes> cancelCheckout(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         AttendanceRes response = attendanceService.cancelCheckout(dojangId, id);
         return ResponseEntity.ok(response);
     }
@@ -108,9 +108,9 @@ public class AttendanceController {
      */
     @PostMapping("/bulk-checkout")
     public ResponseEntity<BulkCheckRes> bulkCheckOut(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody BulkCheckoutReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkCheckRes response = attendanceService.bulkCheckOut(dojangId, request.attendanceIds());
         return ResponseEntity.ok(response);
     }
@@ -126,10 +126,10 @@ public class AttendanceController {
      */
     @PatchMapping("/{id}/status")
     public ResponseEntity<AttendanceRes> changeStatus(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @Valid @RequestBody AttendanceStatusChangeReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         AttendanceRes response = attendanceService.changeStatus(
                 dojangId,
                 id,
@@ -149,10 +149,10 @@ public class AttendanceController {
      */
     @PatchMapping("/{id}/time")
     public ResponseEntity<AttendanceRes> changeTime(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @Valid @RequestBody AttendanceTimeChangeReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         AttendanceRes response = attendanceService.changeTime(
                 dojangId,
                 id,
@@ -171,9 +171,9 @@ public class AttendanceController {
      */
     @PostMapping("/bulk-status")
     public ResponseEntity<BulkCheckRes> bulkChangeStatus(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody BulkStatusChangeReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkCheckRes response = attendanceService.bulkChangeStatus(
                 dojangId,
                 request.attendanceIds(),
@@ -194,11 +194,11 @@ public class AttendanceController {
      */
     @GetMapping("/history")
     public ResponseEntity<List<AttendanceRes>> getHistory(
-            @RequestParam Long dojangId,
-            @RequestParam Long studentId,
+            @RequestParam String dojangId,
+            @RequestParam String studentId,
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         List<AttendanceRes> response = attendanceService.getHistory(dojangId, studentId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
@@ -214,10 +214,10 @@ public class AttendanceController {
      */
     @GetMapping("/range")
     public ResponseEntity<RangeAttendanceRes> getAttendanceRange(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         RangeAttendanceRes response = attendanceService.getAttendanceRange(dojangId, startDate, endDate);
         return ResponseEntity.ok(response);
     }

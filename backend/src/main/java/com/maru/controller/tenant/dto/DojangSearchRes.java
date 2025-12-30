@@ -5,7 +5,7 @@ import lombok.Builder;
 
 @Builder
 public record DojangSearchRes(
-        Long id,
+        String id,
         String name,
         String address,
         String ownerName

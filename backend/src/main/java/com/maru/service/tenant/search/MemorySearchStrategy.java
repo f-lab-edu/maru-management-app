@@ -28,8 +28,8 @@ public class MemorySearchStrategy implements SearchStrategy {
     private final DojangAddressTokenizer addressTokenizer;
     private final DojangQueryTokenizer queryTokenizer;
 
-    private final Map<String, Set<Long>> invertedIndex = new ConcurrentHashMap<>();
-    private final Map<Long, DojangSearchDto> dojangData = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> invertedIndex = new ConcurrentHashMap<>();
+    private final Map<String, DojangSearchDto> dojangData = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -47,10 +47,10 @@ public class MemorySearchStrategy implements SearchStrategy {
             return Page.empty(pageable);
         }
 
-        Set<Long> resultIds = null;
+        Set<String> resultIds = null;
 
         for (String token : queryTokens) {
-            Set<Long> matchedIds = invertedIndex.get(token);
+            Set<String> matchedIds = invertedIndex.get(token);
 
             if (matchedIds == null || matchedIds.isEmpty()) {
                 return Page.empty(pageable);
@@ -67,7 +67,7 @@ public class MemorySearchStrategy implements SearchStrategy {
             }
         }
 
-        List<Long> sortedIds = resultIds.stream()
+        List<String> sortedIds = resultIds.stream()
                 .sorted()
                 .toList();
 
