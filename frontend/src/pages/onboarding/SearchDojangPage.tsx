@@ -48,7 +48,7 @@ export default function SearchDojangPage() {
     }
   };
 
-  const isAlreadyRequested = (dojangId: number) => {
+  const isAlreadyRequested = (dojangId: string) => {
     return myRequests?.some(r =>
       r.dojangId === dojangId &&
       (r.status === 'PENDING' || r.status === 'ACTIVE')

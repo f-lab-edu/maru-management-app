@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
 
 @Builder
 public record EmploymentRes(
-        Long id,
-        Long userId,
-        Long dojangId,
+        String id,
+        String userId,
+        String dojangId,
         String dojangName,
         EmploymentStatus status,
         LocalDateTime requestedAt,

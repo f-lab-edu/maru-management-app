@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 public record InvoiceBulkUpdateReq(
         @NotEmpty(message = "수정할 청구서 ID 목록은 필수입니다")
-        List<Long> invoiceIds,
+        List<String> invoiceIds,
 
         @Positive(message = "금액은 0보다 커야 합니다")
         BigDecimal amount,

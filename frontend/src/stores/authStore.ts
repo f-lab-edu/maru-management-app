@@ -5,9 +5,9 @@ const STORAGE_KEY_PREFIX = 'maru:selected-dojang:';
 
 interface AuthState {
   selectedDojang: DojangSummary | null;
-  setSelectedDojang: (dojang: DojangSummary, userId: number) => void;
-  clearSelectedDojang: (userId: number | null) => void;
-  getLastSelectedDojangId: (userId: number | null) => number | null;
+  setSelectedDojang: (dojang: DojangSummary, userId: string) => void;
+  clearSelectedDojang: (userId: string | null) => void;
+  getLastSelectedDojangId: (userId: string | null) => string | null;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

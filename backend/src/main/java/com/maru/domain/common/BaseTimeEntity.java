@@ -1,9 +1,9 @@
 package com.maru.domain.common;
 
+import io.hypersistence.tsid.TSID;
 import jakarta.persistence.*;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -14,10 +14,17 @@ import java.time.LocalDateTime;
 public abstract class BaseTimeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 13)
+    private String id;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void prePersist() {
+        if (this.id == null) {
+            this.id = TSID.Factory.getTsid().toString();
+        }
+    }
 }

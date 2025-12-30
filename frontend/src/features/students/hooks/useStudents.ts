@@ -3,27 +3,27 @@ import { studentService } from '@/services/studentService';
 import type { StudentCreateRequest, StudentUpdateRequest } from '@/types/student';
 
 const QUERY_KEYS = {
-  students: (dojangId: number) => ['students', dojangId] as const,
-  student: (dojangId: number, studentId: number) => ['student', dojangId, studentId] as const,
+  students: (dojangId: string) => ['students', dojangId] as const,
+  student: (dojangId: string, studentId: string) => ['student', dojangId, studentId] as const,
 };
 
-export function useStudents(dojangId: number | null) {
+export function useStudents(dojangId: string | null) {
   return useQuery({
-    queryKey: QUERY_KEYS.students(dojangId ?? 0),
+    queryKey: QUERY_KEYS.students(dojangId ?? ''),
     queryFn: () => studentService.getStudents(dojangId!),
     enabled: !!dojangId,
   });
 }
 
-export function useStudent(dojangId: number | null, studentId: number | null) {
+export function useStudent(dojangId: string | null, studentId: string | null) {
   return useQuery({
-    queryKey: QUERY_KEYS.student(dojangId ?? 0, studentId ?? 0),
+    queryKey: QUERY_KEYS.student(dojangId ?? '', studentId ?? ''),
     queryFn: () => studentService.getStudent(dojangId!, studentId!),
     enabled: !!dojangId && !!studentId,
   });
 }
 
-export function useCreateStudent(dojangId: number) {
+export function useCreateStudent(dojangId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -34,11 +34,11 @@ export function useCreateStudent(dojangId: number) {
   });
 }
 
-export function useUpdateStudent(dojangId: number) {
+export function useUpdateStudent(dojangId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ studentId, data }: { studentId: number; data: StudentUpdateRequest }) =>
+    mutationFn: ({ studentId, data }: { studentId: string; data: StudentUpdateRequest }) =>
       studentService.updateStudent(dojangId, studentId, data),
     onSuccess: (_, { studentId }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students(dojangId) });
@@ -47,22 +47,22 @@ export function useUpdateStudent(dojangId: number) {
   });
 }
 
-export function useDeleteStudent(dojangId: number) {
+export function useDeleteStudent(dojangId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (studentId: number) => studentService.deleteStudent(dojangId, studentId),
+    mutationFn: (studentId: string) => studentService.deleteStudent(dojangId, studentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students(dojangId) });
     },
   });
 }
 
-export function useBulkDeleteStudents(dojangId: number) {
+export function useBulkDeleteStudents(dojangId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (studentIds: number[]) => studentService.bulkDelete(dojangId, studentIds),
+    mutationFn: (studentIds: string[]) => studentService.bulkDelete(dojangId, studentIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.students(dojangId) });
     },

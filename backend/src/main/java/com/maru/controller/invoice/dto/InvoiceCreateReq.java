@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Builder
 public record InvoiceCreateReq(
         @NotNull(message = "원생 ID는 필수입니다")
-        Long studentId,
+        String studentId,
 
         @Positive(message = "금액은 0보다 커야 합니다")
         BigDecimal amount,

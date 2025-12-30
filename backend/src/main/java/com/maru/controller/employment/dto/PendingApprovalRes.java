@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 @Builder
 public record PendingApprovalRes(
-        Long id,
-        Long userId,
+        String id,
+        String userId,
         String userName,
         String userEmail,
         String userPhone,

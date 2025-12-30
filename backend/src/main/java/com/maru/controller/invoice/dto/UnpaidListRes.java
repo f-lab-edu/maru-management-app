@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Builder
 public record UnpaidListRes(
-        Long invoiceId,
+        String invoiceId,
         String studentName,
         String guardianName,
         String guardianPhone,

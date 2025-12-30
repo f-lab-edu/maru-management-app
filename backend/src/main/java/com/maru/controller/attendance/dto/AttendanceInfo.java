@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Builder
 public record AttendanceInfo(
-        Long id,
+        String id,
         AttendanceStatus status,
         LocalDateTime checkinAt,
         LocalDateTime checkoutAt

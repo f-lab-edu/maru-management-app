@@ -45,8 +45,8 @@ public class GuardianService {
      * @throws BusinessException GUARDIANSHIP_ALREADY_EXISTS - 이미 연결된 보호자
      */
     @Transactional
-    public GuardianRes addGuardian(Long dojangId, Long studentId, GuardianCreateReq req) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public GuardianRes addGuardian(String dojangId, String studentId, GuardianCreateReq req) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -78,8 +78,8 @@ public class GuardianService {
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자를 찾을 수 없음
      */
     @Transactional
-    public GuardianRes updateGuardian(Long dojangId, Long studentId, Long guardianId, GuardianUpdateReq req) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public GuardianRes updateGuardian(String dojangId, String studentId, String guardianId, GuardianUpdateReq req) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -109,8 +109,8 @@ public class GuardianService {
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자를 찾을 수 없음
      */
     @Transactional
-    public void setPrimaryGuardian(Long dojangId, Long studentId, Long guardianId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public void setPrimaryGuardian(String dojangId, String studentId, String guardianId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -136,8 +136,8 @@ public class GuardianService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional(readOnly = true)
-    public List<GuardianRes> getGuardians(Long dojangId, Long studentId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public List<GuardianRes> getGuardians(String dojangId, String studentId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -160,8 +160,8 @@ public class GuardianService {
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자 연결을 찾을 수 없음
      */
     @Transactional
-    public void removeGuardian(Long dojangId, Long studentId, Long guardianId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public void removeGuardian(String dojangId, String studentId, String guardianId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -182,7 +182,7 @@ public class GuardianService {
                 .orElseGet(() -> guardianRepository.save(Guardian.create(phone, name)));
     }
 
-    private void validateDojangAccess(Long dojangId, Long tenantId) {
+    private void validateDojangAccess(String dojangId, String tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
@@ -191,13 +191,13 @@ public class GuardianService {
         }
     }
 
-    private void validateStudentBelongsToDojang(Student student, Long dojangId) {
+    private void validateStudentBelongsToDojang(Student student, String dojangId) {
         if (!student.getDojang().getId().equals(dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
     }
 
-    private void validateGuardianshipNotExists(Long studentId, Long guardianId) {
+    private void validateGuardianshipNotExists(String studentId, String guardianId) {
         guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
                 .ifPresent(gs -> {
                     throw new BusinessException(GuardianErrorCode.GUARDIANSHIP_ALREADY_EXISTS);

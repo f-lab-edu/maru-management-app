@@ -10,21 +10,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
-public interface MessageQueueRepository extends JpaRepository<MessageQueue, Long> {
+public interface MessageQueueRepository extends JpaRepository<MessageQueue, String> {
 
-    /**
-     * 재시도 대상 메시지 조회 (PENDING + scheduled_at 경과 + failed_count < maxRetry)
-     *
-     * @param status   조회할 상태 (PENDING)
-     * @param time     현재 시간 (scheduledAt <= time)
-     * @param maxRetry 최대 재시도 횟수
-     * @param pageable 페이징 정보
-     * @return 재시도 대상 메시지 목록
-     */
     @Query("""
             SELECT m
             FROM MessageQueue m
+            JOIN FETCH m.guardian
             WHERE m.status = :status
               AND m.scheduledAt <= :time
               AND m.failedCount < :maxRetry
@@ -37,14 +30,14 @@ public interface MessageQueueRepository extends JpaRepository<MessageQueue, Long
             Pageable pageable
     );
 
-    /**
-     * Compare And Swap 기반 상태 전이 (중복 발송 방지)
-     *
-     * @param id   메시지 ID
-     * @param from 현재 상태 (예: PENDING)
-     * @param to   변경할 상태 (예: PROCESSING)
-     * @return 업데이트된 행 수 (1: 선점 성공, 0: 이미 다른 스레드가 선점)
-     */
+    @Query("""
+            SELECT m
+            FROM MessageQueue m
+            JOIN FETCH m.guardian
+            WHERE m.id = :id
+            """)
+    Optional<MessageQueue> findByIdWithGuardian(@Param("id") String id);
+
     @Modifying
     @Query("""
             UPDATE MessageQueue m
@@ -53,17 +46,11 @@ public interface MessageQueueRepository extends JpaRepository<MessageQueue, Long
               AND m.status = :from
             """)
     int tryTransitionStatus(
-            @Param("id") Long id,
+            @Param("id") String id,
             @Param("from") MessageStatus from,
             @Param("to") MessageStatus to
     );
 
-    /**
-     * PROCESSING 상태로 오래 방치된 메시지 복구
-     *
-     * @param threshold 이 시간 이전에 PROCESSING 상태가 된 메시지를 복구
-     * @return 복구된 메시지 수
-     */
     @Modifying
     @Query("""
             UPDATE MessageQueue m

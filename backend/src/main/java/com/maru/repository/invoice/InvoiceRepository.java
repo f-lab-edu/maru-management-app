@@ -11,9 +11,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+public interface InvoiceRepository extends JpaRepository<Invoice, String> {
 
-    Optional<Invoice> findByIdAndTenantIdAndDojangId(Long id, Long tenantId, Long dojangId);
+    Optional<Invoice> findByIdAndTenantIdAndDojangId(String id, String tenantId, String dojangId);
 
     @Query("""
         SELECT i FROM Invoice i
@@ -24,8 +24,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         ORDER BY i.dueDate DESC
         """)
     List<Invoice> findByDojangIdWithFilters(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("status") InvoiceStatus status);
 
     @Query("""
@@ -37,8 +37,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.dueDate = :dueDate
         """)
     List<Invoice> findUnpaidByDueDate(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("dueDate") LocalDate dueDate);
 
     @Query("""
@@ -50,8 +50,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
         ORDER BY i.dueDate ASC
         """)
     List<Invoice> findUnpaidInvoices(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END
@@ -63,9 +63,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.billingMonth = :month
         """)
     boolean existsByBillingYearAndMonth(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("studentId") Long studentId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentId") String studentId,
             @Param("year") int year,
             @Param("month") int month);
 
@@ -76,9 +76,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.billingYear = :year
           AND i.billingMonth = :month
         """)
-    List<Long> findStudentIdsWithInvoiceByBillingYearAndMonth(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+    List<String> findStudentIdsWithInvoiceByBillingYearAndMonth(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("year") int year,
             @Param("month") int month);
 
@@ -89,9 +89,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.id IN :ids
         """)
     List<Invoice> findAllByDojangIdAndIdIn(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
-            @Param("ids") List<Long> ids);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("ids") List<String> ids);
 
     @Query("""
         SELECT i FROM Invoice i
@@ -101,9 +101,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.dojangId = :dojangId
         """)
     Optional<Invoice> findByIdAndDojangIdWithStudent(
-            @Param("id") Long id,
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId);
+            @Param("id") String id,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT
@@ -119,8 +119,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
           AND i.status != 'VOID'
         """)
     InvoiceStatistics getStatistics(
-            @Param("tenantId") Long tenantId,
-            @Param("dojangId") Long dojangId,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
             @Param("year") int year,
             @Param("month") int month);
 }

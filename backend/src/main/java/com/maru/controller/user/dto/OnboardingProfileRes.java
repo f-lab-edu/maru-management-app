@@ -6,7 +6,7 @@ import lombok.Builder;
 
 @Builder
 public record OnboardingProfileRes(
-        Long userId,
+        String userId,
         String name,
         String email,
         String phone,

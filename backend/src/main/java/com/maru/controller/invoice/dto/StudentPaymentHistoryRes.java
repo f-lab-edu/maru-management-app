@@ -7,7 +7,7 @@ import java.util.List;
 
 @Builder
 public record StudentPaymentHistoryRes(
-        Long studentId,
+        String studentId,
         String studentName,
         BigDecimal totalPaidAmount,
         List<PaymentHistoryItem> payments
@@ -15,8 +15,8 @@ public record StudentPaymentHistoryRes(
 
     @Builder
     public record PaymentHistoryItem(
-            Long paymentId,
-            Long invoiceId,
+            String paymentId,
+            String invoiceId,
             Integer billingYear,
             Integer billingMonth,
             BigDecimal amount,

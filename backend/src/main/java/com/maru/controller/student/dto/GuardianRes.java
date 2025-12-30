@@ -7,7 +7,7 @@ import lombok.Builder;
 
 @Builder
 public record GuardianRes(
-        Long id,
+        String id,
         String name,
         String phone,
         GuardianRelation relation,

@@ -129,7 +129,7 @@ public class Employment extends BaseEntity {
         return this.permissions.contains(permission);
     }
 
-    public UserRole resolveRole(Long userId) {
+    public UserRole resolveRole(String userId) {
         boolean isOwner = this.dojang.getOwner().getId().equals(userId);
         return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }

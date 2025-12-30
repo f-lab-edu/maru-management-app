@@ -17,7 +17,7 @@ export default function ApprovalStatusPage() {
   const { data: requests, isLoading } = useMyRequests();
   const cancelRequest = useCancelRequest();
 
-  const handleCancel = async (employmentId: number) => {
+  const handleCancel = async (employmentId: string) => {
     if (!confirm('승인 요청을 취소하시겠습니까?')) return;
     try {
       await cancelRequest.mutateAsync(employmentId);

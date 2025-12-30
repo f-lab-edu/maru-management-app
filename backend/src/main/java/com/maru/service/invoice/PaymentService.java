@@ -57,8 +57,8 @@ public class PaymentService {
      * @throws BusinessException AMOUNT_EXCEEDS_REMAINING - 수납 금액이 남은 금액 초과
      */
     @Transactional
-    public InvoiceDetailRes recordPayment(Long dojangId, Long invoiceId, PaymentRecordReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes recordPayment(String dojangId, String invoiceId, PaymentRecordReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -83,8 +83,8 @@ public class PaymentService {
      * @throws BusinessException ALREADY_REFUNDED - 이미 환불된 수납
      */
     @Transactional
-    public InvoiceDetailRes cancelPayment(Long dojangId, Long invoiceId, Long paymentId, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes cancelPayment(String dojangId, String invoiceId, String paymentId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -105,8 +105,8 @@ public class PaymentService {
      * @return 미납 청구서 목록 (연체일 포함)
      */
     @Transactional(readOnly = true)
-    public List<UnpaidListRes> getUnpaidList(Long dojangId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public List<UnpaidListRes> getUnpaidList(String dojangId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Invoice> unpaidInvoices = invoiceRepository.findUnpaidInvoices(tenantId, dojangId);
@@ -123,8 +123,8 @@ public class PaymentService {
      * @return 수납 통계 (완납/미납/부분납 건수 및 금액)
      */
     @Transactional(readOnly = true)
-    public PaymentStatisticsRes getPaymentStatistics(Long dojangId, int year, int month) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public PaymentStatisticsRes getPaymentStatistics(String dojangId, int year, int month) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         LocalDateTime startOfMonth = LocalDate.of(year, month, 1).atStartOfDay();
@@ -154,8 +154,8 @@ public class PaymentService {
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional(readOnly = true)
-    public StudentPaymentHistoryRes getStudentPaymentHistory(Long dojangId, Long studentId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public StudentPaymentHistoryRes getStudentPaymentHistory(String dojangId, String studentId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = findStudentAndValidate(studentId, dojangId);
@@ -164,7 +164,7 @@ public class PaymentService {
         return buildStudentPaymentHistoryRes(student, payments);
     }
 
-    private void validateDojangAccess(Long dojangId, Long tenantId) {
+    private void validateDojangAccess(String dojangId, String tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
@@ -173,17 +173,17 @@ public class PaymentService {
         }
     }
 
-    private Invoice findInvoiceWithStudent(Long invoiceId, Long tenantId, Long dojangId) {
+    private Invoice findInvoiceWithStudent(String invoiceId, String tenantId, String dojangId) {
         return invoiceRepository.findByIdAndDojangIdWithStudent(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
     }
 
-    private Payment createAndSavePayment(Invoice invoice, PaymentRecordReq request, Long userId) {
+    private Payment createAndSavePayment(Invoice invoice, PaymentRecordReq request, String userId) {
         Payment payment = Payment.create(invoice, request.amount(), request.method(), userId);
         return paymentRepository.save(payment);
     }
 
-    private Payment findPaymentAndValidate(Long paymentId, Long invoiceId, Long tenantId, Long dojangId) {
+    private Payment findPaymentAndValidate(String paymentId, String invoiceId, String tenantId, String dojangId) {
         Payment payment = paymentRepository.findByIdAndTenantIdAndDojangId(paymentId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(PaymentErrorCode.NOT_FOUND));
 
@@ -203,7 +203,7 @@ public class PaymentService {
         invoice.subtractPayment(payment.getAmount());
     }
 
-    private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice, Long invoiceId) {
+    private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice, String invoiceId) {
         List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(invoiceId)
                 .stream()
                 .map(PaymentRes::from)
@@ -218,15 +218,15 @@ public class PaymentService {
         }
 
         LocalDate today = LocalDate.now();
-        Map<Long, Guardian> guardianMap = fetchPrimaryGuardiansAsMap(unpaidInvoices);
+        Map<String, Guardian> guardianMap = fetchPrimaryGuardiansAsMap(unpaidInvoices);
 
         return unpaidInvoices.stream()
                 .map(invoice -> buildUnpaidListRes(invoice, today, guardianMap))
                 .toList();
     }
 
-    private Map<Long, Guardian> fetchPrimaryGuardiansAsMap(List<Invoice> invoices) {
-        List<Long> studentIds = invoices.stream()
+    private Map<String, Guardian> fetchPrimaryGuardiansAsMap(List<Invoice> invoices) {
+        List<String> studentIds = invoices.stream()
                 .map(invoice -> invoice.getStudent().getId())
                 .toList();
 
@@ -239,7 +239,7 @@ public class PaymentService {
                 ));
     }
 
-    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today, Map<Long, Guardian> guardianMap) {
+    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today, Map<String, Guardian> guardianMap) {
         Student student = invoice.getStudent();
         Guardian primaryGuardian = guardianMap.get(student.getId());
 
@@ -263,7 +263,7 @@ public class PaymentService {
         return 0;
     }
 
-    private Student findStudentAndValidate(Long studentId, Long dojangId) {
+    private Student findStudentAndValidate(String studentId, String dojangId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 

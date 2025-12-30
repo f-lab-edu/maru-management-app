@@ -32,9 +32,9 @@ public class InvoiceController {
      */
     @PostMapping
     public ResponseEntity<InvoiceDetailRes> createInvoice(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody InvoiceCreateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.createInvoice(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -49,9 +49,9 @@ public class InvoiceController {
      */
     @PostMapping("/bulk")
     public ResponseEntity<BulkCreateRes> createBulkInvoices(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody InvoiceBulkCreateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkCreateRes response = invoiceService.createBulkInvoices(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -66,9 +66,9 @@ public class InvoiceController {
      */
     @GetMapping
     public ResponseEntity<List<InvoiceListRes>> getInvoices(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @RequestParam(required = false) InvoiceStatus status,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         List<InvoiceListRes> response = invoiceService.getInvoices(dojangId, status);
         return ResponseEntity.ok(response);
     }
@@ -83,9 +83,9 @@ public class InvoiceController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<InvoiceDetailRes> getInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.getInvoice(dojangId, id);
         return ResponseEntity.ok(response);
     }
@@ -101,10 +101,10 @@ public class InvoiceController {
      */
     @PatchMapping("/{id}")
     public ResponseEntity<InvoiceDetailRes> updateInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @Valid @RequestBody InvoiceUpdateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.updateInvoice(dojangId, id, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -119,9 +119,9 @@ public class InvoiceController {
      */
     @PatchMapping("/{id}/issue")
     public ResponseEntity<InvoiceDetailRes> issueInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.issueInvoice(dojangId, id, userId);
         return ResponseEntity.ok(response);
     }
@@ -136,9 +136,9 @@ public class InvoiceController {
      */
     @PatchMapping("/{id}/void")
     public ResponseEntity<InvoiceDetailRes> voidInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.voidInvoice(dojangId, id, userId);
         return ResponseEntity.ok(response);
     }
@@ -154,9 +154,9 @@ public class InvoiceController {
      */
     @PatchMapping("/{id}/restore")
     public ResponseEntity<InvoiceDetailRes> restoreInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = invoiceService.restoreInvoice(dojangId, id, userId);
         return ResponseEntity.ok(response);
     }
@@ -170,9 +170,9 @@ public class InvoiceController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteInvoice(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         invoiceService.deleteInvoice(dojangId, id, userId);
         return ResponseEntity.noContent().build();
     }
@@ -188,10 +188,10 @@ public class InvoiceController {
      */
     @PostMapping("/{id}/payments")
     public ResponseEntity<InvoiceDetailRes> recordPayment(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @Valid @RequestBody PaymentRecordReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = paymentService.recordPayment(dojangId, id, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -207,10 +207,10 @@ public class InvoiceController {
      */
     @DeleteMapping("/{invoiceId}/payments/{paymentId}")
     public ResponseEntity<InvoiceDetailRes> cancelPayment(
-            @PathVariable Long invoiceId,
-            @PathVariable Long paymentId,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String invoiceId,
+            @PathVariable String paymentId,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         InvoiceDetailRes response = paymentService.cancelPayment(dojangId, invoiceId, paymentId, userId);
         return ResponseEntity.ok(response);
     }
@@ -225,9 +225,9 @@ public class InvoiceController {
      */
     @PostMapping("/bulk-issue")
     public ResponseEntity<BulkIssueRes> bulkIssueInvoices(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody BulkIssueReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkIssueRes response = invoiceService.bulkIssueInvoices(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -243,9 +243,9 @@ public class InvoiceController {
      */
     @PatchMapping("/bulk-update")
     public ResponseEntity<BulkUpdateRes> bulkUpdateInvoices(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody InvoiceBulkUpdateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         BulkUpdateRes response = invoiceService.bulkUpdateInvoices(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }

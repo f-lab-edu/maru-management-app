@@ -21,8 +21,8 @@ export type ViewMode = 'weekly' | 'monthly';
  * 출석 기록 응답 (AttendanceRes)
  */
 export interface AttendanceResponse {
-  id: number;
-  studentId: number;
+  id: string;
+  studentId: string;
   studentName: string;
   status: AttendanceStatus;
   method: CheckMethod;
@@ -47,7 +47,7 @@ export interface TodayAttendanceResponse {
  * 출석 정보 (AttendanceInfo) - 기간별 조회용
  */
 export interface AttendanceInfo {
-  id: number;
+  id: string;
   status: AttendanceStatus;
   checkinAt: string | null;
   checkoutAt: string | null;
@@ -57,7 +57,7 @@ export interface AttendanceInfo {
  * 원생별 출석 행 (StudentAttendanceRowRes)
  */
 export interface StudentAttendanceRow {
-  id: number;
+  id: string;
   name: string;
   photoUrl: string | null;
   className: string | null;
@@ -78,7 +78,7 @@ export interface RangeAttendanceResponse {
  * 일괄 체크 실패 항목 (BulkCheckFailureRes)
  */
 export interface BulkCheckFailure {
-  studentId: number;
+  studentId: string;
   errorMessage: string;
 }
 
@@ -96,7 +96,7 @@ export interface BulkCheckResponse {
  * 출석 기록 생성 요청 (AttendanceCheckReq)
  */
 export interface AttendanceCheckRequest {
-  studentId: number;
+  studentId: string;
   method: CheckMethod;
   status?: AttendanceStatus;
   date?: string;
@@ -108,7 +108,7 @@ export interface AttendanceCheckRequest {
  * 일괄 출석 체크 요청 (BulkCheckReq)
  */
 export interface BulkCheckRequest {
-  studentIds: number[];
+  studentIds: string[];
   method: CheckMethod;
 }
 
@@ -124,7 +124,7 @@ export interface AttendanceStatusChangeRequest {
  * 일괄 상태 변경 요청 (BulkStatusChangeReq)
  */
 export interface BulkStatusChangeRequest {
-  attendanceIds: number[];
+  attendanceIds: string[];
   status: AttendanceStatus;
   note?: string;
 }

@@ -5,14 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TenantContextHolder {
 
-    private static final ThreadLocal<Long> TENANT_CONTEXT = new ThreadLocal<>();
+    private static final ThreadLocal<String> TENANT_CONTEXT = new ThreadLocal<>();
 
     /**
      * 현재 스레드의 테넌트 ID 설정
      *
      * @param tenantId 테넌트 ID
      */
-    public static AutoCloseable withTenant(Long tenantId) {
+    public static AutoCloseable withTenant(String tenantId) {
         if(TENANT_CONTEXT.get() != null){
             throw new IllegalStateException("테넌트 컨텍스트가 이미 설정되어 있음.");
         }
@@ -29,8 +29,8 @@ public class TenantContextHolder {
      *
      * @return 테넌트 ID (설정되지 않았으면 null)
      */
-    public static Long getTenantId() {
-        Long tenantId = TENANT_CONTEXT.get();
+    public static String getTenantId() {
+        String tenantId = TENANT_CONTEXT.get();
         log.trace("테넌트 컨텍스트 조회: tenantId={}", tenantId);
         return tenantId;
     }
@@ -39,7 +39,7 @@ public class TenantContextHolder {
      * 현재 스레드의 테넌트 컨텍스트 정리
      */
     public static void clear() {
-        Long tenantId = TENANT_CONTEXT.get();
+        String tenantId = TENANT_CONTEXT.get();
         TENANT_CONTEXT.remove();
         log.debug("테넌트 컨텍스트 정리: tenantId={}", tenantId);
     }

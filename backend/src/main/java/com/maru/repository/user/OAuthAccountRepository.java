@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, Long> {
+public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, String> {
 
     Optional<OAuthAccount> findByProviderAndProviderAccountId(
         OAuthProvider provider,
@@ -18,5 +18,5 @@ public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, Long
         String providerAccountId
     );
 
-    Optional<OAuthAccount> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+    Optional<OAuthAccount> findTopByUserIdOrderByCreatedAtDesc(String userId);
 }

@@ -68,8 +68,8 @@ class AttendanceServiceAutoAbsenceTest {
         void createsAbsenceRecordsWhenStudentsExist() {
             // given
             List<Student> students = List.of(
-                    createMockStudent(1L, "홍길동"),
-                    createMockStudent(2L, "김철수")
+                    createMockStudent("student1", "홍길동"),
+                    createMockStudent("student2", "김철수")
             );
             given(studentRepository.findAllActiveStudentsWithoutAttendance(TARGET_DATE))
                     .willReturn(students);
@@ -118,7 +118,7 @@ class AttendanceServiceAutoAbsenceTest {
         }
     }
 
-    private Student createMockStudent(Long id, String name) {
+    private Student createMockStudent(String id, String name) {
         Student student = mock(Student.class);
         Dojang dojang = mock(Dojang.class);
         Tenant tenant = mock(Tenant.class);
@@ -126,16 +126,16 @@ class AttendanceServiceAutoAbsenceTest {
         given(student.getId()).willReturn(id);
         given(student.getName()).willReturn(name);
         given(student.getDojang()).willReturn(dojang);
-        given(dojang.getId()).willReturn(1L);
+        given(dojang.getId()).willReturn("dojang1");
         given(dojang.getTenant()).willReturn(tenant);
-        given(tenant.getId()).willReturn(1L);
+        given(tenant.getId()).willReturn("tenant1");
 
         return student;
     }
 
     private List<Student> createMockStudents(int count) {
         return IntStream.rangeClosed(1, count)
-                .mapToObj(i -> createMockStudent((long) i, "원생" + i))
+                .mapToObj(i -> createMockStudent("student" + i, "원생" + i))
                 .toList();
     }
 }

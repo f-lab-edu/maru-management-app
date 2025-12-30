@@ -59,8 +59,8 @@ public class AuthController {
      */
     @PostMapping("/select-dojang")
     public ResponseEntity<Void> selectDojang(
-        @CurrentUserId Long userId,
-        @RequestParam @NotNull Long dojangId,
+        @CurrentUserId String userId,
+        @RequestParam @NotNull String dojangId,
         HttpServletResponse response
     ) {
         if (userId == null) {

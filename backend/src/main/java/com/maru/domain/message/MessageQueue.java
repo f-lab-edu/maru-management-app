@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MessageQueue extends BaseEntity {
 
-    @Column(nullable = false)
-    private Long tenantId;
+    @Column(nullable = false, length = 13)
+    private String tenantId;
 
-    @Column(nullable = false)
-    private Long dojangId;
+    @Column(nullable = false, length = 13)
+    private String dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guardian_id", nullable = false)
@@ -98,8 +98,8 @@ public class MessageQueue extends BaseEntity {
      * @return 생성된 MessageQueue
      */
     public static MessageQueue createAttendanceNotification(
-            Long tenantId,
-            Long dojangId,
+            String tenantId,
+            String dojangId,
             Guardian guardian,
             Student student,
             String title,

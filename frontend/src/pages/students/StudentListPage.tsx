@@ -47,7 +47,7 @@ export default function StudentListPage() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Drawer 상태
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const { data: selectedStudent, isLoading: isLoadingDetail } = useStudent(
     dojangId,
     selectedStudentId
@@ -57,10 +57,10 @@ export default function StudentListPage() {
   const [modalState, setModalState] = useState<ModalState>({ type: 'closed' });
 
   // Mutations
-  const createMutation = useCreateStudent(dojangId ?? 0);
-  const updateMutation = useUpdateStudent(dojangId ?? 0);
-  const deleteMutation = useDeleteStudent(dojangId ?? 0);
-  const bulkDeleteMutation = useBulkDeleteStudents(dojangId ?? 0);
+  const createMutation = useCreateStudent(dojangId ?? '');
+  const updateMutation = useUpdateStudent(dojangId ?? '');
+  const deleteMutation = useDeleteStudent(dojangId ?? '');
+  const bulkDeleteMutation = useBulkDeleteStudents(dojangId ?? '');
 
   // 필터링된 데이터
   const filteredStudents = useMemo(() => {
@@ -92,7 +92,7 @@ export default function StudentListPage() {
     return Object.keys(rowSelection)
       .filter((key) => rowSelection[key])
       .map((index) => filteredStudents[Number(index)]?.id)
-      .filter((id): id is number => id !== undefined);
+      .filter((id): id is string => id !== undefined);
   }, [rowSelection, filteredStudents]);
 
   // 컬럼 정의

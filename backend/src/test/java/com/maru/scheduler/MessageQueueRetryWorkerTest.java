@@ -103,16 +103,16 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("PENDING 메시지를 조회하여 배치 발송한다")
         void sendsBatchWhenFound() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 0);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 0);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
                     any(LocalDateTime.class),
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message1));
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.of(message2));
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message1));
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.of(message2));
 
             // when
             worker.retryFailedMessages();
@@ -126,16 +126,16 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("발송 성공 시 모든 메시지를 SENT 상태로 변경한다")
         void marksSentOnSuccess() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 0);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 0);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
                     any(LocalDateTime.class),
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message1));
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.of(message2));
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message1));
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.of(message2));
 
             // when
             worker.retryFailedMessages();
@@ -150,16 +150,16 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("배치 발송 실패 시 모든 메시지의 failedCount를 증가시킨다")
         void incrementsFailedCountOnBatchFailure() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 0);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 0);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
                     any(LocalDateTime.class),
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message1));
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.of(message2));
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message1));
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.of(message2));
             doThrow(new RuntimeException("발송 실패")).when(messageSender).sendBatch(any());
 
             // when
@@ -176,7 +176,7 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("최대 재시도 횟수 초과 시 FAILED 상태로 변경한다")
         void marksFailedWhenMaxRetryExceeded() {
             // given
-            MessageQueue message = createMockMessage(1L, 2);
+            MessageQueue message = createMockMessage("msg1", 2);
             given(message.getFailedCount()).willReturn(3);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
@@ -184,7 +184,7 @@ class MessageQueueRetryWorkerTest {
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message));
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message));
             doThrow(new RuntimeException("발송 실패")).when(messageSender).sendBatch(any());
 
             // when
@@ -198,16 +198,16 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("이미 다른 스레드가 선점한 메시지는 배치에서 제외된다")
         void skipsAlreadyAcquiredMessage() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 0);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 0);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
                     any(LocalDateTime.class),
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message1));
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.empty());
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message1));
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.empty());
 
             // when
             worker.retryFailedMessages();
@@ -221,16 +221,16 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("모든 메시지가 선점 실패하면 발송하지 않는다")
         void doesNothingWhenAllAcquireFailed() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 0);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 0);
             given(messageQueueRepository.findRetryTargets(
                     eq(MessageStatus.PENDING),
                     any(LocalDateTime.class),
                     eq(3),
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2));
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.empty());
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.empty());
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.empty());
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.empty());
 
             // when
             worker.retryFailedMessages();
@@ -250,7 +250,7 @@ class MessageQueueRetryWorkerTest {
             // given
             int messageCount = 50;
             List<MessageQueue> messages = IntStream.range(0, messageCount)
-                    .mapToObj(i -> createMockMessage((long) i, 0))
+                    .mapToObj(i -> createMockMessage("msg" + i, 0))
                     .toList();
 
             given(messageQueueRepository.findRetryTargets(
@@ -261,7 +261,7 @@ class MessageQueueRetryWorkerTest {
             )).willReturn(messages);
 
             for (int i = 0; i < messageCount; i++) {
-                given(messageAcquirer.acquire((long) i)).willReturn(Optional.of(messages.get(i)));
+                given(messageAcquirer.acquire("msg" + i)).willReturn(Optional.of(messages.get(i)));
             }
 
             // when
@@ -276,9 +276,9 @@ class MessageQueueRetryWorkerTest {
         @DisplayName("배치 발송 실패 시 MAX_RETRY 기준으로 각 메시지 상태를 결정한다")
         void handlesMixedRetryCountsOnBatchFailure() {
             // given
-            MessageQueue message1 = createMockMessage(1L, 0);
-            MessageQueue message2 = createMockMessage(2L, 2);
-            MessageQueue message3 = createMockMessage(3L, 1);
+            MessageQueue message1 = createMockMessage("msg1", 0);
+            MessageQueue message2 = createMockMessage("msg2", 2);
+            MessageQueue message3 = createMockMessage("msg3", 1);
 
             given(message1.getFailedCount()).willReturn(1);
             given(message2.getFailedCount()).willReturn(3);
@@ -291,9 +291,9 @@ class MessageQueueRetryWorkerTest {
                     any(PageRequest.class)
             )).willReturn(List.of(message1, message2, message3));
 
-            given(messageAcquirer.acquire(1L)).willReturn(Optional.of(message1));
-            given(messageAcquirer.acquire(2L)).willReturn(Optional.of(message2));
-            given(messageAcquirer.acquire(3L)).willReturn(Optional.of(message3));
+            given(messageAcquirer.acquire("msg1")).willReturn(Optional.of(message1));
+            given(messageAcquirer.acquire("msg2")).willReturn(Optional.of(message2));
+            given(messageAcquirer.acquire("msg3")).willReturn(Optional.of(message3));
 
             doThrow(new RuntimeException("발송 실패")).when(messageSender).sendBatch(any());
 
@@ -307,7 +307,7 @@ class MessageQueueRetryWorkerTest {
         }
     }
 
-    private MessageQueue createMockMessage(Long id, int failedCount) {
+    private MessageQueue createMockMessage(String id, int failedCount) {
         MessageQueue message = mock(MessageQueue.class);
         given(message.getId()).willReturn(id);
         given(message.getFailedCount()).willReturn(failedCount);

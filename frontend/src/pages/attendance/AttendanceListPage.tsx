@@ -70,7 +70,7 @@ export default function AttendanceListPage() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Sheet 상태 - ID만 저장하고 데이터는 파생 상태로 관리
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   // 뷰 모드 변경 핸들러
   const handleViewModeChange = (mode: string) => {
@@ -183,7 +183,7 @@ export default function AttendanceListPage() {
   const selectedTodayAttendanceIds = useMemo(() => {
     return selectedStudents
       .map((s) => s.attendances[todayISO]?.id)
-      .filter((id): id is number => id !== undefined && id !== null);
+      .filter((id): id is string => id !== undefined && id !== null);
   }, [selectedStudents, todayISO]);
 
   // 선택된 학생들 중 하원 가능한 출석 기록 ID 목록 (오늘 출석 + 아직 퇴관 안함)
@@ -308,7 +308,7 @@ export default function AttendanceListPage() {
   };
 
   // 개별 상태 변경 핸들러
-  const handleStatusChange = async (attendanceId: number, newStatus: AttendanceStatus) => {
+  const handleStatusChange = async (attendanceId: string, newStatus: AttendanceStatus) => {
     try {
       await changeStatus({ attendanceId, request: { status: newStatus } });
       showSuccess('상태가 변경되었습니다');
@@ -318,7 +318,7 @@ export default function AttendanceListPage() {
   };
 
   // 개별 퇴관 핸들러
-  const handleCheckout = async (attendanceId: number) => {
+  const handleCheckout = async (attendanceId: string) => {
     try {
       await checkout(attendanceId);
       showSuccess('퇴관 처리되었습니다');
@@ -328,7 +328,7 @@ export default function AttendanceListPage() {
   };
 
   // 퇴관 취소 핸들러
-  const handleCancelCheckout = async (attendanceId: number) => {
+  const handleCancelCheckout = async (attendanceId: string) => {
     try {
       await cancelCheckout(attendanceId);
       showSuccess('퇴관이 취소되었습니다');
@@ -338,7 +338,7 @@ export default function AttendanceListPage() {
   };
 
   // 출석 기록 생성 핸들러 (결석/병결/공결)
-  const handleCreateRecord = async (studentId: number, date: string, status: AttendanceStatus) => {
+  const handleCreateRecord = async (studentId: string, date: string, status: AttendanceStatus) => {
     try {
       await createAttendance({
         studentId,
@@ -353,7 +353,7 @@ export default function AttendanceListPage() {
   };
 
   // 시간 변경 핸들러
-  const handleTimeChange = async (attendanceId: number, checkinAt?: string, checkoutAt?: string) => {
+  const handleTimeChange = async (attendanceId: string, checkinAt?: string, checkoutAt?: string) => {
     try {
       await changeTime({
         attendanceId,

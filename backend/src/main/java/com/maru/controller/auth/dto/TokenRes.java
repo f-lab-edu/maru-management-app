@@ -6,8 +6,8 @@ import lombok.Builder;
 public record TokenRes(
     String accessToken,
     String refreshToken,
-    Long userId,
-    Long tenantId,
-    Long dojangId,
+    String userId,
+    String tenantId,
+    String dojangId,
     String role
 ) {}

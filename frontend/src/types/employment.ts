@@ -1,7 +1,7 @@
 export type EmploymentStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED' | 'LEFT';
 
 export interface DojangSearchResult {
-  id: number;
+  id: string;
   name: string;
   address: string;
   ownerName: string;
@@ -9,9 +9,9 @@ export interface DojangSearchResult {
 }
 
 export interface Employment {
-  id: number;
-  userId: number;
-  dojangId: number;
+  id: string;
+  userId: string;
+  dojangId: string;
   dojangName: string;
   status: EmploymentStatus;
   requestedAt: string;
@@ -20,8 +20,8 @@ export interface Employment {
 }
 
 export interface PendingApprovalRequest {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   userName: string;
   userEmail: string;
   userPhone?: string;

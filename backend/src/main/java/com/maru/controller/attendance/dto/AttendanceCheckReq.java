@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Builder
 public record AttendanceCheckReq(
-        @NotNull(message = "원생 ID는 필수입니다") Long studentId,
+        @NotNull(message = "원생 ID는 필수입니다") String studentId,
         @NotNull(message = "체크 방법은 필수입니다") CheckMethod method,
         AttendanceStatus status,
         LocalDate date,

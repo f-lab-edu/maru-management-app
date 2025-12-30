@@ -21,6 +21,7 @@ ext {
     lombokVersion = '1.18.30'
     jjwtVersion = '0.12.3'
     springdocVersion = '2.2.0'
+    hypersistenceTsidVersion = '2.1.4'
 }
 
 configurations {
@@ -54,6 +55,9 @@ dependencies {
     // Flyway for DB migrations
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
+
+    // TSID (Time-Sorted Unique Identifier)
+    implementation "io.hypersistence:hypersistence-tsid:${hypersistenceTsidVersion}"
 
     // ============== Security & Authentication==============
     // Spring Security

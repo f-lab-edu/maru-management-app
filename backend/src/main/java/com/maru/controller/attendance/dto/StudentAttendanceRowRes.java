@@ -7,7 +7,7 @@ import java.util.Map;
 
 @Builder
 public record StudentAttendanceRowRes(
-        Long id,
+        String id,
         String name,
         String photoUrl,
         String className,

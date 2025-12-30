@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Builder
 public record PaymentRes(
-        Long id,
+        String id,
         BigDecimal amount,
         PaymentMethod method,
         PaymentStatus status,

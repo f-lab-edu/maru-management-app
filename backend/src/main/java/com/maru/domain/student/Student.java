@@ -17,8 +17,8 @@ import java.time.LocalDate;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Student extends SoftDeletableEntity {
 
-    @Column(nullable = false)
-    private Long tenantId;
+    @Column(nullable = false, length = 13)
+    private String tenantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dojang_id", nullable = false)

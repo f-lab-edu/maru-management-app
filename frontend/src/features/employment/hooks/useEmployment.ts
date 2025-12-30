@@ -58,7 +58,7 @@ export function useRequestApproval() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (dojangId: number) => employmentService.requestApproval(dojangId),
+    mutationFn: (dojangId: string) => employmentService.requestApproval(dojangId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employmentKeys.myRequests() });
     },
@@ -69,7 +69,7 @@ export function useApproveRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (employmentId: number) => employmentService.approve(employmentId),
+    mutationFn: (employmentId: string) => employmentService.approve(employmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employmentKeys.pendingRequests() });
     },
@@ -80,7 +80,7 @@ export function useRejectRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (employmentId: number) => employmentService.reject(employmentId),
+    mutationFn: (employmentId: string) => employmentService.reject(employmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employmentKeys.pendingRequests() });
     },
@@ -91,7 +91,7 @@ export function useCancelRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (employmentId: number) => employmentService.cancel(employmentId),
+    mutationFn: (employmentId: string) => employmentService.cancel(employmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employmentKeys.myRequests() });
     },

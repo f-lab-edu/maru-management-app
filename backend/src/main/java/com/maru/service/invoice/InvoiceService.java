@@ -48,8 +48,8 @@ public class InvoiceService {
      * @throws BusinessException DUPLICATE_INVOICE - 동일 월 중복 청구서
      */
     @Transactional
-    public InvoiceDetailRes createInvoice(Long dojangId, InvoiceCreateReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes createInvoice(String dojangId, InvoiceCreateReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = findStudentAndValidate(request.studentId(), dojangId);
@@ -76,8 +76,8 @@ public class InvoiceService {
      * @return 생성 결과 (생성 수, 스킵 수)
      */
     @Transactional
-    public BulkCreateRes createBulkInvoices(Long dojangId, InvoiceBulkCreateReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public BulkCreateRes createBulkInvoices(String dojangId, InvoiceBulkCreateReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         int billingYear = resolveBillingYear(request.billingYear());
@@ -109,8 +109,8 @@ public class InvoiceService {
      * @return 청구서 목록
      */
     @Transactional(readOnly = true)
-    public List<InvoiceListRes> getInvoices(Long dojangId, InvoiceStatus status) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public List<InvoiceListRes> getInvoices(String dojangId, InvoiceStatus status) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Invoice> invoices = invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, status);
@@ -129,8 +129,8 @@ public class InvoiceService {
      * @throws BusinessException NOT_FOUND - 청구서를 찾을 수 없음
      */
     @Transactional(readOnly = true)
-    public InvoiceDetailRes getInvoice(Long dojangId, Long invoiceId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes getInvoice(String dojangId, String invoiceId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -149,8 +149,8 @@ public class InvoiceService {
      * @throws BusinessException CANNOT_UPDATE_NON_DRAFT - DRAFT 상태가 아닌 경우
      */
     @Transactional
-    public InvoiceDetailRes updateInvoice(Long dojangId, Long invoiceId, InvoiceUpdateReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes updateInvoice(String dojangId, String invoiceId, InvoiceUpdateReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -171,8 +171,8 @@ public class InvoiceService {
      * @throws BusinessException INVALID_STATUS_TRANSITION - 잘못된 상태 전이
      */
     @Transactional
-    public InvoiceDetailRes issueInvoice(Long dojangId, Long invoiceId, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes issueInvoice(String dojangId, String invoiceId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -193,8 +193,8 @@ public class InvoiceService {
      * @throws BusinessException CANNOT_VOID_PAID_INVOICE - PAID 상태에서 무효화 시도
      */
     @Transactional
-    public InvoiceDetailRes voidInvoice(Long dojangId, Long invoiceId, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes voidInvoice(String dojangId, String invoiceId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -215,8 +215,8 @@ public class InvoiceService {
      * @throws BusinessException CANNOT_RESTORE_NON_VOID - VOID 상태가 아닌 경우
      */
     @Transactional
-    public InvoiceDetailRes restoreInvoice(Long dojangId, Long invoiceId, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public InvoiceDetailRes restoreInvoice(String dojangId, String invoiceId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -236,8 +236,8 @@ public class InvoiceService {
      * @throws BusinessException CANNOT_DELETE_NON_DRAFT - DRAFT 상태가 아닌 경우
      */
     @Transactional
-    public void deleteInvoice(Long dojangId, Long invoiceId, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public void deleteInvoice(String dojangId, String invoiceId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
@@ -258,8 +258,8 @@ public class InvoiceService {
      * @return 발행 결과 (성공 수, 실패 수)
      */
     @Transactional
-    public BulkIssueRes bulkIssueInvoices(Long dojangId, BulkIssueReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public BulkIssueRes bulkIssueInvoices(String dojangId, BulkIssueReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, request.invoiceIds());
@@ -285,8 +285,8 @@ public class InvoiceService {
      * @return 수정 결과 (전체 수, 성공 수, 스킵 수)
      */
     @Transactional
-    public BulkUpdateRes bulkUpdateInvoices(Long dojangId, InvoiceBulkUpdateReq request, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public BulkUpdateRes bulkUpdateInvoices(String dojangId, InvoiceBulkUpdateReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, request.invoiceIds());
@@ -306,7 +306,7 @@ public class InvoiceService {
         return BulkUpdateRes.of(request.invoiceIds().size(), updatedCount);
     }
 
-    private void validateDojangAccess(Long dojangId, Long tenantId) {
+    private void validateDojangAccess(String dojangId, String tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
@@ -315,7 +315,7 @@ public class InvoiceService {
         }
     }
 
-    private Student findStudentAndValidate(Long studentId, Long dojangId) {
+    private Student findStudentAndValidate(String studentId, String dojangId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
@@ -340,7 +340,7 @@ public class InvoiceService {
 
     private record TargetStudentsResult(List<Student> students, int totalCount) {}
 
-    private TargetStudentsResult findAllTargetStudents(Long tenantId, Long dojangId, InvoiceBulkCreateReq request) {
+    private TargetStudentsResult findAllTargetStudents(String tenantId, String dojangId, InvoiceBulkCreateReq request) {
         if (request.studentIds() != null && !request.studentIds().isEmpty()) {
             int totalCount = request.studentIds().size();
             List<Student> students = studentRepository.findAllActiveByIds(
@@ -354,11 +354,11 @@ public class InvoiceService {
         return new TargetStudentsResult(students, students.size());
     }
 
-    private List<Student> excludeAlreadyInvoiced(List<Student> students, Long tenantId, Long dojangId,
+    private List<Student> excludeAlreadyInvoiced(List<Student> students, String tenantId, String dojangId,
                                                   int billingYear, int billingMonth) {
-        List<Long> existingStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearAndMonth(
+        List<String> existingStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearAndMonth(
                 tenantId, dojangId, billingYear, billingMonth);
-        Set<Long> excludeIds = new HashSet<>(existingStudentIds);
+        Set<String> excludeIds = new HashSet<>(existingStudentIds);
 
         return students.stream()
                 .filter(student -> !excludeIds.contains(student.getId()))
@@ -384,7 +384,7 @@ public class InvoiceService {
         return invoices.size();
     }
 
-    private Invoice findInvoiceWithStudent(Long invoiceId, Long tenantId, Long dojangId) {
+    private Invoice findInvoiceWithStudent(String invoiceId, String tenantId, String dojangId) {
         return invoiceRepository.findByIdAndDojangIdWithStudent(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
     }
@@ -398,7 +398,7 @@ public class InvoiceService {
         return InvoiceDetailRes.from(invoice, payments);
     }
 
-    private int issueInvoicesAndCollectFailures(List<Invoice> invoices, Long userId,
+    private int issueInvoicesAndCollectFailures(List<Invoice> invoices, String userId,
                                                   List<BulkIssueRes.FailedInvoice> failedInvoices) {
         int issuedCount = 0;
         for (Invoice invoice : invoices) {
@@ -415,7 +415,7 @@ public class InvoiceService {
         return issuedCount;
     }
 
-    private String tryIssueInvoice(Invoice invoice, Long userId) {
+    private String tryIssueInvoice(Invoice invoice, String userId) {
         try {
             invoice.issue(userId);
             return null;

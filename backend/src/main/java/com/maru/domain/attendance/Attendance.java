@@ -19,17 +19,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Attendance extends BaseEntity {
 
-    @Column(nullable = false)
-    private Long tenantId;
+    @Column(nullable = false, length = 13)
+    private String tenantId;
 
-    @Column(nullable = false)
-    private Long dojangId;
+    @Column(nullable = false, length = 13)
+    private String dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    private Long checkedBy;
+    @Column(length = 13)
+    private String checkedBy;
 
     @Column(nullable = false)
     private LocalDate attendanceDate;

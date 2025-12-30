@@ -15,11 +15,11 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface EmploymentRepository extends JpaRepository<Employment, Long> {
+public interface EmploymentRepository extends JpaRepository<Employment, String> {
 
     Optional<Employment> findByUserAndDojang(User user, Dojang dojang);
 
-    Optional<Employment> findByUserIdAndDojangId(Long userId, Long dojangId);
+    Optional<Employment> findByUserIdAndDojangId(String userId, String dojangId);
 
     @Query("""
         SELECT e
@@ -28,7 +28,7 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
         WHERE e.dojang.id = :dojangId
           AND e.status = :status
         """)
-    List<Employment> findByDojangIdAndStatus(@Param("dojangId") Long dojangId,
+    List<Employment> findByDojangIdAndStatus(@Param("dojangId") String dojangId,
                                              @Param("status") EmploymentStatus status);
 
     @Query("""
@@ -37,7 +37,7 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
         JOIN FETCH e.dojang
         WHERE e.user.id = :userId
         """)
-    List<Employment> findByUserId(@Param("userId") Long userId);
+    List<Employment> findByUserId(@Param("userId") String userId);
 
     @Query("""
         SELECT e
@@ -48,7 +48,7 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
         WHERE e.user.id = :userId
           AND e.status = :status
         """)
-    List<Employment> findActiveWithDojangAndTenant(@Param("userId") Long userId,
+    List<Employment> findActiveWithDojangAndTenant(@Param("userId") String userId,
                                                    @Param("status") EmploymentStatus status);
 
     @Query("""
@@ -59,9 +59,9 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
           AND e.dojang.id = :dojangId
           AND e.status = :status
         """)
-    Set<PermissionType> findPermissions(@Param("userId") Long userId,
-                                        @Param("tenantId") Long tenantId,
-                                        @Param("dojangId") Long dojangId,
+    Set<PermissionType> findPermissions(@Param("userId") String userId,
+                                        @Param("tenantId") String tenantId,
+                                        @Param("dojangId") String dojangId,
                                         @Param("status") EmploymentStatus status);
 
     @Query("""
@@ -74,7 +74,7 @@ public interface EmploymentRepository extends JpaRepository<Employment, Long> {
           AND e.status = :status
         """)
     Optional<Employment> findByUserIdAndDojangIdAndStatus(
-        @Param("userId") Long userId,
-        @Param("dojangId") Long dojangId,
+        @Param("userId") String userId,
+        @Param("dojangId") String dojangId,
         @Param("status") EmploymentStatus status);
 }

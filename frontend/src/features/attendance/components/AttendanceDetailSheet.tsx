@@ -20,21 +20,21 @@ import { useStudentAttendance } from '../hooks/useStudentAttendance';
 
 interface AttendanceDetailSheetProps {
   student: StudentAttendanceRow | null;
-  dojangId: number | null;
+  dojangId: string | null;
   startDate: string;
   endDate: string;
   isOpen: boolean;
   onClose: () => void;
-  onStatusChange?: (attendanceId: number, newStatus: AttendanceStatus) => Promise<void>;
-  onCheckout?: (attendanceId: number) => Promise<void>;
-  onCancelCheckout?: (attendanceId: number) => Promise<void>;
-  onCreateRecord?: (studentId: number, date: string, status: AttendanceStatus) => Promise<void>;
-  onTimeChange?: (attendanceId: number, checkinAt?: string, checkoutAt?: string) => Promise<void>;
+  onStatusChange?: (attendanceId: string, newStatus: AttendanceStatus) => Promise<void>;
+  onCheckout?: (attendanceId: string) => Promise<void>;
+  onCancelCheckout?: (attendanceId: string) => Promise<void>;
+  onCreateRecord?: (studentId: string, date: string, status: AttendanceStatus) => Promise<void>;
+  onTimeChange?: (attendanceId: string, checkinAt?: string, checkoutAt?: string) => Promise<void>;
 }
 
 interface AttendanceHistoryItem {
   date: string;
-  attendanceId: number | null;
+  attendanceId: string | null;
   status: AttendanceStatus | null;
   checkinAt: string | null;
   checkoutAt: string | null;
@@ -111,7 +111,7 @@ export function AttendanceDetailSheet({
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [editingTime, setEditingTime] = useState<{
-    attendanceId: number;
+    attendanceId: string;
     checkinAt: string;
     checkoutAt: string;
   } | null>(null);
@@ -197,7 +197,7 @@ export function AttendanceDetailSheet({
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleStatusChange = async (attendanceId: number | null, newStatus: AttendanceStatus) => {
+  const handleStatusChange = async (attendanceId: string | null, newStatus: AttendanceStatus) => {
     if (!attendanceId || !onStatusChange) return;
     setLoadingAction(`status-${attendanceId}`);
     try {
@@ -207,7 +207,7 @@ export function AttendanceDetailSheet({
     }
   };
 
-  const handleCheckout = async (attendanceId: number | null) => {
+  const handleCheckout = async (attendanceId: string | null) => {
     if (!attendanceId || !onCheckout) return;
     setLoadingAction(`checkout-${attendanceId}`);
     try {
@@ -217,7 +217,7 @@ export function AttendanceDetailSheet({
     }
   };
 
-  const handleCancelCheckout = async (attendanceId: number | null) => {
+  const handleCancelCheckout = async (attendanceId: string | null) => {
     if (!attendanceId || !onCancelCheckout) return;
     setLoadingAction(`cancel-checkout-${attendanceId}`);
     try {
@@ -237,7 +237,7 @@ export function AttendanceDetailSheet({
     }
   };
 
-  const startEditingTime = (attendanceId: number, checkinAt: string | null, checkoutAt: string | null) => {
+  const startEditingTime = (attendanceId: string, checkinAt: string | null, checkoutAt: string | null) => {
     const formatForInput = (isoString: string | null): string => {
       if (!isoString) return '';
       const date = new Date(isoString);

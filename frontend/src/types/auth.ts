@@ -10,9 +10,9 @@ export type OnboardingStep =
 export type OAuthProvider = 'GOOGLE' | 'KAKAO';
 
 export interface DojangSummary {
-  dojangId: number;
+  dojangId: string;
   dojangName: string;
-  tenantId: number;
+  tenantId: string;
   role: UserRole;
 }
 
@@ -22,7 +22,7 @@ export interface MyDojangsRes {
 }
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;

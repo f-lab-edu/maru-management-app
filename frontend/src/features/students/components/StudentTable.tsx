@@ -16,7 +16,7 @@ import type { StudentSummary } from '@/types/student';
 interface StudentTableProps {
   students: StudentSummary[];
   isLoading: boolean;
-  onRowClick: (studentId: number) => void;
+  onRowClick: (studentId: string) => void;
   onEdit: (student: StudentSummary) => void;
   onDelete: (student: StudentSummary) => void;
 }

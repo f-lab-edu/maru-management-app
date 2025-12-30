@@ -36,7 +36,7 @@ public class NotificationService {
      * @return 생성된 메시지 ID 목록
      */
     @Transactional
-    public List<Long> createCheckinNotification(Long attendanceId) {
+    public List<String> createCheckinNotification(String attendanceId) {
         Attendance attendance = findAttendanceWithStudent(attendanceId);
         String dojangName = findDojangName(attendance.getDojangId());
         String studentName = attendance.getStudent().getName();
@@ -55,7 +55,7 @@ public class NotificationService {
      * @return 생성된 메시지 ID 목록
      */
     @Transactional
-    public List<Long> createCheckoutNotification(Long attendanceId) {
+    public List<String> createCheckoutNotification(String attendanceId) {
         Attendance attendance = findAttendanceWithStudent(attendanceId);
         String dojangName = findDojangName(attendance.getDojangId());
         String studentName = attendance.getStudent().getName();
@@ -67,7 +67,7 @@ public class NotificationService {
         );
     }
 
-    private List<Long> createNotification(Attendance attendance, String title, String body) {
+    private List<String> createNotification(Attendance attendance, String title, String body) {
         List<Guardian> guardians = findGuardians(attendance.getStudent().getId());
 
         if (guardians.isEmpty()) {
@@ -78,29 +78,29 @@ public class NotificationService {
         List<MessageQueue> messages = createMessages(attendance, guardians, title, body);
         messageQueueRepository.saveAll(messages);
 
-        List<Long> messageIds = messages.stream().map(MessageQueue::getId).toList();
+        List<String> messageIds = messages.stream().map(MessageQueue::getId).toList();
         log.info("알림 생성 완료: attendanceId={}, title={}, messageCount={}",
                 attendance.getId(), title, messageIds.size());
 
         return messageIds;
     }
 
-    private Attendance findAttendanceWithStudent(Long attendanceId) {
+    private Attendance findAttendanceWithStudent(String attendanceId) {
         return attendanceRepository.findByIdWithStudent(attendanceId)
                 .orElseThrow(() -> new BusinessException(AttendanceErrorCode.NOT_FOUND));
     }
 
-    private String findDojangName(Long dojangId) {
+    private String findDojangName(String dojangId) {
         return dojangRepository.findById(dojangId)
                 .map(Dojang::getName)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
     }
 
-    private List<Guardian> findGuardians(Long studentId) {
+    private List<Guardian> findGuardians(String studentId) {
         return guardianshipRepository.findGuardiansByStudentId(studentId, true);
     }
 
-    private List<Guardian> findGuardians(Long studentId, boolean primaryOnly) {
+    private List<Guardian> findGuardians(String studentId, boolean primaryOnly) {
         return guardianshipRepository.findGuardiansByStudentId(studentId, primaryOnly);
     }
 

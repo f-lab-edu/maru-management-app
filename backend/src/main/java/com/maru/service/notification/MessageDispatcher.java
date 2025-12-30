@@ -32,7 +32,7 @@ public class MessageDispatcher {
      * @param tenantId   테넌트 ID
      */
     @Async
-    public void sendBatchAsync(List<Long> messageIds, Long tenantId) {
+    public void sendBatchAsync(List<String> messageIds, String tenantId) {
         if (messageIds == null || messageIds.isEmpty()) {
             return;
         }
@@ -44,10 +44,10 @@ public class MessageDispatcher {
         }
     }
 
-    private void trySendBatch(List<Long> messageIds) {
+    private void trySendBatch(List<String> messageIds) {
         List<MessageQueue> acquiredMessages = new ArrayList<>();
 
-        for (Long messageId : messageIds) {
+        for (String messageId : messageIds) {
             messageAcquirer.acquire(messageId).ifPresent(acquiredMessages::add);
         }
 

@@ -38,8 +38,8 @@ public class StudentService {
      * @throws BusinessException STUDENT_DUPLICATE - 이미 등록된 원생 (WITHDRAWN 상태면 재등록)
      */
     @Transactional
-    public StudentRes createStudent(Long dojangId, StudentCreateReq req, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public StudentRes createStudent(String dojangId, StudentCreateReq req, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         Dojang dojang = validateDojangAccess(dojangId, tenantId);
 
         Optional<Student> existing = studentRepository.findByDojangIdAndNameAndBirth(dojangId, req.name(), req.birth());
@@ -67,8 +67,8 @@ public class StudentService {
      * @return 원생 목록 (enrolled_at DESC)
      */
     @Transactional(readOnly = true)
-    public StudentListRes getStudents(Long dojangId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public StudentListRes getStudents(String dojangId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
@@ -84,8 +84,8 @@ public class StudentService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional(readOnly = true)
-    public StudentRes getStudent(Long dojangId, Long studentId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public StudentRes getStudent(String dojangId, String studentId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -105,8 +105,8 @@ public class StudentService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional
-    public StudentRes updateStudent(Long dojangId, Long studentId, StudentUpdateReq req, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public StudentRes updateStudent(String dojangId, String studentId, StudentUpdateReq req, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -139,8 +139,8 @@ public class StudentService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional
-    public void deleteStudent(Long dojangId, Long studentId, String reason, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public void deleteStudent(String dojangId, String studentId, String reason, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
@@ -159,8 +159,8 @@ public class StudentService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      */
     @Transactional
-    public void bulkDeleteStudents(Long dojangId, List<Long> studentIds, Long userId) {
-        Long tenantId = TenantContextHolder.getTenantId();
+    public void bulkDeleteStudents(String dojangId, List<String> studentIds, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
         List<Student> students = studentRepository.findAllById(studentIds);
@@ -179,7 +179,7 @@ public class StudentService {
         log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
     }
 
-    private Dojang validateDojangAccess(Long dojangId, Long tenantId) {
+    private Dojang validateDojangAccess(String dojangId, String tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
@@ -190,7 +190,7 @@ public class StudentService {
         return dojang;
     }
 
-    private List<GuardianRes> getGuardianResponses(Long studentId) {
+    private List<GuardianRes> getGuardianResponses(String studentId) {
         return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
                 .map(GuardianRes::from)
                 .toList();

@@ -9,13 +9,13 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface GuardianshipRepository extends JpaRepository<Guardianship, Long> {
+public interface GuardianshipRepository extends JpaRepository<Guardianship, String> {
 
-    List<Guardianship> findByStudentIdAndDeletedAtIsNull(Long studentId);
+    List<Guardianship> findByStudentIdAndDeletedAtIsNull(String studentId);
 
-    Optional<Guardianship> findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(Long studentId);
+    Optional<Guardianship> findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(String studentId);
 
-    Optional<Guardianship> findByStudentIdAndGuardianIdAndDeletedAtIsNull(Long studentId, Long guardianId);
+    Optional<Guardianship> findByStudentIdAndGuardianIdAndDeletedAtIsNull(String studentId, String guardianId);
 
     @Query("""
             SELECT g.guardian
@@ -26,7 +26,7 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Long
               AND g.guardian.deletedAt IS NULL
             """)
     List<Guardian> findGuardiansByStudentId(
-            @Param("studentId") Long studentId,
+            @Param("studentId") String studentId,
             @Param("primaryOnly") boolean primaryOnly
     );
 
@@ -38,5 +38,5 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Long
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
             """)
-    List<Guardianship> findPrimaryGuardianshipsByStudentIds(@Param("studentIds") List<Long> studentIds);
+    List<Guardianship> findPrimaryGuardianshipsByStudentIds(@Param("studentIds") List<String> studentIds);
 }

@@ -32,7 +32,7 @@ public class DatabasePermissionCache implements PermissionCache {
     }
 
     @Override
-    public boolean hasPermission(Long userId, Long tenantId, Long dojangId, String resource, String action) {
+    public boolean hasPermission(String userId, String tenantId, String dojangId, String resource, String action) {
         try {
             PermissionType required = PermissionType.of(resource, action);
             Set<PermissionType> permissions = getPermissionsFromCache(userId, tenantId, dojangId);
@@ -52,7 +52,7 @@ public class DatabasePermissionCache implements PermissionCache {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<PermissionType> getPermissionsFromCache(Long userId, Long tenantId, Long dojangId) {
+    private Set<PermissionType> getPermissionsFromCache(String userId, String tenantId, String dojangId) {
         String key = buildKey(tenantId, userId, dojangId);
 
         Set<PermissionType> result = cache.get(key, () -> {
@@ -66,13 +66,13 @@ public class DatabasePermissionCache implements PermissionCache {
     }
 
     @Override
-    public void invalidate(Long userId, Long tenantId, Long dojangId) {
+    public void invalidate(String userId, String tenantId, String dojangId) {
         String key = buildKey(tenantId, userId, dojangId);
         cache.evict(key);
         log.info("권한 캐시 무효화 - {}", key);
     }
 
-    private String buildKey(Long tenantId, Long userId, Long dojangId) {
+    private String buildKey(String tenantId, String userId, String dojangId) {
         return "tenant:" + tenantId + ":user:" + userId + ":dojang:" + dojangId;
     }
 }
