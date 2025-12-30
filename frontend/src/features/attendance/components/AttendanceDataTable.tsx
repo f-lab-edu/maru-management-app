@@ -29,7 +29,7 @@ const CHECKBOX_COL_WIDTH = 40;
 const RATE_COL_WIDTH = 110;
 const SUMMARY_COL_WIDTH = 140;
 
-interface AttendanceDataTableProps<TData extends { id: number }> {
+interface AttendanceDataTableProps<TData extends { id: string }> {
   columns: ColumnDef<TData>[];
   data: TData[];
   isLoading?: boolean;
@@ -115,7 +115,7 @@ const MemoizedRow = memo(function MemoizedRow<TData>({
   );
 }) as <TData>(props: MemoizedRowProps<TData>) => JSX.Element;
 
-export function AttendanceDataTable<TData extends { id: number }>({
+export function AttendanceDataTable<TData extends { id: string }>({
   columns,
   data,
   isLoading,

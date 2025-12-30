@@ -2,7 +2,7 @@ export type StudentStatus = 'ACTIVE' | 'PAUSED' | 'WITHDRAWN';
 export type GuardianRelation = 'FATHER' | 'MOTHER' | 'GRANDPARENT' | 'OTHER';
 
 export interface Guardian {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   relation: GuardianRelation;
@@ -11,7 +11,7 @@ export interface Guardian {
 }
 
 export interface Student {
-  id: number;
+  id: string;
   name: string;
   birth: string;
   photoUrl?: string;
@@ -22,7 +22,7 @@ export interface Student {
 }
 
 export interface StudentSummary {
-  id: number;
+  id: string;
   name: string;
   birth: string;
   photoUrl?: string;

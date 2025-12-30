@@ -14,7 +14,7 @@ const BASE_PATH = '/attendance';
 
 export const attendanceService = {
   getRange: async (
-    dojangId: number,
+    dojangId: string,
     startDate: string,
     endDate: string
   ): Promise<RangeAttendanceResponse> => {
@@ -25,7 +25,7 @@ export const attendanceService = {
   },
 
   checkIn: async (
-    dojangId: number,
+    dojangId: string,
     request: AttendanceCheckRequest
   ): Promise<AttendanceResponse> => {
     const response = await apiClient.post<AttendanceResponse>(`${BASE_PATH}/check`, request, {
@@ -34,14 +34,14 @@ export const attendanceService = {
     return response.data;
   },
 
-  bulkCheckIn: async (dojangId: number, request: BulkCheckRequest): Promise<BulkCheckResponse> => {
+  bulkCheckIn: async (dojangId: string, request: BulkCheckRequest): Promise<BulkCheckResponse> => {
     const response = await apiClient.post<BulkCheckResponse>(`${BASE_PATH}/bulk-check`, request, {
       params: { dojangId },
     });
     return response.data;
   },
 
-  checkout: async (dojangId: number, attendanceId: number): Promise<AttendanceResponse> => {
+  checkout: async (dojangId: string, attendanceId: string): Promise<AttendanceResponse> => {
     const response = await apiClient.patch<AttendanceResponse>(
       `${BASE_PATH}/${attendanceId}/checkout`,
       null,
@@ -50,7 +50,7 @@ export const attendanceService = {
     return response.data;
   },
 
-  cancelCheckout: async (dojangId: number, attendanceId: number): Promise<AttendanceResponse> => {
+  cancelCheckout: async (dojangId: string, attendanceId: string): Promise<AttendanceResponse> => {
     const response = await apiClient.patch<AttendanceResponse>(
       `${BASE_PATH}/${attendanceId}/cancel-checkout`,
       null,
@@ -59,7 +59,7 @@ export const attendanceService = {
     return response.data;
   },
 
-  bulkCheckout: async (dojangId: number, attendanceIds: number[]): Promise<BulkCheckResponse> => {
+  bulkCheckout: async (dojangId: string, attendanceIds: string[]): Promise<BulkCheckResponse> => {
     const response = await apiClient.post<BulkCheckResponse>(
       `${BASE_PATH}/bulk-checkout`,
       { attendanceIds },
@@ -69,8 +69,8 @@ export const attendanceService = {
   },
 
   changeStatus: async (
-    dojangId: number,
-    attendanceId: number,
+    dojangId: string,
+    attendanceId: string,
     request: AttendanceStatusChangeRequest
   ): Promise<AttendanceResponse> => {
     const response = await apiClient.patch<AttendanceResponse>(
@@ -82,8 +82,8 @@ export const attendanceService = {
   },
 
   changeTime: async (
-    dojangId: number,
-    attendanceId: number,
+    dojangId: string,
+    attendanceId: string,
     request: AttendanceTimeChangeRequest
   ): Promise<AttendanceResponse> => {
     const response = await apiClient.patch<AttendanceResponse>(
@@ -95,7 +95,7 @@ export const attendanceService = {
   },
 
   bulkChangeStatus: async (
-    dojangId: number,
+    dojangId: string,
     request: BulkStatusChangeRequest
   ): Promise<BulkCheckResponse> => {
     const response = await apiClient.post<BulkCheckResponse>(
@@ -107,8 +107,8 @@ export const attendanceService = {
   },
 
   getHistory: async (
-    dojangId: number,
-    studentId: number,
+    dojangId: string,
+    studentId: string,
     startDate: string,
     endDate: string
   ): Promise<AttendanceResponse[]> => {

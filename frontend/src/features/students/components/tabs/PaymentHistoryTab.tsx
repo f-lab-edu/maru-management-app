@@ -2,11 +2,11 @@ import { CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
 
 interface PaymentHistoryTabProps {
-  studentId: number;
+  studentId: string;
 }
 
 interface PaymentItem {
-  id: number;
+  id: string;
   month: string;
   amount: number;
   status: 'PAID' | 'UNPAID' | 'PARTIAL';
@@ -15,9 +15,9 @@ interface PaymentItem {
 
 // TODO: API 연동 시 실제 데이터로 교체
 const MOCK_PAYMENTS: PaymentItem[] = [
-  { id: 1, month: '2024년 12월', amount: 150000, status: 'UNPAID' },
-  { id: 2, month: '2024년 11월', amount: 150000, status: 'PAID', paidAt: '2024-11-05' },
-  { id: 3, month: '2024년 10월', amount: 150000, status: 'PAID', paidAt: '2024-10-03' },
+  { id: '1', month: '2024년 12월', amount: 150000, status: 'UNPAID' },
+  { id: '2', month: '2024년 11월', amount: 150000, status: 'PAID', paidAt: '2024-11-05' },
+  { id: '3', month: '2024년 10월', amount: 150000, status: 'PAID', paidAt: '2024-10-03' },
 ];
 
 const STATUS_CONFIG = {

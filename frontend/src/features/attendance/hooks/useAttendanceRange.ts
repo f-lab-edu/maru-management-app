@@ -3,12 +3,12 @@ import { attendanceService } from '@/services/attendanceService';
 import type { RangeAttendanceResponse } from '../types';
 
 const QUERY_KEYS = {
-  range: (dojangId: number, startDate: string, endDate: string) =>
+  range: (dojangId: string, startDate: string, endDate: string) =>
     ['attendance', 'range', dojangId, startDate, endDate] as const,
 };
 
 interface UseAttendanceRangeParams {
-  dojangId: number | null;
+  dojangId: string | null;
   startDate: string;
   endDate: string;
 }
@@ -24,7 +24,7 @@ interface UseAttendanceRangeParams {
  */
 export function useAttendanceRange({ dojangId, startDate, endDate }: UseAttendanceRangeParams) {
   return useQuery<RangeAttendanceResponse>({
-    queryKey: QUERY_KEYS.range(dojangId ?? 0, startDate, endDate),
+    queryKey: QUERY_KEYS.range(dojangId ?? '', startDate, endDate),
     queryFn: () => attendanceService.getRange(dojangId!, startDate, endDate),
     enabled: !!dojangId && !!startDate && !!endDate,
   });

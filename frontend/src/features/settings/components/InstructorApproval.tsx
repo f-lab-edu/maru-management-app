@@ -12,7 +12,7 @@ export function InstructorApproval() {
   const rejectRequest = useRejectRequest();
   const { confirmDelete } = useConfirm();
 
-  const handleApprove = async (employmentId: number) => {
+  const handleApprove = async (employmentId: string) => {
     try {
       await approveRequest.mutateAsync(employmentId);
     } catch (error) {
@@ -20,7 +20,7 @@ export function InstructorApproval() {
     }
   };
 
-  const handleReject = async (employmentId: number) => {
+  const handleReject = async (employmentId: string) => {
     const { isConfirmed } = await confirmDelete({
       title: '가입 요청 거절',
       text: '이 사범의 가입 요청을 거절하시겠습니까?',

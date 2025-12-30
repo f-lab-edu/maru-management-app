@@ -21,7 +21,7 @@ export const employmentService = {
     return response.data;
   },
 
-  requestApproval: async (dojangId: number): Promise<Employment> => {
+  requestApproval: async (dojangId: string): Promise<Employment> => {
     const response = await apiClient.post<Employment>('/employments/request', null, {
       params: { dojangId },
     });
@@ -38,17 +38,17 @@ export const employmentService = {
     return response.data;
   },
 
-  approve: async (employmentId: number): Promise<Employment> => {
+  approve: async (employmentId: string): Promise<Employment> => {
     const response = await apiClient.patch<Employment>(`/employments/${employmentId}/approve`);
     return response.data;
   },
 
-  reject: async (employmentId: number): Promise<Employment> => {
+  reject: async (employmentId: string): Promise<Employment> => {
     const response = await apiClient.patch<Employment>(`/employments/${employmentId}/reject`);
     return response.data;
   },
 
-  cancel: async (employmentId: number): Promise<void> => {
+  cancel: async (employmentId: string): Promise<void> => {
     await apiClient.delete(`/employments/${employmentId}/cancel`);
   },
 };

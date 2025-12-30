@@ -3,13 +3,13 @@ import { attendanceService } from '@/services/attendanceService';
 import type { AttendanceResponse } from '../types';
 
 const QUERY_KEYS = {
-  studentDetail: (dojangId: number, studentId: number, startDate: string, endDate: string) =>
+  studentDetail: (dojangId: string, studentId: string, startDate: string, endDate: string) =>
     ['attendance', 'student', dojangId, studentId, startDate, endDate] as const,
 };
 
 interface UseStudentAttendanceParams {
-  dojangId: number | null;
-  studentId: number | null;
+  dojangId: string | null;
+  studentId: string | null;
   startDate: string;
   endDate: string;
 }
@@ -24,7 +24,7 @@ export function useStudentAttendance({
   endDate,
 }: UseStudentAttendanceParams) {
   return useQuery<AttendanceResponse[]>({
-    queryKey: QUERY_KEYS.studentDetail(dojangId ?? 0, studentId ?? 0, startDate, endDate),
+    queryKey: QUERY_KEYS.studentDetail(dojangId ?? '', studentId ?? '', startDate, endDate),
     queryFn: () => attendanceService.getHistory(dojangId!, studentId!, startDate, endDate),
     enabled: !!dojangId && !!studentId && !!startDate && !!endDate,
     staleTime: 0,

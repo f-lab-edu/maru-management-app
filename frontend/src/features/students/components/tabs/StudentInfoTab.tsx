@@ -50,7 +50,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
   const otherGuardians = student.guardians.filter((g) => !g.isPrimary);
 
   const setPrimaryMutation = useMutation({
-    mutationFn: (guardianId: number) =>
+    mutationFn: (guardianId: string) =>
       studentService.setPrimaryGuardian(dojangId!, student.id, guardianId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });
@@ -77,7 +77,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (guardianId: number) =>
+    mutationFn: (guardianId: string) =>
       studentService.deleteGuardian(dojangId!, student.id, guardianId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });

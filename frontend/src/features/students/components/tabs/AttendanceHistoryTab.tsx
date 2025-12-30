@@ -2,11 +2,11 @@ import { Calendar, Clock, TrendingUp } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
 
 interface AttendanceHistoryTabProps {
-  studentId: number;
+  studentId: string;
 }
 
 interface AttendanceRecord {
-  id: number;
+  id: string;
   date: string;
   checkIn?: string;
   checkOut?: string;
@@ -14,11 +14,11 @@ interface AttendanceRecord {
 
 // TODO: API 연동 시 실제 데이터로 교체
 const MOCK_ATTENDANCE: AttendanceRecord[] = [
-  { id: 1, date: '2024-12-07', checkIn: '16:30', checkOut: '18:00' },
-  { id: 2, date: '2024-12-05', checkIn: '16:25', checkOut: '17:55' },
-  { id: 3, date: '2024-12-03', checkIn: '16:35', checkOut: '18:05' },
-  { id: 4, date: '2024-12-01', checkIn: '16:30', checkOut: '18:00' },
-  { id: 5, date: '2024-11-29', checkIn: '16:20', checkOut: '17:50' },
+  { id: '1', date: '2024-12-07', checkIn: '16:30', checkOut: '18:00' },
+  { id: '2', date: '2024-12-05', checkIn: '16:25', checkOut: '17:55' },
+  { id: '3', date: '2024-12-03', checkIn: '16:35', checkOut: '18:05' },
+  { id: '4', date: '2024-12-01', checkIn: '16:30', checkOut: '18:00' },
+  { id: '5', date: '2024-11-29', checkIn: '16:20', checkOut: '17:50' },
 ];
 
 const MOCK_STATS = {

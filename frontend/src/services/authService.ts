@@ -24,7 +24,7 @@ export const authService = {
     await apiClient.post('/auth/logout');
   },
 
-  selectDojang: async (dojangId: number): Promise<void> => {
+  selectDojang: async (dojangId: string): Promise<void> => {
     await apiClient.post('/auth/select-dojang', null, {
       params: { dojangId },
     });

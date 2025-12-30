@@ -13,7 +13,7 @@ import type {
 /**
  * 출석 체크 mutation
  */
-export function useAttendanceCheck(dojangId: number | null) {
+export function useAttendanceCheck(dojangId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<AttendanceResponse, Error, AttendanceCheckRequest>({
@@ -30,7 +30,7 @@ export function useAttendanceCheck(dojangId: number | null) {
 /**
  * 일괄 출석 체크 mutation
  */
-export function useBulkCheckIn(dojangId: number | null) {
+export function useBulkCheckIn(dojangId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<BulkCheckResponse, Error, BulkCheckRequest>({
@@ -47,10 +47,10 @@ export function useBulkCheckIn(dojangId: number | null) {
 /**
  * 퇴관 처리 mutation
  */
-export function useAttendanceCheckout(dojangId: number | null) {
+export function useAttendanceCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<AttendanceResponse, Error, number>({
+  return useMutation<AttendanceResponse, Error, string>({
     mutationFn: (attendanceId) => {
       if (!dojangId) throw new Error('도장 ID가 필요합니다');
       return attendanceService.checkout(dojangId, attendanceId);
@@ -64,10 +64,10 @@ export function useAttendanceCheckout(dojangId: number | null) {
 /**
  * 퇴관 취소 mutation
  */
-export function useCancelCheckout(dojangId: number | null) {
+export function useCancelCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<AttendanceResponse, Error, number>({
+  return useMutation<AttendanceResponse, Error, string>({
     mutationFn: (attendanceId) => {
       if (!dojangId) throw new Error('도장 ID가 필요합니다');
       return attendanceService.cancelCheckout(dojangId, attendanceId);
@@ -81,10 +81,10 @@ export function useCancelCheckout(dojangId: number | null) {
 /**
  * 일괄 퇴관 처리 mutation
  */
-export function useBulkCheckout(dojangId: number | null) {
+export function useBulkCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
-  return useMutation<BulkCheckResponse, Error, number[]>({
+  return useMutation<BulkCheckResponse, Error, string[]>({
     mutationFn: (attendanceIds) => {
       if (!dojangId) throw new Error('도장 ID가 필요합니다');
       return attendanceService.bulkCheckout(dojangId, attendanceIds);
@@ -98,13 +98,13 @@ export function useBulkCheckout(dojangId: number | null) {
 /**
  * 출석 상태 수정 mutation
  */
-export function useAttendanceStatusUpdate(dojangId: number | null) {
+export function useAttendanceStatusUpdate(dojangId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<
     AttendanceResponse,
     Error,
-    { attendanceId: number; request: AttendanceStatusChangeRequest }
+    { attendanceId: string; request: AttendanceStatusChangeRequest }
   >({
     mutationFn: ({ attendanceId, request }) => {
       if (!dojangId) throw new Error('도장 ID가 필요합니다');
@@ -119,7 +119,7 @@ export function useAttendanceStatusUpdate(dojangId: number | null) {
 /**
  * 일괄 상태 변경 mutation
  */
-export function useBulkStatusChange(dojangId: number | null) {
+export function useBulkStatusChange(dojangId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<BulkCheckResponse, Error, BulkStatusChangeRequest>({
@@ -136,13 +136,13 @@ export function useBulkStatusChange(dojangId: number | null) {
 /**
  * 시간 변경 mutation
  */
-export function useAttendanceTimeChange(dojangId: number | null) {
+export function useAttendanceTimeChange(dojangId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation<
     AttendanceResponse,
     Error,
-    { attendanceId: number; request: AttendanceTimeChangeRequest }
+    { attendanceId: string; request: AttendanceTimeChangeRequest }
   >({
     mutationFn: ({ attendanceId, request }) => {
       if (!dojangId) throw new Error('도장 ID가 필요합니다');

@@ -12,21 +12,21 @@ import type {
 const BASE_PATH = '/students';
 
 export const studentService = {
-  getStudents: async (dojangId: number): Promise<StudentListResponse> => {
+  getStudents: async (dojangId: string): Promise<StudentListResponse> => {
     const response = await apiClient.get<StudentListResponse>(BASE_PATH, {
       params: { dojangId },
     });
     return response.data;
   },
 
-  getStudent: async (dojangId: number, studentId: number): Promise<Student> => {
+  getStudent: async (dojangId: string, studentId: string): Promise<Student> => {
     const response = await apiClient.get<Student>(`${BASE_PATH}/${studentId}`, {
       params: { dojangId },
     });
     return response.data;
   },
 
-  createStudent: async (dojangId: number, data: StudentCreateRequest): Promise<Student> => {
+  createStudent: async (dojangId: string, data: StudentCreateRequest): Promise<Student> => {
     const response = await apiClient.post<Student>(BASE_PATH, data, {
       params: { dojangId },
     });
@@ -34,8 +34,8 @@ export const studentService = {
   },
 
   updateStudent: async (
-    dojangId: number,
-    studentId: number,
+    dojangId: string,
+    studentId: string,
     data: StudentUpdateRequest
   ): Promise<Student> => {
     const response = await apiClient.patch<Student>(`${BASE_PATH}/${studentId}`, data, {
@@ -44,15 +44,15 @@ export const studentService = {
     return response.data;
   },
 
-  deleteStudent: async (dojangId: number, studentId: number): Promise<void> => {
+  deleteStudent: async (dojangId: string, studentId: string): Promise<void> => {
     await apiClient.delete(`${BASE_PATH}/${studentId}`, {
       params: { dojangId },
     });
   },
 
   addGuardian: async (
-    dojangId: number,
-    studentId: number,
+    dojangId: string,
+    studentId: string,
     data: GuardianCreateRequest
   ): Promise<Guardian> => {
     const response = await apiClient.post<Guardian>(
@@ -64,9 +64,9 @@ export const studentService = {
   },
 
   setPrimaryGuardian: async (
-    dojangId: number,
-    studentId: number,
-    guardianId: number
+    dojangId: string,
+    studentId: string,
+    guardianId: string
   ): Promise<void> => {
     await apiClient.patch(
       `${BASE_PATH}/${studentId}/guardians/${guardianId}/primary`,
@@ -75,7 +75,7 @@ export const studentService = {
     );
   },
 
-  bulkDelete: async (dojangId: number, studentIds: number[]): Promise<void> => {
+  bulkDelete: async (dojangId: string, studentIds: string[]): Promise<void> => {
     await apiClient.delete(`${BASE_PATH}/bulk`, {
       params: { dojangId },
       data: { studentIds },
@@ -83,9 +83,9 @@ export const studentService = {
   },
 
   updateGuardian: async (
-    dojangId: number,
-    studentId: number,
-    guardianId: number,
+    dojangId: string,
+    studentId: string,
+    guardianId: string,
     data: GuardianUpdateRequest
   ): Promise<Guardian> => {
     const response = await apiClient.patch<Guardian>(
@@ -97,9 +97,9 @@ export const studentService = {
   },
 
   deleteGuardian: async (
-    dojangId: number,
-    studentId: number,
-    guardianId: number
+    dojangId: string,
+    studentId: string,
+    guardianId: string
   ): Promise<void> => {
     await apiClient.delete(`${BASE_PATH}/${studentId}/guardians/${guardianId}`, {
       params: { dojangId },
