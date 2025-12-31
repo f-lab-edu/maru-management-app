@@ -15,5 +15,7 @@ public record UnpaidListRes(
         BigDecimal paidAmount,
         BigDecimal remainingAmount,
         LocalDate dueDate,
-        int overdueDays
+        int overdueDays,
+        int billingYear,
+        int billingMonth
 ) {}
