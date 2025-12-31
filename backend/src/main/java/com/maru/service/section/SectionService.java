@@ -12,7 +12,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,10 +40,7 @@ public class SectionService {
         Dojang dojang = findDojangById(dojangId);
         validateDuplicateName(dojangId, request.name());
 
-        int nextDisplayOrder = sectionRepository.findMaxDisplayOrderByDojangId(dojangId)
-                .map(max -> max + 1)
-                .orElse(0);
-
+        int nextDisplayOrder = sectionRepository.findMaxDisplayOrderByDojangId(dojangId) + 1;
         Section section = Section.create(dojang, request.name(), nextDisplayOrder);
         sectionRepository.save(section);
 
@@ -53,12 +55,7 @@ public class SectionService {
      */
     public SectionListRes getSections(String dojangId) {
         List<Section> sections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
-
-        List<SectionRes> sectionResList = sections.stream()
-                .map(section -> SectionRes.from(section, 0))
-                .toList();
-
-        return SectionListRes.from(sectionResList);
+        return toSectionListRes(sections);
     }
 
     /**
@@ -98,15 +95,15 @@ public class SectionService {
      *
      * @param dojangId 도장 ID
      * @param request  순서 변경 요청 (ID 목록 순서대로 displayOrder 부여)
+     * @throws BusinessException 요청한 수련부 갯수와 실제 갯수가 다른 경우
      */
     @Transactional
     public void reorderSections(String dojangId, SectionReorderReq request) {
         List<String> sectionIds = request.sectionIds();
 
-        for (int i = 0; i < sectionIds.size(); i++) {
-            Section section = findSectionByIdAndDojangId(sectionIds.get(i), dojangId);
-            section.updateDisplayOrder(i);
-        }
+        validateNoDuplicateIds(sectionIds);
+        List<Section> allSections = findAllSectionsAndValidateCount(dojangId, sectionIds);
+        updateDisplayOrders(allSections, sectionIds);
     }
 
     private Dojang findDojangById(String dojangId) {
@@ -119,6 +116,13 @@ public class SectionService {
                 .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
     }
 
+    private SectionListRes toSectionListRes(List<Section> sections) {
+        List<SectionRes> sectionResList = sections.stream()
+                .map(section -> SectionRes.from(section, 0))
+                .toList();
+        return SectionListRes.from(sectionResList);
+    }
+
     private void validateDuplicateName(String dojangId, String name) {
         if (sectionRepository.existsByDojangIdAndName(dojangId, name)) {
             throw new BusinessException(SectionErrorCode.DUPLICATE_NAME);
@@ -128,6 +132,34 @@ public class SectionService {
     private void validateDuplicateNameExcludingSelf(String dojangId, String name, String excludeId) {
         if (sectionRepository.existsByDojangIdAndNameAndIdNot(dojangId, name, excludeId)) {
             throw new BusinessException(SectionErrorCode.DUPLICATE_NAME);
+        }
+    }
+
+    private void validateNoDuplicateIds(List<String> sectionIds) {
+        Set<String> sectionIdSet = new HashSet<>(sectionIds);
+        if (sectionIdSet.size() != sectionIds.size()) {
+            throw new BusinessException(SectionErrorCode.DUPLICATE_ID_IN_REQUEST);
+        }
+    }
+
+    private List<Section> findAllSectionsAndValidateCount(String dojangId, List<String> sectionIds) {
+        List<Section> allSections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
+        if (allSections.size() != sectionIds.size()) {
+            throw new BusinessException(SectionErrorCode.REORDER_COUNT_MISMATCH);
+        }
+        return allSections;
+    }
+
+    private void updateDisplayOrders(List<Section> allSections, List<String> sectionIds) {
+        Map<String, Section> sectionMap = allSections.stream()
+                .collect(Collectors.toMap(Section::getId, Function.identity()));
+
+        for (int i = 0; i < sectionIds.size(); i++) {
+            Section section = sectionMap.get(sectionIds.get(i));
+            if (section == null) {
+                throw new BusinessException(SectionErrorCode.NOT_FOUND);
+            }
+            section.updateDisplayOrder(i);
         }
     }
 }

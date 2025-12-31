@@ -10,13 +10,41 @@ import java.util.Optional;
 
 public interface SectionRepository extends JpaRepository<Section, String> {
 
-    List<Section> findAllByDojangIdOrderByDisplayOrder(String dojangId);
+    @Query("""
+        SELECT s FROM Section s
+        WHERE s.dojang.id = :dojangId
+          AND s.deletedAt IS NULL
+        ORDER BY s.displayOrder
+        """)
+    List<Section> findAllByDojangIdOrderByDisplayOrder(@Param("dojangId") String dojangId);
 
-    boolean existsByDojangIdAndName(String dojangId, String name);
+    @Query("""
+        SELECT COUNT(s) > 0 FROM Section s
+        WHERE s.dojang.id = :dojangId
+          AND s.name = :name
+          AND s.deletedAt IS NULL
+        """)
+    boolean existsByDojangIdAndName(@Param("dojangId") String dojangId, @Param("name") String name);
 
-    boolean existsByDojangIdAndNameAndIdNot(String dojangId, String name, String id);
+    @Query("""
+        SELECT COUNT(s) > 0 FROM Section s
+        WHERE s.dojang.id = :dojangId
+          AND s.name = :name
+          AND s.id != :id
+          AND s.deletedAt IS NULL
+        """)
+    boolean existsByDojangIdAndNameAndIdNot(
+            @Param("dojangId") String dojangId,
+            @Param("name") String name,
+            @Param("id") String id);
 
-    Optional<Section> findByIdAndDojangId(String id, String dojangId);
+    @Query("""
+        SELECT s FROM Section s
+        WHERE s.id = :id
+          AND s.dojang.id = :dojangId
+          AND s.deletedAt IS NULL
+        """)
+    Optional<Section> findByIdAndDojangId(@Param("id") String id, @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT COALESCE(MAX(s.displayOrder), -1)
@@ -24,5 +52,5 @@ public interface SectionRepository extends JpaRepository<Section, String> {
         WHERE s.dojang.id = :dojangId
           AND s.deletedAt IS NULL
         """)
-    Optional<Integer> findMaxDisplayOrderByDojangId(@Param("dojangId") String dojangId);
+    int findMaxDisplayOrderByDojangId(@Param("dojangId") String dojangId);
 }
