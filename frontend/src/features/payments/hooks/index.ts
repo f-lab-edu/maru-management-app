@@ -285,6 +285,9 @@ export function useYearlyStatistics(dojangId: string | null, year: number) {
   return { data, isLoading, isError };
 }
 
+export { useInvoiceActions } from './useInvoiceActions';
+export type { UpdateData } from './useInvoiceActions';
+
 export function usePrepaidPayment(dojangId: string | null) {
   const queryClient = useQueryClient();
 
