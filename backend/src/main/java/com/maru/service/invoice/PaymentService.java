@@ -7,6 +7,7 @@ import com.maru.controller.invoice.dto.*;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.Payment;
+import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.exception.StudentErrorCode;
@@ -25,10 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -164,6 +168,34 @@ public class PaymentService {
         return buildStudentPaymentHistoryRes(student, payments);
     }
 
+    /**
+     * 선납 수납 처리 (여러 월 청구서 생성 + 일괄 수납)
+     *
+     * @param dojangId 도장 ID
+     * @param request 선납 수납 요청
+     * @param userId 현재 사용자 ID
+     * @return 선납 처리 결과
+     */
+    @Transactional
+    public PrepaidPaymentRes processPrepaidPayment(String dojangId, PrepaidPaymentReq request, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        Student student = findStudentAndValidate(request.studentId(), dojangId);
+        List<YearMonth> months = calculateMonthRange(
+                request.startYear(), request.startMonth(),
+                request.endYear(), request.endMonth()
+        );
+        validateNoDuplicateInvoices(tenantId, dojangId, request.studentId(), months);
+
+        List<String> invoiceIds = createInvoicesWithPayments(student, months, request, userId);
+
+        log.info("선납 수납 완료: studentId={}, months={}, totalAmount={}, userId={}",
+                request.studentId(), months.size(), request.totalAmount(), userId);
+
+        return buildPrepaidResponse(months.size(), request, invoiceIds);
+    }
+
     private void validateDojangAccess(String dojangId, String tenantId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
@@ -253,6 +285,8 @@ public class PaymentService {
                 .remainingAmount(invoice.getRemainingAmount())
                 .dueDate(invoice.getDueDate())
                 .overdueDays(calculateOverdueDays(invoice.getDueDate(), today))
+                .billingYear(invoice.getBillingYear())
+                .billingMonth(invoice.getBillingMonth())
                 .build();
     }
 
@@ -311,6 +345,100 @@ public class PaymentService {
                 .status(payment.getStatus() != null ? payment.getStatus().name() : null)
                 .paidAt(payment.getPaidAt() != null ? payment.getPaidAt().format(DATE_TIME_FORMATTER) : null)
                 .refundedAt(payment.getRefundedAt() != null ? payment.getRefundedAt().format(DATE_TIME_FORMATTER) : null)
+                .build();
+    }
+
+
+    private List<YearMonth> calculateMonthRange(int startYear, int startMonth, int endYear, int endMonth) {
+        List<YearMonth> months = new ArrayList<>();
+        YearMonth current = YearMonth.of(startYear, startMonth);
+        YearMonth end = YearMonth.of(endYear, endMonth);
+
+        while (!current.isAfter(end)) {
+            months.add(current);
+            current = current.plusMonths(1);
+        }
+
+        return months;
+    }
+
+
+    private void validateNoDuplicateInvoices(String tenantId, String dojangId, String studentId, List<YearMonth> months) {
+        for (YearMonth ym : months) {
+            boolean exists = invoiceRepository.existsByBillingYearAndMonth(
+                    tenantId, dojangId, studentId, ym.getYear(), ym.getMonthValue()
+            );
+            if (exists) {
+                throw new BusinessException(InvoiceErrorCode.PREPAID_DUPLICATE_INVOICE);
+            }
+        }
+    }
+
+    private List<String> createInvoicesWithPayments(
+            Student student,
+            List<YearMonth> months,
+            PrepaidPaymentReq request,
+            String userId
+    ) {
+        int monthCount = months.size();
+        BigDecimal amountPerInvoice = request.totalAmount()
+                .divide(BigDecimal.valueOf(monthCount), 0, RoundingMode.DOWN);
+        BigDecimal remainder = request.totalAmount()
+                .subtract(amountPerInvoice.multiply(BigDecimal.valueOf(monthCount)));
+
+        List<String> invoiceIds = new ArrayList<>();
+        LocalDate dueDate = request.dueDate() != null ? request.dueDate() : LocalDate.now();
+
+        for (int i = 0; i < months.size(); i++) {
+            BigDecimal invoiceAmount = (i == 0)
+                    ? amountPerInvoice.add(remainder)
+                    : amountPerInvoice;
+
+            String invoiceId = createSingleInvoiceWithPayment(
+                    student, months.get(i), invoiceAmount, dueDate, request.note(), request.paymentMethod(), userId
+            );
+            invoiceIds.add(invoiceId);
+        }
+
+        return invoiceIds;
+    }
+
+    private String createSingleInvoiceWithPayment(
+            Student student,
+            YearMonth yearMonth,
+            BigDecimal amount,
+            LocalDate dueDate,
+            String note,
+            PaymentMethod paymentMethod,
+            String userId
+    ) {
+        Invoice invoice = Invoice.create(
+                student,
+                yearMonth.getYear(),
+                yearMonth.getMonthValue(),
+                amount,
+                dueDate,
+                note
+        );
+        invoice.issue(userId);
+        invoiceRepository.save(invoice);
+
+        Payment payment = Payment.create(invoice, amount, paymentMethod, userId);
+        paymentRepository.save(payment);
+        invoice.addPayment(amount);
+
+        return invoice.getId();
+    }
+
+    private PrepaidPaymentRes buildPrepaidResponse(int monthCount, PrepaidPaymentReq request, List<String> invoiceIds) {
+        BigDecimal originalTotal = request.monthlyAmount().multiply(BigDecimal.valueOf(monthCount));
+        BigDecimal discountAmount = originalTotal.subtract(request.totalAmount());
+
+        return PrepaidPaymentRes.builder()
+                .invoiceCount(monthCount)
+                .totalAmount(request.totalAmount())
+                .discountAmount(discountAmount)
+                .invoiceIds(invoiceIds)
                 .build();
     }
 }

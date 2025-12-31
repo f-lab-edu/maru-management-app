@@ -249,4 +249,21 @@ public class InvoiceController {
         BulkUpdateRes response = invoiceService.bulkUpdateInvoices(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 선납 수납 API (여러 월 청구서 생성 + 일괄 수납)
+     *
+     * @param dojangId 도장 ID
+     * @param request 선납 수납 요청
+     * @param userId 현재 인증된 사용자 ID
+     * @return 선납 처리 결과
+     */
+    @PostMapping("/prepaid-payment")
+    public ResponseEntity<PrepaidPaymentRes> processPrepaidPayment(
+            @RequestParam String dojangId,
+            @Valid @RequestBody PrepaidPaymentReq request,
+            @CurrentUserId String userId) {
+        PrepaidPaymentRes response = paymentService.processPrepaidPayment(dojangId, request, userId);
+        return ResponseEntity.ok(response);
+    }
 }
