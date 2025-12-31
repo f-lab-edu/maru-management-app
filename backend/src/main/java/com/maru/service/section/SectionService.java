@@ -1,14 +1,26 @@
 package com.maru.service.section;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.section.dto.*;
+import com.maru.domain.section.Section;
+import com.maru.domain.section.exception.SectionErrorCode;
+import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.section.SectionRepository;
+import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SectionService {
+
+    private final SectionRepository sectionRepository;
+    private final DojangRepository dojangRepository;
 
     /**
      * 수련부 생성
@@ -18,8 +30,19 @@ public class SectionService {
      * @return 생성된 수련부 정보
      * @throws BusinessException 중복 이름인 경우
      */
+    @Transactional
     public SectionRes createSection(String dojangId, SectionCreateReq request) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Dojang dojang = findDojangById(dojangId);
+        validateDuplicateName(dojangId, request.name());
+
+        int nextDisplayOrder = sectionRepository.findMaxDisplayOrderByDojangId(dojangId)
+                .map(max -> max + 1)
+                .orElse(0);
+
+        Section section = Section.create(dojang, request.name(), nextDisplayOrder);
+        sectionRepository.save(section);
+
+        return SectionRes.from(section, 0);
     }
 
     /**
@@ -29,7 +52,13 @@ public class SectionService {
      * @return 수련부 목록 (displayOrder 순)
      */
     public SectionListRes getSections(String dojangId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        List<Section> sections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
+
+        List<SectionRes> sectionResList = sections.stream()
+                .map(section -> SectionRes.from(section, 0))
+                .toList();
+
+        return SectionListRes.from(sectionResList);
     }
 
     /**
@@ -41,8 +70,14 @@ public class SectionService {
      * @return 수정된 수련부 정보
      * @throws BusinessException 수련부를 찾을 수 없거나 중복 이름인 경우
      */
+    @Transactional
     public SectionRes updateSection(String dojangId, String sectionId, SectionUpdateReq request) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Section section = findSectionByIdAndDojangId(sectionId, dojangId);
+        validateDuplicateNameExcludingSelf(dojangId, request.name(), sectionId);
+
+        section.updateName(request.name());
+
+        return SectionRes.from(section, 0);
     }
 
     /**
@@ -52,8 +87,10 @@ public class SectionService {
      * @param sectionId 수련부 ID
      * @throws BusinessException 수련부를 찾을 수 없거나 소속 수련반이 있는 경우
      */
+    @Transactional
     public void deleteSection(String dojangId, String sectionId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        Section section = findSectionByIdAndDojangId(sectionId, dojangId);
+        section.markAsDeleted();
     }
 
     /**
@@ -62,7 +99,35 @@ public class SectionService {
      * @param dojangId 도장 ID
      * @param request  순서 변경 요청 (ID 목록 순서대로 displayOrder 부여)
      */
+    @Transactional
     public void reorderSections(String dojangId, SectionReorderReq request) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        List<String> sectionIds = request.sectionIds();
+
+        for (int i = 0; i < sectionIds.size(); i++) {
+            Section section = findSectionByIdAndDojangId(sectionIds.get(i), dojangId);
+            section.updateDisplayOrder(i);
+        }
+    }
+
+    private Dojang findDojangById(String dojangId) {
+        return dojangRepository.findById(dojangId)
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+    }
+
+    private Section findSectionByIdAndDojangId(String sectionId, String dojangId) {
+        return sectionRepository.findByIdAndDojangId(sectionId, dojangId)
+                .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
+    }
+
+    private void validateDuplicateName(String dojangId, String name) {
+        if (sectionRepository.existsByDojangIdAndName(dojangId, name)) {
+            throw new BusinessException(SectionErrorCode.DUPLICATE_NAME);
+        }
+    }
+
+    private void validateDuplicateNameExcludingSelf(String dojangId, String name, String excludeId) {
+        if (sectionRepository.existsByDojangIdAndNameAndIdNot(dojangId, name, excludeId)) {
+            throw new BusinessException(SectionErrorCode.DUPLICATE_NAME);
+        }
     }
 }
