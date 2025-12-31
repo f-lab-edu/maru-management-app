@@ -21,6 +21,7 @@ public enum InvoiceErrorCode implements BaseErrorCode {
 
     // 비즈니스 규칙 위반
     DUPLICATE_INVOICE(HttpStatus.CONFLICT, "INVOICE_301", "해당 월에 이미 청구서가 존재합니다"),
+    PREPAID_DUPLICATE_INVOICE(HttpStatus.CONFLICT, "INVOICE_311", "선납 기간 내 청구서가 이미 존재합니다. 기존 청구서를 삭제하고 진행해주세요"),
     INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "INVOICE_302", "잘못된 상태 변경입니다"),
     CANNOT_VOID_PAID_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_303", "완납된 청구서는 무효화할 수 없습니다"),
     CANNOT_UPDATE_ISSUED_INVOICE(HttpStatus.BAD_REQUEST, "INVOICE_304", "수납 전 상태의 청구서만 수정할 수 있습니다"),

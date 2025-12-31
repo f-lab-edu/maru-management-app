@@ -64,8 +64,8 @@ public class Payment extends BaseTimeEntity {
     }
 
     private void validatePayment(Invoice invoice, BigDecimal amount) {
-        DomainAssert.notNull(invoice, PaymentErrorCode.INVALID_AMOUNT);
-        DomainAssert.notNull(amount, PaymentErrorCode.INVALID_AMOUNT);
+        DomainAssert.notNull(invoice, PaymentErrorCode.INVOICE_REQUIRED);
+        DomainAssert.notNull(amount, PaymentErrorCode.AMOUNT_REQUIRED);
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(PaymentErrorCode.INVALID_AMOUNT);
