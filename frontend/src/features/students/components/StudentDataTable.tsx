@@ -80,8 +80,11 @@ const MemoizedRow = memo(function MemoizedRow<TData>({
       className="cursor-pointer hover:bg-muted/50"
       onClick={() => onRowClick?.(row.original)}
     >
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
+      {row.getVisibleCells().map((cell, index) => (
+        <TableCell
+          key={cell.id}
+          className={index < 2 ? 'bg-muted/50 hover:bg-muted' : ''}
+        >
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </TableCell>
       ))}
@@ -145,7 +148,7 @@ export function StudentDataTable<TData>({
   return (
     <div ref={containerRef} className="rounded-xl border bg-white shadow-sm">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-muted">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (

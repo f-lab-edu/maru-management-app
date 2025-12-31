@@ -87,12 +87,12 @@ const MemoizedRow = memo(function MemoizedRow<TData>({
 
         // 체크박스 컬럼 - 왼쪽 고정
         if (hasCheckbox && index === 0) {
-          className = 'sticky left-0 z-10 bg-white';
+          className = 'sticky left-0 z-10 bg-muted/50 hover:bg-muted';
           style = { ...style, minWidth: CHECKBOX_COL_WIDTH };
         }
         // 이름 컬럼 - 왼쪽 고정 (체크박스 다음)
         else if (index === nameColIndex) {
-          className = 'sticky z-10 bg-white';
+          className = 'sticky z-10 bg-muted/50 hover:bg-muted';
           const leftOffset = hasCheckbox ? CHECKBOX_COL_WIDTH : 0;
           style = { ...style, left: leftOffset, minWidth: NAME_COL_WIDTH, boxShadow: '2px 0 0 0 hsl(var(--border))' };
         }

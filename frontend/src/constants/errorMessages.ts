@@ -82,6 +82,11 @@ export const ERROR_MESSAGES: Record<string, string> = {
   ATTENDANCE_303: '퇴관 시각은 입관 시각보다 이후여야 합니다',
   ATTENDANCE_304: '이미 동일한 상태입니다',
 
+  // 청구서 관련 (INVOICE_XXX)
+  // 비즈니스 규칙 (301~399)
+  INVOICE_301: '해당 월에 이미 청구서가 존재합니다',
+  INVOICE_311: '선납 기간 내 청구서가 이미 존재합니다. 기존 청구서를 삭제하고 진행해주세요',
+
   // 일반 에러 (COMMON_XXX)
   // 조회 실패 (001~099)
   COMMON_001: '요청한 정보를 찾을 수 없습니다',
@@ -94,4 +99,21 @@ export const ERROR_MESSAGES: Record<string, string> = {
 
 export const getErrorMessage = (code: string): string => {
   return ERROR_MESSAGES[code] || '알 수 없는 오류가 발생했습니다';
+};
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      code?: string;
+    };
+  };
+}
+
+export const extractErrorCode = (error: unknown): string | undefined => {
+  return (error as ApiErrorResponse)?.response?.data?.code;
+};
+
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const code = extractErrorCode(error);
+  return code ? getErrorMessage(code) : fallback;
 };

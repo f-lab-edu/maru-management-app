@@ -12,6 +12,7 @@ import UserInfoPage from '../pages/onboarding/UserInfoPage';
 import SettingsPage from '../pages/SettingsPage';
 import StudentListPage from '../pages/students/StudentListPage';
 import AttendanceListPage from '../pages/attendance/AttendanceListPage';
+import BillingPage from '../pages/billing/BillingPage';
 import { OnboardingRoute, CompletedOnboardingRoute } from './AuthGuard';
 import AuthLayout from '../layouts/AuthLayout';
 import { DojangGuard } from '../components/auth/DojangGuard';
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'students', element: <StudentListPage /> },
           { path: 'attendance', element: <AttendanceListPage /> },
+          { path: 'billing', element: <BillingPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
