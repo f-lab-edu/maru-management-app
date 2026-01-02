@@ -1,7 +1,5 @@
 package com.maru.controller.groups;
 
-import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.groups.dto.GroupCreateReq;
 import com.maru.controller.groups.dto.GroupDetailRes;
 import com.maru.controller.groups.dto.GroupListRes;
@@ -40,7 +38,8 @@ public class GroupController {
             @RequestParam String dojangId,
             @Valid @RequestBody GroupCreateReq request
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        GroupRes response = groupService.createGroup(dojangId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -55,7 +54,8 @@ public class GroupController {
             @RequestParam String dojangId,
             @RequestParam(required = false) String sectionId
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        GroupListRes response = groupService.getGroups(dojangId, sectionId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -70,7 +70,8 @@ public class GroupController {
             @RequestParam String dojangId,
             @PathVariable String groupId
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        GroupDetailRes response = groupService.getGroupDetail(dojangId, groupId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -87,7 +88,8 @@ public class GroupController {
             @PathVariable String groupId,
             @Valid @RequestBody GroupUpdateReq request
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        GroupRes response = groupService.updateGroup(dojangId, groupId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -102,6 +104,7 @@ public class GroupController {
             @RequestParam String dojangId,
             @PathVariable String groupId
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        groupService.deleteGroup(dojangId, groupId);
+        return ResponseEntity.noContent().build();
     }
 }
