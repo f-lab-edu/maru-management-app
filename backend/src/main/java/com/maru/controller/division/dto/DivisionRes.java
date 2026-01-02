@@ -1,4 +1,4 @@
-package com.maru.controller.groups.dto;
+package com.maru.controller.division.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
@@ -7,7 +7,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Builder
-public record GroupRes(
+public record DivisionRes(
         String id,
         String sectionId,
         String sectionName,

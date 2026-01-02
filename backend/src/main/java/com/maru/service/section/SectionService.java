@@ -6,8 +6,8 @@ import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.group.GroupRepository;
-import com.maru.repository.group.projection.GroupCountBySection;
+import com.maru.repository.division.DivisionRepository;
+import com.maru.repository.division.projection.DivisionCountBySection;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class SectionService {
 
     private final SectionRepository sectionRepository;
     private final DojangRepository dojangRepository;
-    private final GroupRepository groupRepository;
+    private final DivisionRepository divisionRepository;
 
     /**
      * 수련부 생성
@@ -58,15 +58,15 @@ public class SectionService {
      */
     public SectionListRes getSections(String dojangId) {
         List<Section> sections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
-        Map<String, Integer> groupCountMap = buildGroupCountMap(dojangId);
-        return toSectionListRes(sections, groupCountMap);
+        Map<String, Integer> divisionCountMap = buildDivisionCountMap(dojangId);
+        return toSectionListRes(sections, divisionCountMap);
     }
 
-    private Map<String, Integer> buildGroupCountMap(String dojangId) {
-        return groupRepository.countGroupsBySectionForDojang(dojangId).stream()
+    private Map<String, Integer> buildDivisionCountMap(String dojangId) {
+        return divisionRepository.countDivisionsBySectionForDojang(dojangId).stream()
                 .collect(Collectors.toMap(
-                        GroupCountBySection::getSectionId,
-                        GroupCountBySection::getGroupCount
+                        DivisionCountBySection::getSectionId,
+                        DivisionCountBySection::getDivisionCount
                 ));
     }
 
@@ -99,12 +99,12 @@ public class SectionService {
     @Transactional
     public void deleteSection(String dojangId, String sectionId) {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
-        validateNoGroups(sectionId);
+        validateNoDivisions(sectionId);
         section.markAsDeleted();
     }
 
-    private void validateNoGroups(String sectionId) {
-        if (groupRepository.existsBySectionId(sectionId)) {
+    private void validateNoDivisions(String sectionId) {
+        if (divisionRepository.existsBySectionId(sectionId)) {
             throw new BusinessException(SectionErrorCode.HAS_CLASSES);
         }
     }

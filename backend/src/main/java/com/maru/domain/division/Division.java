@@ -1,12 +1,14 @@
-package com.maru.domain.group;
+package com.maru.domain.division;
 
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.group.exception.GroupErrorCode;
+import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
+import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -19,10 +21,10 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "groups")
+@Table(name = "division")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Group extends SoftDeletableEntity {
+public class Division extends SoftDeletableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dojang_id", nullable = false)
@@ -32,6 +34,7 @@ public class Group extends SoftDeletableEntity {
     @JoinColumn(name = "section_id")
     private Section section;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week")
     private DayOfWeek dayOfWeek;
 
@@ -47,21 +50,21 @@ public class Group extends SoftDeletableEntity {
     @Column(name = "display_order")
     private Integer displayOrder;
 
-    private Group(Dojang dojang, Section section, String name, Integer displayOrder) {
+    private Division(Dojang dojang, Section section, String name, Integer displayOrder) {
         this.dojang = dojang;
         this.section = section;
         this.name = name;
         this.displayOrder = displayOrder;
     }
 
-    public static Group create(Dojang dojang, Section section, String name, Integer displayOrder) {
-        DomainAssert.notNull(section, GroupErrorCode.SECTION_REQUIRED);
-        DomainAssert.hasText(name, GroupErrorCode.NAME_REQUIRED);
-        return new Group(dojang, section, name, displayOrder);
+    public static Division create(Dojang dojang, Section section, String name, Integer displayOrder) {
+        DomainAssert.notNull(section, DivisionErrorCode.SECTION_REQUIRED);
+        DomainAssert.hasText(name, DivisionErrorCode.NAME_REQUIRED);
+        return new Division(dojang, section, name, displayOrder);
     }
 
     public void updateName(String name) {
-        DomainAssert.hasText(name, GroupErrorCode.NAME_REQUIRED);
+        DomainAssert.hasText(name, DivisionErrorCode.NAME_REQUIRED);
         this.name = name;
     }
 

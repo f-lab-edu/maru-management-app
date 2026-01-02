@@ -1,11 +1,11 @@
-package com.maru.controller.groups;
+package com.maru.controller.division;
 
-import com.maru.controller.groups.dto.GroupCreateReq;
-import com.maru.controller.groups.dto.GroupDetailRes;
-import com.maru.controller.groups.dto.GroupListRes;
-import com.maru.controller.groups.dto.GroupRes;
-import com.maru.controller.groups.dto.GroupUpdateReq;
-import com.maru.service.group.GroupService;
+import com.maru.controller.division.dto.DivisionCreateReq;
+import com.maru.controller.division.dto.DivisionDetailRes;
+import com.maru.controller.division.dto.DivisionListRes;
+import com.maru.controller.division.dto.DivisionRes;
+import com.maru.controller.division.dto.DivisionUpdateReq;
+import com.maru.service.division.DivisionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/groups")
+@RequestMapping("/api/v1/divisions")
 @RequiredArgsConstructor
-public class GroupController {
+public class DivisionController {
 
-    private final GroupService groupService;
+    private final DivisionService divisionService;
 
     /**
      * 수련반 생성
@@ -34,11 +34,11 @@ public class GroupController {
      * @return 생성된 수련반 정보
      */
     @PostMapping
-    public ResponseEntity<GroupRes> createGroup(
+    public ResponseEntity<DivisionRes> createDivision(
             @RequestParam String dojangId,
-            @Valid @RequestBody GroupCreateReq request
+            @Valid @RequestBody DivisionCreateReq request
     ) {
-        GroupRes response = groupService.createGroup(dojangId, request);
+        DivisionRes response = divisionService.createDivision(dojangId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -50,11 +50,11 @@ public class GroupController {
      * @return 수련반 목록 (section.displayOrder, displayOrder 순)
      */
     @GetMapping
-    public ResponseEntity<GroupListRes> getGroups(
+    public ResponseEntity<DivisionListRes> getDivisions(
             @RequestParam String dojangId,
             @RequestParam(required = false) String sectionId
     ) {
-        GroupListRes response = groupService.getGroups(dojangId, sectionId);
+        DivisionListRes response = divisionService.getDivisions(dojangId, sectionId);
         return ResponseEntity.ok(response);
     }
 
@@ -62,15 +62,15 @@ public class GroupController {
      * 수련반 상세 조회
      *
      * @param dojangId 도장 ID
-     * @param groupId 수련반 ID
+     * @param divisionId 수련반 ID
      * @return 수련반 상세 정보
      */
-    @GetMapping("/{groupId}")
-    public ResponseEntity<GroupDetailRes> getGroupDetail(
+    @GetMapping("/{divisionId}")
+    public ResponseEntity<DivisionDetailRes> getDivisionDetail(
             @RequestParam String dojangId,
-            @PathVariable String groupId
+            @PathVariable String divisionId
     ) {
-        GroupDetailRes response = groupService.getGroupDetail(dojangId, groupId);
+        DivisionDetailRes response = divisionService.getDivisionDetail(dojangId, divisionId);
         return ResponseEntity.ok(response);
     }
 
@@ -78,17 +78,17 @@ public class GroupController {
      * 수련반 수정
      *
      * @param dojangId 도장 ID
-     * @param groupId 수련반 ID
+     * @param divisionId 수련반 ID
      * @param request 수정 정보
      * @return 수정된 수련반 정보
      */
-    @PatchMapping("/{groupId}")
-    public ResponseEntity<GroupRes> updateGroup(
+    @PatchMapping("/{divisionId}")
+    public ResponseEntity<DivisionRes> updateDivision(
             @RequestParam String dojangId,
-            @PathVariable String groupId,
-            @Valid @RequestBody GroupUpdateReq request
+            @PathVariable String divisionId,
+            @Valid @RequestBody DivisionUpdateReq request
     ) {
-        GroupRes response = groupService.updateGroup(dojangId, groupId, request);
+        DivisionRes response = divisionService.updateDivision(dojangId, divisionId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -96,15 +96,15 @@ public class GroupController {
      * 수련반 삭제
      *
      * @param dojangId 도장 ID
-     * @param groupId 수련반 ID
+     * @param divisionId 수련반 ID
      * @return 204 No Content
      */
-    @DeleteMapping("/{groupId}")
-    public ResponseEntity<Void> deleteGroup(
+    @DeleteMapping("/{divisionId}")
+    public ResponseEntity<Void> deleteDivision(
             @RequestParam String dojangId,
-            @PathVariable String groupId
+            @PathVariable String divisionId
     ) {
-        groupService.deleteGroup(dojangId, groupId);
+        divisionService.deleteDivision(dojangId, divisionId);
         return ResponseEntity.noContent().build();
     }
 }

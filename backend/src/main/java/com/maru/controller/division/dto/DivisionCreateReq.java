@@ -1,4 +1,4 @@
-package com.maru.controller.groups.dto;
+package com.maru.controller.division.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
@@ -10,7 +10,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Builder
-public record GroupCreateReq(
+public record DivisionCreateReq(
         @NotNull(message = "수련부 선택은 필수입니다")
         String sectionId,
 

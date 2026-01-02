@@ -172,8 +172,8 @@ CREATE TABLE section (
   CONSTRAINT fk_section_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련부 (유아부, 초등부, 성인부 등)';
 
--- 4.2 GROUPS (수련반)
-CREATE TABLE groups (
+-- 4.2 DIVISION (수련반)
+CREATE TABLE division (
   id VARCHAR(13) PRIMARY KEY,
   dojang_id VARCHAR(13) NOT NULL COMMENT '도장 ID',
   section_id VARCHAR(13) COMMENT '수련부 ID (NULL 가능)',
@@ -184,21 +184,21 @@ CREATE TABLE groups (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  CONSTRAINT fk_group_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE,
-  CONSTRAINT fk_group_section_id FOREIGN KEY (section_id) REFERENCES section (id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련반 (그룹)';
+  CONSTRAINT fk_division_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE,
+  CONSTRAINT fk_division_section_id FOREIGN KEY (section_id) REFERENCES section (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련반';
 
 -- 4.3 ENROLLMENT (수련반 등록)
 CREATE TABLE enrollment (
   id VARCHAR(13) PRIMARY KEY,
   student_id VARCHAR(13) NOT NULL COMMENT '원생 ID',
-  group_id VARCHAR(13) NOT NULL COMMENT '수련반(그룹) ID',
+  division_id VARCHAR(13) NOT NULL COMMENT '수련반 ID',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각 (등록 취소)',
-  UNIQUE KEY uk_enrollment_student_group (student_id, group_id),
+  UNIQUE KEY uk_enrollment_student_division (student_id, division_id),
   CONSTRAINT fk_enrollment_student_id FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE CASCADE,
-  CONSTRAINT fk_enrollment_group_id FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE
+  CONSTRAINT fk_enrollment_division_id FOREIGN KEY (division_id) REFERENCES division (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 수련반 등록';
 
 -- ========================================
@@ -375,13 +375,13 @@ CREATE INDEX idx_guardianship_student_id ON guardianship (student_id);
 -- SECTION 테이블 인덱스
 CREATE INDEX idx_section_dojang_id_is_active ON section (dojang_id, is_active);
 
--- CLASSES 테이블 인덱스
-CREATE INDEX idx_class_dojang_id_day_of_week ON classes (dojang_id, day_of_week);
-CREATE INDEX idx_class_section_id ON classes (section_id);
+-- DIVISION 테이블 인덱스
+CREATE INDEX idx_division_dojang_id_day_of_week ON division (dojang_id, day_of_week);
+CREATE INDEX idx_division_section_id ON division (section_id);
 
 -- ENROLLMENT 테이블 인덱스
 CREATE INDEX idx_enrollment_student_id ON enrollment (student_id);
-CREATE INDEX idx_enrollment_class_id ON enrollment (class_id);
+CREATE INDEX idx_enrollment_division_id ON enrollment (division_id);
 
 -- ATTENDANCE 테이블 인덱스
 CREATE INDEX idx_attendance_tenant_id_attendance_date ON attendance (tenant_id, attendance_date);
