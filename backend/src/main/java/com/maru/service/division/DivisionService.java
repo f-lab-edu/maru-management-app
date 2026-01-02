@@ -61,13 +61,11 @@ public class DivisionService {
      * 수련반 목록 조회
      *
      * @param dojangId 도장 ID
-     * @param sectionId 수련부 ID (선택, null이면 전체)
-     * @return 수련반 목록 (section.displayOrder, displayOrder 순)
+     * @param sectionId 수련부 ID
+     * @return 수련반 목록 (displayOrder 순)
      */
     public DivisionListRes getDivisions(String dojangId, String sectionId) {
-        List<Division> divisions = (sectionId == null)
-                ? divisionRepository.findAllWithSectionByDojangId(dojangId)
-                : divisionRepository.findAllWithSectionByDojangIdAndSectionId(dojangId, sectionId);
+        List<Division> divisions = divisionRepository.findAllWithSectionByDojangIdAndSectionId(dojangId, sectionId);
 
         List<DivisionRes> divisionResList = divisions.stream()
                 .map(this::toDivisionRes)

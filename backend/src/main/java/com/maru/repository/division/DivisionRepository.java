@@ -23,15 +23,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         SELECT d FROM Division d
         JOIN FETCH d.section s
         WHERE s.dojang.id = :dojangId
-          AND d.deletedAt IS NULL
-        ORDER BY s.displayOrder, d.displayOrder
-        """)
-    List<Division> findAllWithSectionByDojangId(@Param("dojangId") String dojangId);
-
-    @Query("""
-        SELECT d FROM Division d
-        JOIN FETCH d.section s
-        WHERE s.dojang.id = :dojangId
           AND s.id = :sectionId
           AND d.deletedAt IS NULL
         ORDER BY d.displayOrder

@@ -46,13 +46,13 @@ public class DivisionController {
      * 수련반 목록 조회
      *
      * @param dojangId 도장 ID
-     * @param sectionId 수련부 ID (선택, null이면 전체)
-     * @return 수련반 목록 (section.displayOrder, displayOrder 순)
+     * @param sectionId 수련부 ID
+     * @return 수련반 목록 (displayOrder 순)
      */
     @GetMapping
     public ResponseEntity<DivisionListRes> getDivisions(
             @RequestParam String dojangId,
-            @RequestParam(required = false) String sectionId
+            @RequestParam String sectionId
     ) {
         DivisionListRes response = divisionService.getDivisions(dojangId, sectionId);
         return ResponseEntity.ok(response);
