@@ -3,6 +3,7 @@ package com.maru.controller.payment;
 import com.maru.controller.invoice.dto.PaymentStatisticsRes;
 import com.maru.controller.invoice.dto.StudentPaymentHistoryRes;
 import com.maru.controller.invoice.dto.UnpaidListRes;
+import com.maru.controller.invoice.dto.YearlyStatisticsRes;
 import com.maru.security.CurrentUserId;
 import com.maru.service.invoice.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,23 @@ public class PaymentController {
             @RequestParam int month,
             @CurrentUserId String userId) {
         PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, year, month);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 연간 수납 통계 조회 API
+     *
+     * @param dojangId 도장 ID
+     * @param year 조회 연도
+     * @param userId 현재 인증된 사용자 ID
+     * @return 연간 수납 통계 (월별 데이터 포함)
+     */
+    @GetMapping("/statistics/year")
+    public ResponseEntity<YearlyStatisticsRes> getYearStatistics(
+            @RequestParam String dojangId,
+            @RequestParam int year,
+            @CurrentUserId String userId) {
+        YearlyStatisticsRes response = paymentService.getYearStatistics(dojangId, year);
         return ResponseEntity.ok(response);
     }
 

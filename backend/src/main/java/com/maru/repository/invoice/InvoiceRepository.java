@@ -3,6 +3,7 @@ package com.maru.repository.invoice;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.repository.invoice.projection.InvoiceStatistics;
+import com.maru.repository.invoice.projection.MonthlyInvoiceStatistics;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -118,4 +119,28 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("yearMonth") YearMonth yearMonth);
+
+    @Query("""
+        SELECT
+            i.billingYearMonth AS yearMonth,
+            COALESCE(SUM(i.amount), 0) AS totalAmount,
+            COALESCE(SUM(i.paidAmount), 0) AS totalPaidAmount,
+            COALESCE(SUM(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN i.amount - i.paidAmount ELSE 0 END), 0) AS totalUnpaidAmount,
+            COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) AS paidCount,
+            COUNT(CASE WHEN i.status = 'PARTIAL' THEN 1 END) AS partialCount,
+            COUNT(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN 1 END) AS unpaidCount
+        FROM Invoice i
+        WHERE i.tenantId = :tenantId
+          AND i.dojangId = :dojangId
+          AND i.billingYearMonth >= :startYearMonth
+          AND i.billingYearMonth <= :endYearMonth
+          AND i.status != 'VOID'
+        GROUP BY i.billingYearMonth
+        ORDER BY i.billingYearMonth
+        """)
+    List<MonthlyInvoiceStatistics> getYearStatistics(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("startYearMonth") YearMonth startYearMonth,
+            @Param("endYearMonth") YearMonth endYearMonth);
 }
