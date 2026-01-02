@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -204,7 +205,7 @@ class PaymentServiceTest {
         Student student = createMockStudent("student100", "테스트학생", dojang);
 
         Invoice invoice = Invoice.create(
-                student, 2025, 1,
+                student, YearMonth.of(2025, 1),
                 amount,
                 LocalDate.of(2025, 1, 31),
                 null
@@ -244,7 +245,7 @@ class PaymentServiceTest {
         Student student = createMockStudent("student100", "테스트학생", dojang);
 
         Invoice invoice = Invoice.create(
-                student, 2025, 1,
+                student, YearMonth.of(2025, 1),
                 amount,
                 LocalDate.of(2025, 1, 31),
                 null

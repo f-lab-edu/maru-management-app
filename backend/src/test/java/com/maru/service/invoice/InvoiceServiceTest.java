@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -163,7 +164,7 @@ class InvoiceServiceTest {
         BigDecimal amount = new BigDecimal("100000");
 
         Invoice invoice = Invoice.create(
-                student, 2025, 1,
+                student, YearMonth.of(2025, 1),
                 amount,
                 LocalDate.of(2025, 1, 31),
                 null

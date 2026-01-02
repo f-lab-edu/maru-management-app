@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -40,7 +41,7 @@ class InvoicePaymentScenarioTest {
         void fullPaymentFlow() {
             // Given: 청구서 생성
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     "1월 수강료"
@@ -81,7 +82,7 @@ class InvoicePaymentScenarioTest {
         void partialPaymentFlow() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -120,7 +121,7 @@ class InvoicePaymentScenarioTest {
         void paymentCancellationFlow() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -149,7 +150,7 @@ class InvoicePaymentScenarioTest {
         void partialPaymentCancellationFlow() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -195,7 +196,7 @@ class InvoicePaymentScenarioTest {
         void voidRestoreFlow() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -222,7 +223,7 @@ class InvoicePaymentScenarioTest {
         void issuedInvoiceVoidRestoreFlow() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -248,7 +249,7 @@ class InvoicePaymentScenarioTest {
         void updateDraftInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     "원래 메모"
@@ -271,7 +272,7 @@ class InvoicePaymentScenarioTest {
         void updateOpenInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -298,7 +299,7 @@ class InvoicePaymentScenarioTest {
         void cannotIssueNonDraftInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -315,7 +316,7 @@ class InvoicePaymentScenarioTest {
         void cannotPayDraftInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -331,7 +332,7 @@ class InvoicePaymentScenarioTest {
         void cannotPayVoidInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -348,7 +349,7 @@ class InvoicePaymentScenarioTest {
         void cannotVoidPaidInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -367,7 +368,7 @@ class InvoicePaymentScenarioTest {
         void cannotRestoreNonVoidInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -383,7 +384,7 @@ class InvoicePaymentScenarioTest {
         void cannotUpdatePartialOrPaidInvoice() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -402,7 +403,7 @@ class InvoicePaymentScenarioTest {
         void cannotOverpay() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     MONTHLY_FEE,
                     LocalDate.of(2025, 1, 31),
                     null
@@ -426,7 +427,7 @@ class InvoicePaymentScenarioTest {
         void multiplePaymentMethods() {
             // Given
             Invoice invoice = Invoice.create(
-                    student, 2025, 1,
+                    student, YearMonth.of(2025, 1),
                     new BigDecimal("100000"),
                     LocalDate.of(2025, 1, 31),
                     null
