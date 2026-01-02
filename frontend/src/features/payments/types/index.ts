@@ -21,6 +21,7 @@ export interface PaymentRes {
   method: PaymentMethod;
   status: PaymentStatus;
   paidAt: string;
+  refundedAt: string | null;
 }
 
 export interface InvoiceDetailRes {

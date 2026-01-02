@@ -53,6 +53,11 @@ export function PaymentList({ payments, onCancelPayment, canCancel }: PaymentLis
             <p className="text-xs text-muted-foreground">
               {formatDate(payment.paidAt)}
             </p>
+            {payment.status === 'REFUNDED' && payment.refundedAt && (
+              <p className="text-xs text-destructive">
+                환불: {formatDate(payment.refundedAt)}
+              </p>
+            )}
           </div>
 
           {canCancel && payment.status !== 'REFUNDED' && (

@@ -14,7 +14,8 @@ public record PaymentRes(
         BigDecimal amount,
         PaymentMethod method,
         PaymentStatus status,
-        LocalDateTime paidAt
+        LocalDateTime paidAt,
+        LocalDateTime refundedAt
 ) {
 
     public static PaymentRes from(Payment payment) {
@@ -24,6 +25,7 @@ public record PaymentRes(
                 .method(payment.getMethod())
                 .status(payment.getStatus())
                 .paidAt(payment.getPaidAt())
+                .refundedAt(payment.getRefundedAt())
                 .build();
     }
 }

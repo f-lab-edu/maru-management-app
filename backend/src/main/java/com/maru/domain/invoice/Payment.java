@@ -78,6 +78,9 @@ public class Payment extends BaseTimeEntity {
     }
 
     public void refund() {
+        if (this.status == PaymentStatus.REFUNDED) {
+            return;
+        }
         this.status = PaymentStatus.REFUNDED;
         this.refundedAt = LocalDateTime.now();
     }
