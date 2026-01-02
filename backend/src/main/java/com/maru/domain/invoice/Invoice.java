@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 @Entity
@@ -30,11 +31,8 @@ public class Invoice extends BaseEntity {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @Column(nullable = false)
-    private int billingYear;
-
-    @Column(nullable = false)
-    private int billingMonth;
+    @Column(name = "billing_ym", nullable = false)
+    private YearMonth billingYearMonth;
 
     @Column(length = 13)
     private String issuedBy;
@@ -57,18 +55,17 @@ public class Invoice extends BaseEntity {
     @Column(length = 500)
     private String note;
 
-    private Invoice(Student student, int billingYear, int billingMonth,
+    private Invoice(Student student, YearMonth billingYearMonth,
                     BigDecimal amount, LocalDate dueDate, String note) {
         DomainAssert.notNull(student, InvoiceErrorCode.STUDENT_REQUIRED);
+        DomainAssert.notNull(billingYearMonth, InvoiceErrorCode.BILLING_YEAR_MONTH_REQUIRED);
         DomainAssert.notNull(dueDate, InvoiceErrorCode.DUE_DATE_REQUIRED);
         DomainAssert.notNull(amount, InvoiceErrorCode.AMOUNT_REQUIRED);
-        validateBillingMonth(billingMonth);
 
         this.tenantId = student.getTenantId();
         this.dojangId = student.getDojang().getId();
         this.student = student;
-        this.billingYear = billingYear;
-        this.billingMonth = billingMonth;
+        this.billingYearMonth = billingYearMonth;
         this.issueDate = null;
         this.dueDate = dueDate;
         this.status = InvoiceStatus.DRAFT;
@@ -77,15 +74,9 @@ public class Invoice extends BaseEntity {
         this.note = note;
     }
 
-    public static Invoice create(Student student, int billingYear, int billingMonth,
+    public static Invoice create(Student student, YearMonth billingYearMonth,
                                  BigDecimal amount, LocalDate dueDate, String note) {
-        return new Invoice(student, billingYear, billingMonth, amount, dueDate, note);
-    }
-
-    private void validateBillingMonth(int billingMonth) {
-        if (billingMonth < 1 || billingMonth > 12) {
-            throw new BusinessException(InvoiceErrorCode.INVALID_BILLING_MONTH);
-        }
+        return new Invoice(student, billingYearMonth, amount, dueDate, note);
     }
 
     public void issue(String issuedBy) {

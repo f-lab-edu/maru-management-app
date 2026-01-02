@@ -6,22 +6,17 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 public record PrepaidPaymentReq(
         @NotNull(message = "원생 ID는 필수입니다")
         String studentId,
 
-        @NotNull(message = "시작 연도는 필수입니다")
-        Integer startYear,
+        @NotNull(message = "시작 연월은 필수입니다")
+        YearMonth startYearMonth,
 
-        @NotNull(message = "시작 월은 필수입니다")
-        Integer startMonth,
-
-        @NotNull(message = "종료 연도는 필수입니다")
-        Integer endYear,
-
-        @NotNull(message = "종료 월은 필수입니다")
-        Integer endMonth,
+        @NotNull(message = "종료 연월은 필수입니다")
+        YearMonth endYearMonth,
 
         @NotNull(message = "월 수업료는 필수입니다")
         @Positive(message = "월 수업료는 0보다 커야 합니다")

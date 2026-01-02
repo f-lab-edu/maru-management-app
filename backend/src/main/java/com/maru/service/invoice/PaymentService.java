@@ -138,7 +138,7 @@ public class PaymentService {
                 tenantId, dojangId, startOfMonth, startOfNextMonth);
 
         InvoiceStatistics statistics = invoiceRepository.getStatistics(
-                tenantId, dojangId, year, month);
+                tenantId, dojangId, YearMonth.of(year, month));
 
         return PaymentStatisticsRes.builder()
                 .totalPaidAmount(totalPaidAmount)
@@ -183,8 +183,7 @@ public class PaymentService {
 
         Student student = findStudentAndValidate(request.studentId(), dojangId);
         List<YearMonth> months = calculateMonthRange(
-                request.startYear(), request.startMonth(),
-                request.endYear(), request.endMonth()
+                request.startYearMonth(), request.endYearMonth()
         );
         validateNoDuplicateInvoices(tenantId, dojangId, request.studentId(), months);
 
@@ -285,8 +284,7 @@ public class PaymentService {
                 .remainingAmount(invoice.getRemainingAmount())
                 .dueDate(invoice.getDueDate())
                 .overdueDays(calculateOverdueDays(invoice.getDueDate(), today))
-                .billingYear(invoice.getBillingYear())
-                .billingMonth(invoice.getBillingMonth())
+                .billingYearMonth(invoice.getBillingYearMonth())
                 .build();
     }
 
@@ -338,8 +336,7 @@ public class PaymentService {
         return StudentPaymentHistoryRes.PaymentHistoryItem.builder()
                 .paymentId(payment.getId())
                 .invoiceId(invoice.getId())
-                .billingYear(invoice.getBillingYear())
-                .billingMonth(invoice.getBillingMonth())
+                .billingYearMonth(invoice.getBillingYearMonth())
                 .amount(payment.getAmount())
                 .method(payment.getMethod() != null ? payment.getMethod().name() : null)
                 .status(payment.getStatus() != null ? payment.getStatus().name() : null)
@@ -349,10 +346,9 @@ public class PaymentService {
     }
 
 
-    private List<YearMonth> calculateMonthRange(int startYear, int startMonth, int endYear, int endMonth) {
+    private List<YearMonth> calculateMonthRange(YearMonth start, YearMonth end) {
         List<YearMonth> months = new ArrayList<>();
-        YearMonth current = YearMonth.of(startYear, startMonth);
-        YearMonth end = YearMonth.of(endYear, endMonth);
+        YearMonth current = start;
 
         while (!current.isAfter(end)) {
             months.add(current);
@@ -365,8 +361,8 @@ public class PaymentService {
 
     private void validateNoDuplicateInvoices(String tenantId, String dojangId, String studentId, List<YearMonth> months) {
         for (YearMonth ym : months) {
-            boolean exists = invoiceRepository.existsByBillingYearAndMonth(
-                    tenantId, dojangId, studentId, ym.getYear(), ym.getMonthValue()
+            boolean exists = invoiceRepository.existsByBillingYearMonth(
+                    tenantId, dojangId, studentId, ym
             );
             if (exists) {
                 throw new BusinessException(InvoiceErrorCode.PREPAID_DUPLICATE_INVOICE);
@@ -414,8 +410,7 @@ public class PaymentService {
     ) {
         Invoice invoice = Invoice.create(
                 student,
-                yearMonth.getYear(),
-                yearMonth.getMonthValue(),
+                yearMonth,
                 amount,
                 dueDate,
                 note
