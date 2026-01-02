@@ -15,9 +15,7 @@ public enum InvoiceErrorCode implements BaseErrorCode {
     STUDENT_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_101", "원생 정보는 필수입니다"),
     DUE_DATE_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_102", "납부 마감일은 필수입니다"),
     AMOUNT_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_103", "청구 금액은 필수입니다"),
-
-    // 검증 실패
-    INVALID_BILLING_MONTH(HttpStatus.BAD_REQUEST, "INVOICE_201", "청구 월은 1-12 사이여야 합니다"),
+    BILLING_YEAR_MONTH_REQUIRED(HttpStatus.BAD_REQUEST, "INVOICE_104", "청구 연월은 필수입니다"),
 
     // 비즈니스 규칙 위반
     DUPLICATE_INVOICE(HttpStatus.CONFLICT, "INVOICE_301", "해당 월에 이미 청구서가 존재합니다"),
