@@ -30,16 +30,14 @@ const singleCreateSchema = z.object({
   amount: z.number().positive('금액은 0보다 커야 합니다'),
   dueDate: z.string().min(1, '납부 기한을 선택해주세요'),
   note: z.string().max(500, '비고는 500자 이내여야 합니다').optional(),
-  billingYear: z.number().optional(),
-  billingMonth: z.number().min(1).max(12).optional(),
+  billingYearMonth: z.string().optional(),
 });
 
 const bulkCreateSchema = z.object({
   defaultAmount: z.number().positive('금액은 0보다 커야 합니다'),
   dueDate: z.string().min(1, '납부 기한을 선택해주세요'),
   note: z.string().max(500, '비고는 500자 이내여야 합니다').optional(),
-  billingYear: z.number().optional(),
-  billingMonth: z.number().min(1).max(12).optional(),
+  billingYearMonth: z.string().optional(),
 });
 
 type SingleCreateData = z.infer<typeof singleCreateSchema>;
@@ -73,8 +71,9 @@ export function InvoiceCreateSheet({
     useCreateBulkInvoices(dojangId);
 
   const now = new Date();
-  const defaultBillingYear = now.getFullYear();
-  const defaultBillingMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const defaultBillingYearMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   const defaultDueDate = new Date(now.getFullYear(), now.getMonth() + 1, 10)
     .toISOString()
     .split('T')[0];
@@ -86,8 +85,7 @@ export function InvoiceCreateSheet({
       amount: 100000,
       dueDate: defaultDueDate,
       note: '',
-      billingYear: defaultBillingYear,
-      billingMonth: defaultBillingMonth,
+      billingYearMonth: defaultBillingYearMonth,
     },
   });
 
@@ -97,8 +95,7 @@ export function InvoiceCreateSheet({
       defaultAmount: 100000,
       dueDate: defaultDueDate,
       note: '',
-      billingYear: defaultBillingYear,
-      billingMonth: defaultBillingMonth,
+      billingYearMonth: defaultBillingYearMonth,
     },
   });
 
@@ -150,34 +147,13 @@ export function InvoiceCreateSheet({
               onSubmit={singleForm.handleSubmit(handleSingleSubmit)}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="billingYear">청구 연도</Label>
-                  <Input
-                    type="number"
-                    {...singleForm.register('billingYear', { valueAsNumber: true })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="billingMonth">청구 월</Label>
-                  <Select
-                    value={singleForm.watch('billingMonth')?.toString()}
-                    onValueChange={(v) =>
-                      singleForm.setValue('billingMonth', parseInt(v))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                        <SelectItem key={m} value={m.toString()}>
-                          {m}월
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="billingYearMonth">청구 연월</Label>
+                <Input
+                  type="month"
+                  {...singleForm.register('billingYearMonth')}
+                  placeholder="YYYY-MM"
+                />
               </div>
 
               <div className="space-y-2">
@@ -264,34 +240,13 @@ export function InvoiceCreateSheet({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="billingYear">청구 연도</Label>
-                      <Input
-                        type="number"
-                        {...singleForm.register('billingYear', { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="billingMonth">청구 월</Label>
-                      <Select
-                        value={singleForm.watch('billingMonth')?.toString()}
-                        onValueChange={(v) =>
-                          singleForm.setValue('billingMonth', parseInt(v))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                            <SelectItem key={m} value={m.toString()}>
-                              {m}월
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="billingYearMonth">청구 연월</Label>
+                    <Input
+                      type="month"
+                      {...singleForm.register('billingYearMonth')}
+                      placeholder="YYYY-MM"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -346,34 +301,13 @@ export function InvoiceCreateSheet({
                   onSubmit={bulkForm.handleSubmit(handleBulkSubmit)}
                   className="space-y-4"
                 >
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="billingYear">청구 연도</Label>
-                      <Input
-                        type="number"
-                        {...bulkForm.register('billingYear', { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="billingMonth">청구 월</Label>
-                      <Select
-                        value={bulkForm.watch('billingMonth')?.toString()}
-                        onValueChange={(v) =>
-                          bulkForm.setValue('billingMonth', parseInt(v))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                            <SelectItem key={m} value={m.toString()}>
-                              {m}월
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="billingYearMonth">청구 연월</Label>
+                    <Input
+                      type="month"
+                      {...bulkForm.register('billingYearMonth')}
+                      placeholder="YYYY-MM"
+                    />
                   </div>
 
                   <div className="space-y-2">

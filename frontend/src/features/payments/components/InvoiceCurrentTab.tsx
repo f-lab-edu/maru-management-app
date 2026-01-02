@@ -9,6 +9,7 @@ import { PaymentRecordForm } from './PaymentRecordForm';
 import { PaymentList } from './PaymentList';
 import type { InvoiceDetailRes, InvoiceStatus } from '../types';
 import type { UpdateData } from '../hooks/useInvoiceActions';
+import { formatBillingYearMonth } from '../utils';
 
 interface InvoiceCurrentTabProps {
   invoice: InvoiceDetailRes;
@@ -193,7 +194,7 @@ export function InvoiceCurrentTab({
             <div>
               <span className="text-muted-foreground">청구 연월</span>
               <p className="font-medium">
-                {invoice.billingYear}년 {invoice.billingMonth}월
+                {formatBillingYearMonth(invoice.billingYearMonth)}
               </p>
             </div>
             {invoice.issueDate && (

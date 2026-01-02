@@ -26,22 +26,18 @@ const currentYear = currentDate.getFullYear();
 const currentMonth = currentDate.getMonth() + 1;
 
 const prepaidSchema = z.object({
-  startYear: z.number().min(currentYear - 1).max(currentYear + 5),
-  startMonth: z.number().min(1).max(12),
-  endYear: z.number().min(currentYear - 1).max(currentYear + 5),
-  endMonth: z.number().min(1).max(12),
+  startYearMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM 형식이어야 합니다'),
+  endYearMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM 형식이어야 합니다'),
   monthlyAmount: z.number().positive('월 수강료를 입력해주세요'),
   totalAmount: z.number().positive('총 결제 금액을 입력해주세요'),
   paymentMethod: z.enum(['CASH', 'CARD', 'TRANSFER', 'PG', 'OTHER'] as const),
   dueDate: z.string().optional(),
   note: z.string().max(500, '비고는 500자 이내여야 합니다').optional(),
 }).refine((data) => {
-  const start = data.startYear * 12 + data.startMonth;
-  const end = data.endYear * 12 + data.endMonth;
-  return end >= start;
+  return data.endYearMonth >= data.startYearMonth;
 }, {
   message: '종료 월이 시작 월보다 이전일 수 없습니다',
-  path: ['endMonth'],
+  path: ['endYearMonth'],
 });
 
 type PrepaidFormData = z.infer<typeof prepaidSchema>;
@@ -52,8 +48,21 @@ interface PrepaidPaymentFormProps {
   onSuccess: () => void;
 }
 
-const YEARS = Array.from({ length: 7 }, (_, i) => currentYear - 1 + i);
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const generateYearMonthOptions = () => {
+  const options: string[] = [];
+  const startYear = currentYear - 1;
+  const endYear = currentYear + 5;
+
+  for (let year = startYear; year <= endYear; year++) {
+    for (let month = 1; month <= 12; month++) {
+      options.push(`${year}-${String(month).padStart(2, '0')}`);
+    }
+  }
+
+  return options;
+};
+
+const YEAR_MONTH_OPTIONS = generateYearMonthOptions();
 
 export function PrepaidPaymentForm({
   studentId,
@@ -68,10 +77,8 @@ export function PrepaidPaymentForm({
   const form = useForm<PrepaidFormData>({
     resolver: zodResolver(prepaidSchema),
     defaultValues: {
-      startYear: currentYear,
-      startMonth: currentMonth,
-      endYear: currentYear,
-      endMonth: Math.min(currentMonth + 2, 12),
+      startYearMonth: `${currentYear}-${String(currentMonth).padStart(2, '0')}`,
+      endYearMonth: `${currentYear}-${String(Math.min(currentMonth + 2, 12)).padStart(2, '0')}`,
       monthlyAmount: 100000,
       totalAmount: 0,
       paymentMethod: 'CARD',
@@ -83,8 +90,10 @@ export function PrepaidPaymentForm({
   const watchedValues = form.watch();
 
   const calculatedInfo = useMemo(() => {
-    const start = watchedValues.startYear * 12 + watchedValues.startMonth;
-    const end = watchedValues.endYear * 12 + watchedValues.endMonth;
+    const [startYear, startMonth] = watchedValues.startYearMonth.split('-').map(Number);
+    const [endYear, endMonth] = watchedValues.endYearMonth.split('-').map(Number);
+    const start = startYear * 12 + startMonth;
+    const end = endYear * 12 + endMonth;
     const monthCount = Math.max(1, end - start + 1);
     const originalTotal = monthCount * watchedValues.monthlyAmount;
     const discountAmount = originalTotal - (watchedValues.totalAmount || 0);
@@ -97,12 +106,14 @@ export function PrepaidPaymentForm({
       originalTotal,
       discountAmount,
       discountPercent,
+      startYear,
+      startMonth,
+      endYear,
+      endMonth,
     };
   }, [
-    watchedValues.startYear,
-    watchedValues.startMonth,
-    watchedValues.endYear,
-    watchedValues.endMonth,
+    watchedValues.startYearMonth,
+    watchedValues.endYearMonth,
     watchedValues.monthlyAmount,
     watchedValues.totalAmount,
   ]);
@@ -115,10 +126,8 @@ export function PrepaidPaymentForm({
     try {
       const result = await processPrepaidPayment({
         studentId,
-        startYear: data.startYear,
-        startMonth: data.startMonth,
-        endYear: data.endYear,
-        endMonth: data.endMonth,
+        startYearMonth: data.startYearMonth,
+        endYearMonth: data.endYearMonth,
         monthlyAmount: data.monthlyAmount,
         totalAmount: data.totalAmount,
         paymentMethod: data.paymentMethod as PaymentMethod,
@@ -145,77 +154,49 @@ export function PrepaidPaymentForm({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">시작</Label>
-            <div className="flex gap-2">
-              <Select
-                value={String(watchedValues.startYear)}
-                onValueChange={(v) => form.setValue('startYear', Number(v))}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((y) => (
-                    <SelectItem key={y} value={String(y)}>
-                      {y}년
+            <Select
+              value={watchedValues.startYearMonth}
+              onValueChange={(v) => form.setValue('startYearMonth', v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_MONTH_OPTIONS.map((ym) => {
+                  const [year, month] = ym.split('-');
+                  return (
+                    <SelectItem key={ym} value={ym}>
+                      {year}년 {parseInt(month)}월
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={String(watchedValues.startMonth)}
-                onValueChange={(v) => form.setValue('startMonth', Number(v))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m} value={String(m)}>
-                      {m}월
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">종료</Label>
-            <div className="flex gap-2">
-              <Select
-                value={String(watchedValues.endYear)}
-                onValueChange={(v) => form.setValue('endYear', Number(v))}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((y) => (
-                    <SelectItem key={y} value={String(y)}>
-                      {y}년
+            <Select
+              value={watchedValues.endYearMonth}
+              onValueChange={(v) => form.setValue('endYearMonth', v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_MONTH_OPTIONS.map((ym) => {
+                  const [year, month] = ym.split('-');
+                  return (
+                    <SelectItem key={ym} value={ym}>
+                      {year}년 {parseInt(month)}월
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={String(watchedValues.endMonth)}
-                onValueChange={(v) => form.setValue('endMonth', Number(v))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m} value={String(m)}>
-                      {m}월
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {form.formState.errors.endMonth && (
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.endYearMonth && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.endMonth.message}
+                {form.formState.errors.endYearMonth.message}
               </p>
             )}
           </div>
@@ -226,8 +207,8 @@ export function PrepaidPaymentForm({
             {calculatedInfo.monthCount}개월
           </span>
           <p className="text-sm text-muted-foreground mt-1">
-            {watchedValues.startYear}년 {watchedValues.startMonth}월 ~{' '}
-            {watchedValues.endYear}년 {watchedValues.endMonth}월
+            {calculatedInfo.startYear}년 {calculatedInfo.startMonth}월 ~{' '}
+            {calculatedInfo.endYear}년 {calculatedInfo.endMonth}월
           </p>
         </div>
 

@@ -11,8 +11,7 @@ export interface InvoiceListRes {
   status: InvoiceStatus;
   dueDate: string;
   issueDate: string | null;
-  billingYear: number;
-  billingMonth: number;
+  billingYearMonth: string;
 }
 
 export interface PaymentRes {
@@ -35,8 +34,7 @@ export interface InvoiceDetailRes {
   dueDate: string;
   issueDate: string | null;
   note: string | null;
-  billingYear: number;
-  billingMonth: number;
+  billingYearMonth: string;
   payments: PaymentRes[];
 }
 
@@ -45,8 +43,7 @@ export interface InvoiceCreateReq {
   amount: number;
   dueDate: string;
   note?: string;
-  billingYear?: number;
-  billingMonth?: number;
+  billingYearMonth?: string;
 }
 
 export interface InvoiceBulkCreateReq {
@@ -54,8 +51,7 @@ export interface InvoiceBulkCreateReq {
   defaultAmount: number;
   dueDate: string;
   note?: string;
-  billingYear?: number;
-  billingMonth?: number;
+  billingYearMonth?: string;
 }
 
 export interface BulkCreateRes {
@@ -112,8 +108,7 @@ export interface UnpaidListRes {
   remainingAmount: number;
   dueDate: string;
   overdueDays: number;
-  billingYear: number;
-  billingMonth: number;
+  billingYearMonth: string;
 }
 
 export interface PaymentStatisticsRes {
@@ -134,8 +129,7 @@ export interface StudentPaymentHistoryRes {
 
 export interface StudentInvoiceSummary {
   id: string;
-  billingYear: number;
-  billingMonth: number;
+  billingYearMonth: string;
   amount: number;
   paidAmount: number;
   remainingAmount: number;
@@ -146,8 +140,7 @@ export interface StudentInvoiceSummary {
 export interface PaymentHistoryItem {
   paymentId: string;
   invoiceId: string;
-  billingYear: number;
-  billingMonth: number;
+  billingYearMonth: string;
   amount: number;
   method: string;
   status: string;
@@ -181,10 +174,8 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
 
 export interface PrepaidPaymentReq {
   studentId: string;
-  startYear: number;
-  startMonth: number;
-  endYear: number;
-  endMonth: number;
+  startYearMonth: string;
+  endYearMonth: string;
   monthlyAmount: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;

@@ -17,6 +17,7 @@ import type {
   StudentPaymentHistoryRes,
   PrepaidPaymentReq,
   PrepaidPaymentRes,
+  YearlyStatistics,
 } from '@/features/payments/types';
 
 const INVOICE_BASE = '/invoices';
@@ -158,6 +159,16 @@ export const invoiceApi = {
   ): Promise<PaymentStatisticsRes> => {
     const response = await apiClient.get<PaymentStatisticsRes>(`${PAYMENT_BASE}/statistics`, {
       params: { dojangId, year, month },
+    });
+    return response.data;
+  },
+
+  getYearStatistics: async (
+    dojangId: string,
+    year: number
+  ): Promise<YearlyStatistics> => {
+    const response = await apiClient.get<YearlyStatistics>(`${PAYMENT_BASE}/statistics/year`, {
+      params: { dojangId, year },
     });
     return response.data;
   },

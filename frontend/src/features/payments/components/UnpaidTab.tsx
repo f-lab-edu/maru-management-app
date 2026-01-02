@@ -23,6 +23,7 @@ import { useUnpaidList } from '../hooks';
 import { InvoiceDetailSheet } from './InvoiceDetailSheet';
 import { PAYMENT_COLORS } from '../constants/chartColors';
 import type { UnpaidListRes } from '../types';
+import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
 
 const SEVERITY_CONFIG = {
   critical: { label: '심각', color: '#dc2626', bg: '#fee2e2', days: '7일+' },
@@ -44,20 +45,26 @@ export function UnpaidTab() {
 
   const yearOptions = useMemo(() => {
     const currentYear = now.getFullYear();
-    return Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
+    const years: number[] = [];
+    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
+      years.push(year);
+    }
+    return years;
   }, []);
 
-  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
+  const monthOptions = useMemo(() => {
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, []);
 
   const filteredList = useMemo(() => {
     let result = unpaidList;
 
     if (yearFilter !== 'ALL') {
-      result = result.filter((item) => item.billingYear === yearFilter);
+      result = result.filter((item) => extractYear(item.billingYearMonth) === yearFilter);
     }
 
     if (monthFilter !== 'ALL') {
-      result = result.filter((item) => item.billingMonth === monthFilter);
+      result = result.filter((item) => extractMonth(item.billingYearMonth) === monthFilter);
     }
 
     if (searchQuery) {
@@ -193,16 +200,16 @@ export function UnpaidTab() {
       <div className="flex items-center gap-3 shrink-0">
         <Select
           value={yearFilter.toString()}
-          onValueChange={(v) => setYearFilter(v === 'ALL' ? 'ALL' : parseInt(v))}
+          onValueChange={(v) => setYearFilter(v === 'ALL' ? 'ALL' : parseInt(v, 10))}
         >
-          <SelectTrigger className="w-[100px]">
+          <SelectTrigger className="w-[110px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">전체 연도</SelectItem>
-            {yearOptions.map((y) => (
-              <SelectItem key={y} value={y.toString()}>
-                {y}년
+            <SelectItem value="ALL">전체</SelectItem>
+            {yearOptions.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}년
               </SelectItem>
             ))}
           </SelectContent>
@@ -210,16 +217,16 @@ export function UnpaidTab() {
 
         <Select
           value={monthFilter.toString()}
-          onValueChange={(v) => setMonthFilter(v === 'ALL' ? 'ALL' : parseInt(v))}
+          onValueChange={(v) => setMonthFilter(v === 'ALL' ? 'ALL' : parseInt(v, 10))}
         >
-          <SelectTrigger className="w-[90px]">
+          <SelectTrigger className="w-[100px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">전체 월</SelectItem>
-            {monthOptions.map((m) => (
-              <SelectItem key={m} value={m.toString()}>
-                {m}월
+            <SelectItem value="ALL">전체</SelectItem>
+            {monthOptions.map((month) => (
+              <SelectItem key={month} value={month.toString()}>
+                {month}월
               </SelectItem>
             ))}
           </SelectContent>
@@ -272,7 +279,7 @@ export function UnpaidTab() {
                 >
                   <TableCell className="font-medium">{item.studentName}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {item.billingYear}년 {item.billingMonth}월
+                    {formatBillingYearMonth(item.billingYearMonth)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {item.guardianName || '-'}

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useStudentPaymentHistory } from '@/features/payments/hooks';
 import { InvoiceCreateSheet } from '@/features/payments/components';
 import type { InvoiceStatus, StudentInvoiceSummary } from '@/features/payments/types';
+import { formatBillingYearMonth } from '@/features/payments/utils';
 
 interface PaymentHistoryTabProps {
   studentId: string;
@@ -110,7 +111,7 @@ export function PaymentHistoryTab({ studentId }: PaymentHistoryTabProps) {
                   />
                   <div>
                     <p className="font-medium">
-                      {invoice.billingYear}년 {invoice.billingMonth}월
+                      {formatBillingYearMonth(invoice.billingYearMonth)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {formatAmount(invoice.amount)}

@@ -28,6 +28,7 @@ import { InvoiceBulkUpdateSheet } from './InvoiceBulkUpdateSheet';
 import { PAYMENT_COLORS } from '../constants/chartColors';
 import { useAlert } from '@/hooks';
 import type { InvoiceStatus, InvoiceListRes } from '../types';
+import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
 
 const getStatusBorderColor = (status: InvoiceStatus) => {
   switch (status) {
@@ -78,18 +79,28 @@ export function InvoiceTab() {
 
   const { mutateAsync: bulkIssue, isPending: isIssuing } = useBulkIssueInvoices(dojangId);
 
-  const yearOptions = Array.from({ length: 3 }, (_, i) => now.getFullYear() - 1 + i);
-  const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
+  const yearOptions = useMemo(() => {
+    const currentYear = now.getFullYear();
+    const years: number[] = [];
+    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
+      years.push(year);
+    }
+    return years;
+  }, []);
+
+  const monthOptions = useMemo(() => {
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, []);
 
   const filteredInvoices = useMemo(() => {
     let result = invoices;
 
     if (yearFilter !== 'ALL') {
-      result = result.filter((inv) => inv.billingYear === yearFilter);
+      result = result.filter((inv) => extractYear(inv.billingYearMonth) === yearFilter);
     }
 
     if (monthFilter !== 'ALL') {
-      result = result.filter((inv) => inv.billingMonth === monthFilter);
+      result = result.filter((inv) => extractMonth(inv.billingYearMonth) === monthFilter);
     }
 
     if (searchQuery) {
@@ -154,12 +165,12 @@ export function InvoiceTab() {
     }
   };
 
-  const periodLabel =
-    yearFilter !== 'ALL' && monthFilter !== 'ALL'
-      ? `${yearFilter}년 ${monthFilter}월`
-      : yearFilter !== 'ALL'
-        ? `${yearFilter}년`
-        : '전체 기간';
+  const periodLabel = useMemo(() => {
+    if (yearFilter === 'ALL' && monthFilter === 'ALL') return '전체 기간';
+    if (yearFilter !== 'ALL' && monthFilter === 'ALL') return `${yearFilter}년`;
+    if (yearFilter === 'ALL' && monthFilter !== 'ALL') return `${monthFilter}월`;
+    return `${yearFilter}년 ${monthFilter}월`;
+  }, [yearFilter, monthFilter]);
 
   return (
     <div className="flex flex-col gap-4 flex-1 min-h-0">
@@ -227,16 +238,16 @@ export function InvoiceTab() {
         <div className="flex items-center gap-3">
           <Select
             value={yearFilter.toString()}
-            onValueChange={(v) => setYearFilter(v === 'ALL' ? 'ALL' : parseInt(v))}
+            onValueChange={(v) => setYearFilter(v === 'ALL' ? 'ALL' : parseInt(v, 10))}
           >
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[110px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">전체 연도</SelectItem>
-              {yearOptions.map((y) => (
-                <SelectItem key={y} value={y.toString()}>
-                  {y}년
+              <SelectItem value="ALL">전체</SelectItem>
+              {yearOptions.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}년
                 </SelectItem>
               ))}
             </SelectContent>
@@ -244,16 +255,16 @@ export function InvoiceTab() {
 
           <Select
             value={monthFilter.toString()}
-            onValueChange={(v) => setMonthFilter(v === 'ALL' ? 'ALL' : parseInt(v))}
+            onValueChange={(v) => setMonthFilter(v === 'ALL' ? 'ALL' : parseInt(v, 10))}
           >
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">전체 월</SelectItem>
-              {monthOptions.map((m) => (
-                <SelectItem key={m} value={m.toString()}>
-                  {m}월
+              <SelectItem value="ALL">전체</SelectItem>
+              {monthOptions.map((month) => (
+                <SelectItem key={month} value={month.toString()}>
+                  {month}월
                 </SelectItem>
               ))}
             </SelectContent>
@@ -396,7 +407,7 @@ export function InvoiceTab() {
                       {invoice.studentName}
                     </TableCell>
                     <TableCell>
-                      {invoice.billingYear}년 {invoice.billingMonth}월
+                      {formatBillingYearMonth(invoice.billingYearMonth)}
                     </TableCell>
                     <TableCell className="text-right">₩{formatAmount(invoice.amount)}</TableCell>
                     <TableCell className="text-right text-green-600">

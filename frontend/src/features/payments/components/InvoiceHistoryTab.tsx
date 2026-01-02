@@ -7,6 +7,7 @@ import { cn } from '@/shared/utils';
 import { Calendar, Wallet, CalendarPlus } from 'lucide-react';
 import type { PaymentHistoryItem, StudentPaymentHistoryRes } from '../types';
 import { PAYMENT_METHOD_LABEL } from '../types';
+import { formatBillingYearMonth, extractYear } from '../utils';
 
 interface InvoiceHistoryTabProps {
   paymentHistory: StudentPaymentHistoryRes | undefined;
@@ -29,11 +30,12 @@ export function InvoiceHistoryTab({
 
     payments.forEach((p: PaymentHistoryItem) => {
       if (p.status === 'REFUNDED') return;
-      if (!grouped[p.billingYear]) {
-        grouped[p.billingYear] = { total: 0, count: 0 };
+      const year = extractYear(p.billingYearMonth);
+      if (!grouped[year]) {
+        grouped[year] = { total: 0, count: 0 };
       }
-      grouped[p.billingYear].total += p.amount;
-      grouped[p.billingYear].count += 1;
+      grouped[year].total += p.amount;
+      grouped[year].count += 1;
     });
 
     return Object.entries(grouped)
@@ -46,7 +48,7 @@ export function InvoiceHistoryTab({
     const grouped: Record<string, PaymentHistoryItem[]> = {};
 
     payments.forEach((p: PaymentHistoryItem) => {
-      const key = `${p.billingYear}-${String(p.billingMonth).padStart(2, '0')}`;
+      const key = p.billingYearMonth;
       if (!grouped[key]) {
         grouped[key] = [];
       }
@@ -55,8 +57,7 @@ export function InvoiceHistoryTab({
 
     return Object.entries(grouped)
       .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, items]) => {
-        const [year, month] = key.split('-').map(Number);
+      .map(([yearMonth, items]) => {
         const total = items
           .filter((p) => p.status !== 'REFUNDED')
           .reduce((sum, p) => sum + p.amount, 0);
@@ -64,8 +65,7 @@ export function InvoiceHistoryTab({
           .filter((p) => p.status === 'REFUNDED')
           .reduce((sum, p) => sum + p.amount, 0);
         return {
-          year,
-          month,
+          yearMonth,
           payments: items.sort((a, b) => {
             const dateA = a.refundedAt ? new Date(a.refundedAt) : new Date(a.paidAt);
             const dateB = b.refundedAt ? new Date(b.refundedAt) : new Date(b.paidAt);
@@ -162,10 +162,10 @@ export function InvoiceHistoryTab({
         ) : (
           <div className="space-y-4">
             {paymentsByMonth.map((monthData) => (
-              <div key={`${monthData.year}-${monthData.month}`} className="space-y-2">
+              <div key={monthData.yearMonth} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">
-                    {monthData.year}년 {monthData.month}월
+                    {formatBillingYearMonth(monthData.yearMonth)}
                   </span>
                   <span className="text-emerald-600 font-medium text-sm">
                     ₩{formatAmount(monthData.total)}

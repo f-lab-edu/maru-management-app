@@ -1,4 +1,4 @@
-import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceApi } from '@/services/invoiceApi';
 import type {
   InvoiceStatus,
@@ -249,40 +249,11 @@ export function useStudentPaymentHistory(dojangId: string | null, studentId: str
 }
 
 export function useYearlyStatistics(dojangId: string | null, year: number) {
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-
-  const queries = useQueries({
-    queries: months.map((month) => ({
-      queryKey: paymentKeys.statistics(dojangId!, year, month),
-      queryFn: () => invoiceApi.getPaymentStatistics(dojangId!, year, month),
-      enabled: !!dojangId && year > 0,
-    })),
+  return useQuery<YearlyStatistics, Error>({
+    queryKey: [...paymentKeys.all, 'yearStatistics', dojangId, year] as const,
+    queryFn: () => invoiceApi.getYearStatistics(dojangId!, year),
+    enabled: !!dojangId && year > 0,
   });
-
-  const isLoading = queries.some((q) => q.isLoading);
-  const isError = queries.some((q) => q.isError);
-
-  const data: YearlyStatistics | undefined = !isLoading && !isError
-    ? {
-        year,
-        totalPaidAmount: queries.reduce((sum, q) => sum + (q.data?.totalPaidAmount ?? 0), 0),
-        totalUnpaidAmount: queries.reduce((sum, q) => sum + (q.data?.totalUnpaidAmount ?? 0), 0),
-        paidInvoiceCount: queries.reduce((sum, q) => sum + (q.data?.paidInvoiceCount ?? 0), 0),
-        unpaidInvoiceCount: queries.reduce((sum, q) => sum + (q.data?.unpaidInvoiceCount ?? 0), 0),
-        partialInvoiceCount: queries.reduce((sum, q) => sum + (q.data?.partialInvoiceCount ?? 0), 0),
-        monthlyData: months.map((month, i) => ({
-          month,
-          totalAmount: (queries[i].data?.totalPaidAmount ?? 0) + (queries[i].data?.totalUnpaidAmount ?? 0),
-          paidAmount: queries[i].data?.totalPaidAmount ?? 0,
-          unpaidAmount: queries[i].data?.totalUnpaidAmount ?? 0,
-          paidCount: queries[i].data?.paidInvoiceCount ?? 0,
-          unpaidCount: queries[i].data?.unpaidInvoiceCount ?? 0,
-          partialCount: queries[i].data?.partialInvoiceCount ?? 0,
-        })),
-      }
-    : undefined;
-
-  return { data, isLoading, isError };
 }
 
 export { useInvoiceActions } from './useInvoiceActions';
