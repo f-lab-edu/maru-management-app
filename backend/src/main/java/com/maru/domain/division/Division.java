@@ -5,10 +5,10 @@ import com.maru.domain.common.SoftDeletableEntity;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
 import com.maru.domain.tenant.Dojang;
+import com.maru.common.converter.ScheduleDaysConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "division")
@@ -34,9 +35,9 @@ public class Division extends SoftDeletableEntity {
     @JoinColumn(name = "section_id")
     private Section section;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week")
-    private DayOfWeek dayOfWeek;
+    @Convert(converter = ScheduleDaysConverter.class)
+    @Column(name = "schedule_days", columnDefinition = "TINYINT")
+    private Set<DayOfWeek> scheduleDays;
 
     @Column(name = "start_time")
     private LocalTime startTime;
@@ -72,8 +73,8 @@ public class Division extends SoftDeletableEntity {
         this.displayOrder = displayOrder;
     }
 
-    public void updateSchedule(DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
-        this.dayOfWeek = dayOfWeek;
+    public void updateSchedule(Set<DayOfWeek> scheduleDays, LocalTime startTime, LocalTime endTime) {
+        this.scheduleDays = scheduleDays;
         this.startTime = startTime;
         this.endTime = endTime;
     }
