@@ -64,7 +64,7 @@ public class PaymentController {
      * @param userId 현재 인증된 사용자 ID
      * @return 연간 수납 통계 (월별 데이터 포함)
      */
-    @GetMapping("/statistics/year")
+    @GetMapping("/statistics/yearly")
     public ResponseEntity<YearlyStatisticsRes> getYearStatistics(
             @RequestParam String dojangId,
             @RequestParam int year,

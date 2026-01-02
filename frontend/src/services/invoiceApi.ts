@@ -167,7 +167,7 @@ export const invoiceApi = {
     dojangId: string,
     year: number
   ): Promise<YearlyStatistics> => {
-    const response = await apiClient.get<YearlyStatistics>(`${PAYMENT_BASE}/statistics/year`, {
+    const response = await apiClient.get<YearlyStatistics>(`${PAYMENT_BASE}/statistics/yearly`, {
       params: { dojangId, year },
     });
     return response.data;
