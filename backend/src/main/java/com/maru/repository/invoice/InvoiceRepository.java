@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,28 +60,24 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.student.id = :studentId
-          AND i.billingYear = :year
-          AND i.billingMonth = :month
+          AND i.billingYearMonth = :yearMonth
         """)
-    boolean existsByBillingYearAndMonth(
+    boolean existsByBillingYearMonth(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("studentId") String studentId,
-            @Param("year") int year,
-            @Param("month") int month);
+            @Param("yearMonth") YearMonth yearMonth);
 
     @Query("""
         SELECT i.student.id FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.billingYear = :year
-          AND i.billingMonth = :month
+          AND i.billingYearMonth = :yearMonth
         """)
-    List<String> findStudentIdsWithInvoiceByBillingYearAndMonth(
+    List<String> findStudentIdsWithInvoiceByBillingYearMonth(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
-            @Param("year") int year,
-            @Param("month") int month);
+            @Param("yearMonth") YearMonth yearMonth);
 
     @Query("""
         SELECT i FROM Invoice i
@@ -114,13 +111,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.billingYear = :year
-          AND i.billingMonth = :month
+          AND i.billingYearMonth = :yearMonth
           AND i.status != 'VOID'
         """)
     InvoiceStatistics getStatistics(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
-            @Param("year") int year,
-            @Param("month") int month);
+            @Param("yearMonth") YearMonth yearMonth);
 }
