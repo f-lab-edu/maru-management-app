@@ -3,15 +3,14 @@ package com.maru.controller.payment;
 import com.maru.controller.invoice.dto.PaymentStatisticsRes;
 import com.maru.controller.invoice.dto.StudentPaymentHistoryRes;
 import com.maru.controller.invoice.dto.UnpaidListRes;
+import com.maru.controller.invoice.dto.YearlyStatisticsRes;
 import com.maru.security.CurrentUserId;
 import com.maru.service.invoice.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -53,6 +52,24 @@ public class PaymentController {
             @RequestParam int month,
             @CurrentUserId String userId) {
         PaymentStatisticsRes response = paymentService.getPaymentStatistics(dojangId, year, month);
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * 연간 수납 통계 조회 API (12개월 통계를 단일 쿼리로 조회)
+     *
+     * @param dojangId 도장 ID
+     * @param year 조회 연도
+     * @param userId 현재 인증된 사용자 ID
+     * @return 연간 수납 통계 (월별 데이터 포함)
+     */
+    @GetMapping("/statistics/year")
+    public ResponseEntity<YearlyStatisticsRes> getYearStatistics(
+            @RequestParam String dojangId,
+            @RequestParam int year,
+            @CurrentUserId String userId) {
+        YearlyStatisticsRes response = paymentService.getYearStatistics(dojangId, year);
         return ResponseEntity.ok(response);
     }
 
