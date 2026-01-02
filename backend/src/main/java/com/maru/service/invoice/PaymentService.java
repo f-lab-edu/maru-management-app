@@ -17,6 +17,7 @@ import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.invoice.projection.InvoiceStatistics;
+import com.maru.repository.invoice.projection.MonthlyInvoiceStatistics;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
@@ -138,7 +139,7 @@ public class PaymentService {
                 tenantId, dojangId, startOfMonth, startOfNextMonth);
 
         InvoiceStatistics statistics = invoiceRepository.getStatistics(
-                tenantId, dojangId, year, month);
+                tenantId, dojangId, YearMonth.of(year, month));
 
         return PaymentStatisticsRes.builder()
                 .totalPaidAmount(totalPaidAmount)
@@ -147,6 +148,75 @@ public class PaymentService {
                 .unpaidInvoiceCount((int) statistics.getUnpaidCount())
                 .partialInvoiceCount((int) statistics.getPartialCount())
                 .build();
+    }
+
+    /**
+     * 연간 수납 통계 조회
+     *
+     * @param dojangId 도장 ID
+     * @param year 조회 연도
+     * @return 연간 통계 (월별 데이터 포함)
+     */
+    @Transactional(readOnly = true)
+    public YearlyStatisticsRes getYearStatistics(String dojangId, int year) {
+        String tenantId = TenantContextHolder.getTenantId();
+        validateDojangAccess(dojangId, tenantId);
+
+        YearMonth startYearMonth = YearMonth.of(year, 1);
+        YearMonth endYearMonth = YearMonth.of(year, 12);
+
+        List<MonthlyInvoiceStatistics> queryResult = invoiceRepository.getYearStatistics(
+                tenantId, dojangId, startYearMonth, endYearMonth);
+
+        List<MonthlyStatisticsData> monthlyData = buildMonthlyDataWithZeroFilling(year, queryResult);
+
+        BigDecimal totalPaidAmount = monthlyData.stream()
+                .map(MonthlyStatisticsData::paidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalUnpaidAmount = monthlyData.stream()
+                .map(MonthlyStatisticsData::unpaidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int paidCount = monthlyData.stream().mapToInt(MonthlyStatisticsData::paidCount).sum();
+        int unpaidCount = monthlyData.stream().mapToInt(MonthlyStatisticsData::unpaidCount).sum();
+        int partialCount = monthlyData.stream().mapToInt(MonthlyStatisticsData::partialCount).sum();
+
+        return YearlyStatisticsRes.builder()
+                .year(year)
+                .totalPaidAmount(totalPaidAmount)
+                .totalUnpaidAmount(totalUnpaidAmount)
+                .paidInvoiceCount(paidCount)
+                .unpaidInvoiceCount(unpaidCount)
+                .partialInvoiceCount(partialCount)
+                .monthlyData(monthlyData)
+                .build();
+    }
+
+    private List<MonthlyStatisticsData> buildMonthlyDataWithZeroFilling(
+            int year, List<MonthlyInvoiceStatistics> queryResult) {
+        Map<Integer, MonthlyInvoiceStatistics> resultMap = queryResult.stream()
+                .collect(Collectors.toMap(
+                        stat -> stat.getYearMonth().getMonthValue(),
+                        stat -> stat
+                ));
+
+        List<MonthlyStatisticsData> monthlyData = new ArrayList<>();
+        for (int month = 1; month <= 12; month++) {
+            MonthlyInvoiceStatistics stat = resultMap.get(month);
+            if (stat != null) {
+                monthlyData.add(new MonthlyStatisticsData(
+                        month,
+                        stat.getTotalAmount(),
+                        stat.getTotalPaidAmount(),
+                        stat.getTotalUnpaidAmount(),
+                        stat.getPaidCount(),
+                        stat.getUnpaidCount(),
+                        stat.getPartialCount()
+                ));
+            } else {
+                monthlyData.add(MonthlyStatisticsData.zero(month));
+            }
+        }
+        return monthlyData;
     }
 
     /**
