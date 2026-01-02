@@ -6,6 +6,7 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 @Builder
 public record InvoiceListRes(
@@ -17,8 +18,7 @@ public record InvoiceListRes(
         InvoiceStatus status,
         LocalDate dueDate,
         LocalDate issueDate,
-        int billingYear,
-        int billingMonth
+        YearMonth billingYearMonth
 ) {
 
     public static InvoiceListRes from(Invoice invoice) {
@@ -31,8 +31,7 @@ public record InvoiceListRes(
                 .status(invoice.getStatus())
                 .dueDate(invoice.getDueDate())
                 .issueDate(invoice.getIssueDate())
-                .billingYear(invoice.getBillingYear())
-                .billingMonth(invoice.getBillingMonth())
+                .billingYearMonth(invoice.getBillingYearMonth())
                 .build();
     }
 }
