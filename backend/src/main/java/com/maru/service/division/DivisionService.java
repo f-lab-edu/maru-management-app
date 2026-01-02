@@ -48,8 +48,8 @@ public class DivisionService {
         int nextDisplayOrder = divisionRepository.findMaxDisplayOrderBySectionId(request.sectionId()) + 1;
         Division division = Division.create(dojang, section, request.name(), nextDisplayOrder);
 
-        if (request.dayOfWeek() != null) {
-            division.updateSchedule(request.dayOfWeek(), request.startTime(), request.endTime());
+        if (request.scheduleDays() != null && !request.scheduleDays().isEmpty()) {
+            division.updateSchedule(request.scheduleDays(), request.startTime(), request.endTime());
         }
 
         divisionRepository.save(division);
@@ -103,7 +103,7 @@ public class DivisionService {
         validateDuplicateNameExcludingSelf(division.getSection().getId(), request.name(), divisionId);
 
         division.updateName(request.name());
-        division.updateSchedule(request.dayOfWeek(), request.startTime(), request.endTime());
+        division.updateSchedule(request.scheduleDays(), request.startTime(), request.endTime());
 
         return toDivisionRes(division);
     }
@@ -155,7 +155,7 @@ public class DivisionService {
                 .sectionName(division.getSection().getName())
                 .name(division.getName())
                 .displayOrder(division.getDisplayOrder())
-                .dayOfWeek(division.getDayOfWeek())
+                .scheduleDays(division.getScheduleDays())
                 .startTime(division.getStartTime())
                 .endTime(division.getEndTime())
                 .studentCount(0)
@@ -169,7 +169,7 @@ public class DivisionService {
                 .sectionName(division.getSection().getName())
                 .name(division.getName())
                 .displayOrder(division.getDisplayOrder())
-                .dayOfWeek(division.getDayOfWeek())
+                .scheduleDays(division.getScheduleDays())
                 .startTime(division.getStartTime())
                 .endTime(division.getEndTime())
                 .studentCount(0)
