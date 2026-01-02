@@ -5,6 +5,7 @@ import lombok.Builder;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Set;
 
 @Builder
 public record DivisionRes(
@@ -13,7 +14,7 @@ public record DivisionRes(
         String sectionName,
         String name,
         Integer displayOrder,
-        DayOfWeek dayOfWeek,
+        Set<DayOfWeek> scheduleDays,
         @JsonFormat(pattern = "HH:mm")
         LocalTime startTime,
         @JsonFormat(pattern = "HH:mm")
