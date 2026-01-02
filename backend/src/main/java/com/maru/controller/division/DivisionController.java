@@ -3,6 +3,7 @@ package com.maru.controller.division;
 import com.maru.controller.division.dto.DivisionCreateReq;
 import com.maru.controller.division.dto.DivisionDetailRes;
 import com.maru.controller.division.dto.DivisionListRes;
+import com.maru.controller.division.dto.DivisionReorderReq;
 import com.maru.controller.division.dto.DivisionRes;
 import com.maru.controller.division.dto.DivisionUpdateReq;
 import com.maru.service.division.DivisionService;
@@ -105,6 +106,22 @@ public class DivisionController {
             @PathVariable String divisionId
     ) {
         divisionService.deleteDivision(dojangId, divisionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 수련반 순서 변경
+     *
+     * @param dojangId 도장 ID
+     * @param request 순서 변경 요청 (수련부 ID, 수련반 ID 목록)
+     * @return 204 No Content
+     */
+    @PatchMapping("/reorder")
+    public ResponseEntity<Void> reorderDivisions(
+            @RequestParam String dojangId,
+            @Valid @RequestBody DivisionReorderReq request
+    ) {
+        divisionService.reorderDivisions(dojangId, request);
         return ResponseEntity.noContent().build();
     }
 }

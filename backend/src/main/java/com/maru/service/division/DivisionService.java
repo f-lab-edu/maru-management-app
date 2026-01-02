@@ -4,6 +4,7 @@ import com.maru.common.exception.BusinessException;
 import com.maru.controller.division.dto.DivisionCreateReq;
 import com.maru.controller.division.dto.DivisionDetailRes;
 import com.maru.controller.division.dto.DivisionListRes;
+import com.maru.controller.division.dto.DivisionReorderReq;
 import com.maru.controller.division.dto.DivisionRes;
 import com.maru.controller.division.dto.DivisionUpdateReq;
 import com.maru.domain.division.Division;
@@ -19,7 +20,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -119,6 +125,52 @@ public class DivisionService {
     public void deleteDivision(String dojangId, String divisionId) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
         division.markAsDeleted();
+    }
+
+    /**
+     * 수련반 순서 변경
+     *
+     * @param dojangId 도장 ID
+     * @param request 순서 변경 요청 (수련부 ID, 수련반 ID 목록)
+     * @throws BusinessException 중복 ID, 개수 불일치, 수련반 미존재 시
+     */
+    @Transactional
+    public void reorderDivisions(String dojangId, DivisionReorderReq request) {
+        findSectionByIdAndDojangId(request.sectionId(), dojangId);
+
+        List<String> divisionIds = request.divisionIds();
+        validateNoDuplicateIds(divisionIds);
+
+        List<Division> allDivisions = findAllDivisionsAndValidateCount(request.sectionId(), divisionIds);
+        updateDivisionDisplayOrders(allDivisions, divisionIds);
+    }
+
+    private void validateNoDuplicateIds(List<String> divisionIds) {
+        Set<String> divisionIdSet = new HashSet<>(divisionIds);
+        if (divisionIdSet.size() != divisionIds.size()) {
+            throw new BusinessException(DivisionErrorCode.DUPLICATE_ID_IN_REQUEST);
+        }
+    }
+
+    private List<Division> findAllDivisionsAndValidateCount(String sectionId, List<String> divisionIds) {
+        List<Division> allDivisions = divisionRepository.findAllBySectionIdOrderByDisplayOrder(sectionId);
+        if (allDivisions.size() != divisionIds.size()) {
+            throw new BusinessException(DivisionErrorCode.REORDER_COUNT_MISMATCH);
+        }
+        return allDivisions;
+    }
+
+    private void updateDivisionDisplayOrders(List<Division> allDivisions, List<String> divisionIds) {
+        Map<String, Division> divisionMap = allDivisions.stream()
+                .collect(Collectors.toMap(Division::getId, Function.identity()));
+
+        for (int i = 0; i < divisionIds.size(); i++) {
+            Division division = divisionMap.get(divisionIds.get(i));
+            if (division == null) {
+                throw new BusinessException(DivisionErrorCode.NOT_FOUND);
+            }
+            division.updateDisplayOrder(i);
+        }
     }
 
     private Dojang findDojangById(String dojangId) {
