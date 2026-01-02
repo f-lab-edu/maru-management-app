@@ -6,6 +6,8 @@ import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.group.GroupRepository;
+import com.maru.repository.group.projection.GroupCountBySection;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class SectionService {
 
     private final SectionRepository sectionRepository;
     private final DojangRepository dojangRepository;
+    private final GroupRepository groupRepository;
 
     /**
      * 수련부 생성
@@ -51,11 +54,20 @@ public class SectionService {
      * 수련부 목록 조회
      *
      * @param dojangId 도장 ID
-     * @return 수련부 목록 (displayOrder 순)
+     * @return 수련부 목록 (displayOrder 순, groupCount 포함)
      */
     public SectionListRes getSections(String dojangId) {
         List<Section> sections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
-        return toSectionListRes(sections);
+        Map<String, Integer> groupCountMap = buildGroupCountMap(dojangId);
+        return toSectionListRes(sections, groupCountMap);
+    }
+
+    private Map<String, Integer> buildGroupCountMap(String dojangId) {
+        return groupRepository.countGroupsBySectionForDojang(dojangId).stream()
+                .collect(Collectors.toMap(
+                        GroupCountBySection::getSectionId,
+                        GroupCountBySection::getGroupCount
+                ));
     }
 
     /**
@@ -87,7 +99,14 @@ public class SectionService {
     @Transactional
     public void deleteSection(String dojangId, String sectionId) {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
+        validateNoGroups(sectionId);
         section.markAsDeleted();
+    }
+
+    private void validateNoGroups(String sectionId) {
+        if (groupRepository.existsBySectionId(sectionId)) {
+            throw new BusinessException(SectionErrorCode.HAS_CLASSES);
+        }
     }
 
     /**
@@ -116,9 +135,9 @@ public class SectionService {
                 .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
     }
 
-    private SectionListRes toSectionListRes(List<Section> sections) {
+    private SectionListRes toSectionListRes(List<Section> sections, Map<String, Integer> groupCountMap) {
         List<SectionRes> sectionResList = sections.stream()
-                .map(section -> SectionRes.from(section, 0))
+                .map(section -> SectionRes.from(section, groupCountMap.getOrDefault(section.getId(), 0)))
                 .toList();
         return SectionListRes.from(sectionResList);
     }

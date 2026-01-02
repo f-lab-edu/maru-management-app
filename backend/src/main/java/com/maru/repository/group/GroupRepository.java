@@ -1,6 +1,7 @@
 package com.maru.repository.group;
 
 import com.maru.domain.group.Group;
+import com.maru.repository.group.projection.GroupCountBySection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -86,4 +87,13 @@ public interface GroupRepository extends JpaRepository<Group, String> {
           AND g.deletedAt IS NULL
         """)
     int findMaxDisplayOrderBySectionId(@Param("sectionId") String sectionId);
+
+    @Query("""
+        SELECT g.section.id AS sectionId, COUNT(g) AS groupCount
+        FROM Group g
+        WHERE g.section.dojang.id = :dojangId
+          AND g.deletedAt IS NULL
+        GROUP BY g.section.id
+        """)
+    List<GroupCountBySection> countGroupsBySectionForDojang(@Param("dojangId") String dojangId);
 }
