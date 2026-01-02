@@ -172,8 +172,8 @@ CREATE TABLE section (
   CONSTRAINT fk_section_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련부 (유아부, 초등부, 성인부 등)';
 
--- 4.2 CLASSES (수련반)
-CREATE TABLE classes (
+-- 4.2 GROUPS (수련반)
+CREATE TABLE groups (
   id VARCHAR(13) PRIMARY KEY,
   dojang_id VARCHAR(13) NOT NULL COMMENT '도장 ID',
   section_id VARCHAR(13) COMMENT '수련부 ID (NULL 가능)',
@@ -184,21 +184,21 @@ CREATE TABLE classes (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각',
-  CONSTRAINT fk_class_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE,
-  CONSTRAINT fk_class_section_id FOREIGN KEY (section_id) REFERENCES section (id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련반 (요일 + 시간 기반)';
+  CONSTRAINT fk_group_dojang_id FOREIGN KEY (dojang_id) REFERENCES dojang (id) ON DELETE CASCADE,
+  CONSTRAINT fk_group_section_id FOREIGN KEY (section_id) REFERENCES section (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='수련반 (그룹)';
 
--- 4.3 ENROLLMENT (수업 등록)
+-- 4.3 ENROLLMENT (수련반 등록)
 CREATE TABLE enrollment (
   id VARCHAR(13) PRIMARY KEY,
   student_id VARCHAR(13) NOT NULL COMMENT '원생 ID',
-  class_id VARCHAR(13) NOT NULL COMMENT '수련반 ID',
+  group_id VARCHAR(13) NOT NULL COMMENT '수련반(그룹) ID',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '등록 시각',
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
   deleted_at TIMESTAMP NULL COMMENT '소프트 삭제 시각 (등록 취소)',
-  UNIQUE KEY uk_enrollment_student_class (student_id, class_id),
+  UNIQUE KEY uk_enrollment_student_group (student_id, group_id),
   CONSTRAINT fk_enrollment_student_id FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE CASCADE,
-  CONSTRAINT fk_enrollment_class_id FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE
+  CONSTRAINT fk_enrollment_group_id FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='원생 수련반 등록';
 
 -- ========================================
