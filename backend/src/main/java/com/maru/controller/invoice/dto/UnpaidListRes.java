@@ -4,6 +4,7 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 @Builder
 public record UnpaidListRes(
@@ -16,6 +17,5 @@ public record UnpaidListRes(
         BigDecimal remainingAmount,
         LocalDate dueDate,
         int overdueDays,
-        int billingYear,
-        int billingMonth
+        YearMonth billingYearMonth
 ) {}

@@ -3,6 +3,7 @@ package com.maru.controller.invoice.dto;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 
 @Builder
@@ -17,8 +18,7 @@ public record StudentPaymentHistoryRes(
     public record PaymentHistoryItem(
             String paymentId,
             String invoiceId,
-            Integer billingYear,
-            Integer billingMonth,
+            YearMonth billingYearMonth,
             BigDecimal amount,
             String method,
             String status,
