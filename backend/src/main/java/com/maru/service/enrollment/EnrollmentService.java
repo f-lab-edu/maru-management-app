@@ -157,4 +157,23 @@ public class EnrollmentService {
                 .stream()
                 .collect(Collectors.toSet());
     }
+
+
+    /**
+     * 수련부/수련반 필터 조건에 해당하는 원생 ID 목록 조회
+     *
+     * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
+     * @return 필터된 원생 ID 목록, 필터 조건이 없으면 null
+     */
+    public List<String> getFilteredStudentIds(String dojangId, String sectionId, String divisionId) {
+        if (divisionId != null) {
+            return enrollmentRepository.findStudentIdsByDivisionId(dojangId, divisionId);
+        }
+        if (sectionId != null) {
+            return enrollmentRepository.findStudentIdsBySectionId(dojangId, sectionId);
+        }
+        return null;
+    }
 }
