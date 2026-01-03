@@ -1,6 +1,7 @@
 package com.maru.controller.division.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.maru.domain.division.Division;
 import lombok.Builder;
 
 import java.time.DayOfWeek;
@@ -20,4 +21,18 @@ public record DivisionRes(
         @JsonFormat(pattern = "HH:mm")
         LocalTime endTime,
         Integer studentCount
-) {}
+) {
+    public static DivisionRes from(Division division, int studentCount) {
+        return DivisionRes.builder()
+                .id(division.getId())
+                .sectionId(division.getSection().getId())
+                .sectionName(division.getSection().getName())
+                .name(division.getName())
+                .displayOrder(division.getDisplayOrder())
+                .scheduleDays(division.getScheduleDays())
+                .startTime(division.getStartTime())
+                .endTime(division.getEndTime())
+                .studentCount(studentCount)
+                .build();
+    }
+}
