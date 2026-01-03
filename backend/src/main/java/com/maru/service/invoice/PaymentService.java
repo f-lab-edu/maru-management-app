@@ -107,14 +107,17 @@ public class PaymentService {
      * 미납자 목록 조회
      *
      * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @return 미납 청구서 목록 (연체일 포함)
      */
     @Transactional(readOnly = true)
-    public List<UnpaidListRes> getUnpaidList(String dojangId) {
+    public List<UnpaidListRes> getUnpaidList(String dojangId, String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<Invoice> unpaidInvoices = invoiceRepository.findUnpaidInvoices(tenantId, dojangId);
+        List<Invoice> unpaidInvoices = invoiceRepository.findUnpaidInvoices(
+                tenantId, dojangId, sectionId, divisionId);
 
         return buildUnpaidListResponses(unpaidInvoices);
     }

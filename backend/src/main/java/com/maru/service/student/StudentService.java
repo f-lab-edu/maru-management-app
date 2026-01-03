@@ -9,6 +9,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
+import com.maru.service.enrollment.EnrollmentService;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
@@ -31,6 +32,7 @@ public class StudentService {
     private final DojangRepository dojangRepository;
     private final GuardianshipRepository guardianshipRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final EnrollmentService enrollmentService;
 
     /**
      * 원생 등록
@@ -68,14 +70,24 @@ public class StudentService {
      * 원생 목록 조회
      *
      * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택, 해당 수련부 소속 원생만 조회)
+     * @param divisionId 수련반 ID (선택, 해당 수련반 소속 원생만 조회)
      * @return 원생 목록 (enrolled_at DESC)
      */
     @Transactional(readOnly = true)
-    public StudentListRes getStudents(String dojangId) {
+    public StudentListRes getStudents(String dojangId, String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+        List<String> filteredStudentIds = enrollmentService.getFilteredStudentIds(dojangId, sectionId, divisionId);
+
+        if (filteredStudentIds != null && filteredStudentIds.isEmpty()) {
+            return StudentListRes.empty();
+        }
+
+        List<Student> students = (filteredStudentIds != null)
+                ? studentRepository.findActiveStudentsByIds(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN)
+                : studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
 
         Set<String> enrolledStudentIds = Set.of();
         if (!students.isEmpty()) {

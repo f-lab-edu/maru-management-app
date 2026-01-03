@@ -14,6 +14,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
 import com.maru.repository.student.StudentRepository;
+import com.maru.service.enrollment.EnrollmentService;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final EnrollmentService enrollmentService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -259,6 +261,8 @@ public class AttendanceService {
      * @param dojangId 도장 ID
      * @param startDate 시작 날짜
      * @param endDate 종료 날짜 (최대 31일 범위)
+     * @param sectionId 수련부 ID (선택, 해당 수련부 소속 원생만 조회)
+     * @param divisionId 수련반 ID (선택, 해당 수련반 소속 원생만 조회)
      * @return 기간별 출석 현황
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
      * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
@@ -266,13 +270,29 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_DATE_RANGE_TOO_LARGE - 조회 기간 31일 초과
      */
     @Transactional(readOnly = true)
-    public RangeAttendanceRes getAttendanceRange(String dojangId, LocalDate startDate, LocalDate endDate) {
+    public RangeAttendanceRes getAttendanceRange(String dojangId, LocalDate startDate, LocalDate endDate,
+                                                  String sectionId, String divisionId) {
         String tenantId = validateDojangAndGetTenantId(dojangId);
         validateDateRange(startDate, endDate);
 
-        List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
-        List<Attendance> attendances = attendanceRepository
-                .findByTenantIdAndDojangIdAndAttendanceDateBetween(tenantId, dojangId, startDate, endDate);
+        List<String> filteredStudentIds = enrollmentService.getFilteredStudentIds(dojangId, sectionId, divisionId);
+
+        if (filteredStudentIds != null && filteredStudentIds.isEmpty()) {
+            return RangeAttendanceRes.empty(startDate, endDate);
+        }
+
+        List<Student> students;
+        List<Attendance> attendances;
+
+        if (filteredStudentIds != null) {
+            students = studentRepository.findActiveStudentsByIds(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN);
+            attendances = attendanceRepository.findByDojangIdAndDateRangeAndStudentIds(
+                    tenantId, dojangId, filteredStudentIds, startDate, endDate);
+        } else {
+            students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+            attendances = attendanceRepository.findByTenantIdAndDojangIdAndAttendanceDateBetween(
+                    tenantId, dojangId, startDate, endDate);
+        }
 
         return buildRangeAttendanceRes(students, attendances, startDate, endDate);
     }

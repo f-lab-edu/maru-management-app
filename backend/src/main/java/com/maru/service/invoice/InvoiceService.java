@@ -11,6 +11,7 @@ import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.invoice.InvoiceRepository;
+import com.maru.service.enrollment.EnrollmentService;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
@@ -38,6 +39,7 @@ public class InvoiceService {
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final EnrollmentService enrollmentService;
 
     /**
      * 단일 청구서 생성
@@ -103,14 +105,25 @@ public class InvoiceService {
      *
      * @param dojangId 도장 ID
      * @param status 상태 필터 (null이면 전체)
+     * @param sectionId 수련부 ID (선택, 해당 수련부 소속 원생만 조회)
+     * @param divisionId 수련반 ID (선택, 해당 수련반 소속 원생만 조회)
      * @return 청구서 목록
      */
     @Transactional(readOnly = true)
-    public List<InvoiceListRes> getInvoices(String dojangId, InvoiceStatus status) {
+    public List<InvoiceListRes> getInvoices(String dojangId, InvoiceStatus status,
+                                             String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<Invoice> invoices = invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, status);
+        List<String> filteredStudentIds = enrollmentService.getFilteredStudentIds(dojangId, sectionId, divisionId);
+
+        if (filteredStudentIds != null && filteredStudentIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Invoice> invoices = (filteredStudentIds != null)
+                ? invoiceRepository.findByDojangIdWithFiltersAndStudentIds(tenantId, dojangId, filteredStudentIds, status)
+                : invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, status);
 
         return invoices.stream()
                 .map(InvoiceListRes::from)
