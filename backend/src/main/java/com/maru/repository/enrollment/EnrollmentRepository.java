@@ -1,6 +1,7 @@
 package com.maru.repository.enrollment;
 
 import com.maru.domain.enrollment.Enrollment;
+import com.maru.repository.enrollment.projection.StudentCountByDivision;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -62,4 +63,15 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
             AND e.division.id = :divisionId
             """)
     void deleteAllByDivisionId(@Param("dojangId") String dojangId, @Param("divisionId") String divisionId);
+
+    @Query("""
+            SELECT e.division.id AS divisionId, COUNT(e) AS studentCount
+            FROM Enrollment e
+            WHERE e.dojangId = :dojangId
+            AND e.division.id IN :divisionIds
+            GROUP BY e.division.id
+            """)
+    List<StudentCountByDivision> countStudentsByDivisionIds(
+            @Param("dojangId") String dojangId,
+            @Param("divisionIds") List<String> divisionIds);
 }
