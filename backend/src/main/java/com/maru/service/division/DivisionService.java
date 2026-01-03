@@ -14,12 +14,15 @@ import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
+import com.maru.repository.enrollment.EnrollmentRepository;
+import com.maru.repository.enrollment.projection.StudentCountByDivision;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +38,7 @@ public class DivisionService {
     private final DivisionRepository divisionRepository;
     private final SectionRepository sectionRepository;
     private final DojangRepository dojangRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     /**
      * 수련반 생성
@@ -60,7 +64,7 @@ public class DivisionService {
 
         divisionRepository.save(division);
 
-        return toDivisionRes(division);
+        return DivisionRes.from(division, 0);
     }
 
     /**
@@ -73,8 +77,10 @@ public class DivisionService {
     public DivisionListRes getDivisions(String dojangId, String sectionId) {
         List<Division> divisions = divisionRepository.findAllWithSectionByDojangIdAndSectionId(dojangId, sectionId);
 
+        Map<String, Integer> studentCountMap = getStudentCountMap(dojangId, divisions);
+
         List<DivisionRes> divisionResList = divisions.stream()
-                .map(this::toDivisionRes)
+                .map(division -> DivisionRes.from(division, studentCountMap.getOrDefault(division.getId(), 0)))
                 .toList();
 
         return DivisionListRes.from(divisionResList);
@@ -90,7 +96,8 @@ public class DivisionService {
      */
     public DivisionDetailRes getDivisionDetail(String dojangId, String divisionId) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
-        return toDivisionDetailRes(division);
+        int studentCount = enrollmentRepository.countByDivisionId(dojangId, divisionId);
+        return DivisionDetailRes.from(division, studentCount);
     }
 
     /**
@@ -111,7 +118,8 @@ public class DivisionService {
         division.updateName(request.name());
         division.updateSchedule(request.scheduleDays(), request.startTime(), request.endTime());
 
-        return toDivisionRes(division);
+        int studentCount = enrollmentRepository.countByDivisionId(dojangId, divisionId);
+        return DivisionRes.from(division, studentCount);
     }
 
     /**
@@ -200,31 +208,16 @@ public class DivisionService {
         }
     }
 
-    private DivisionRes toDivisionRes(Division division) {
-        return DivisionRes.builder()
-                .id(division.getId())
-                .sectionId(division.getSection().getId())
-                .sectionName(division.getSection().getName())
-                .name(division.getName())
-                .displayOrder(division.getDisplayOrder())
-                .scheduleDays(division.getScheduleDays())
-                .startTime(division.getStartTime())
-                .endTime(division.getEndTime())
-                .studentCount(0)
-                .build();
-    }
-
-    private DivisionDetailRes toDivisionDetailRes(Division division) {
-        return DivisionDetailRes.builder()
-                .id(division.getId())
-                .sectionId(division.getSection().getId())
-                .sectionName(division.getSection().getName())
-                .name(division.getName())
-                .displayOrder(division.getDisplayOrder())
-                .scheduleDays(division.getScheduleDays())
-                .startTime(division.getStartTime())
-                .endTime(division.getEndTime())
-                .studentCount(0)
-                .build();
+    private Map<String, Integer> getStudentCountMap(String dojangId, List<Division> divisions) {
+        if (divisions.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<String> divisionIds = divisions.stream()
+                .map(Division::getId)
+                .toList();
+        return enrollmentRepository.countStudentsByDivisionIds(dojangId, divisionIds).stream()
+                .collect(Collectors.toMap(
+                        StudentCountByDivision::getDivisionId,
+                        StudentCountByDivision::getStudentCount));
     }
 }
