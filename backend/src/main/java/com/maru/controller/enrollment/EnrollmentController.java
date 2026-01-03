@@ -80,20 +80,18 @@ public class EnrollmentController {
     }
 
     /**
-     * 등록 정보 조회 (수련반별 원생 목록 또는 원생별 수련반 목록)
+     * 수련반에 등록된 원생 목록 조회
      *
      * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID (optional)
-     * @param studentId 원생 ID (optional)
-     * @return 등록 목록
+     * @param divisionId 수련반 ID
+     * @return 등록된 원생 목록
      */
     @GetMapping
     public ResponseEntity<EnrolledStudentListRes> getEnrollments(
             @RequestParam String dojangId,
-            @RequestParam(required = false) String divisionId,
-            @RequestParam(required = false) String studentId
+            @RequestParam String divisionId
     ) {
-        EnrolledStudentListRes response = enrollmentService.getEnrollments(dojangId, divisionId, studentId);
+        EnrolledStudentListRes response = enrollmentService.getEnrollments(dojangId, divisionId);
         return ResponseEntity.ok(response);
     }
 }

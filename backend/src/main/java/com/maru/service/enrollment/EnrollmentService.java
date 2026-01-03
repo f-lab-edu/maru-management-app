@@ -107,32 +107,19 @@ public class EnrollmentService {
     }
 
     /**
-     * 등록 정보를 조회합니다.
-     * divisionId 또는 studentId 중 하나 이상 필수입니다.
+     * 수련반에 등록된 원생 목록을 조회합니다.
      *
      * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID (optional)
-     * @param studentId 원생 ID (optional)
-     * @return 등록 목록
+     * @param divisionId 수련반 ID
+     * @return 등록된 원생 목록
      */
-    public EnrolledStudentListRes getEnrollments(String dojangId, String divisionId, String studentId) {
-        List<EnrolledStudentRes> students;
+    public EnrolledStudentListRes getEnrollments(String dojangId, String divisionId) {
+        List<Enrollment> enrollments = enrollmentRepository
+                .findAllWithStudentByDivisionId(dojangId, divisionId);
 
-        if (divisionId != null) {
-            List<Enrollment> enrollments = enrollmentRepository
-                    .findAllWithStudentByDivisionId(dojangId, divisionId);
-            students = enrollments.stream()
-                    .map(EnrolledStudentRes::from)
-                    .toList();
-        } else if (studentId != null) {
-            List<Enrollment> enrollments = enrollmentRepository
-                    .findAllWithDivisionByStudentId(dojangId, studentId);
-            students = enrollments.stream()
-                    .map(EnrolledStudentRes::from)
-                    .toList();
-        } else {
-            students = List.of();
-        }
+        List<EnrolledStudentRes> students = enrollments.stream()
+                .map(EnrolledStudentRes::from)
+                .toList();
 
         return EnrolledStudentListRes.from(students);
     }
