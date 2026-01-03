@@ -91,4 +91,19 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
         WHERE a.id = :id
         """)
     Optional<Attendance> findByIdWithStudent(@Param("id") String id);
+
+    @Query("""
+        SELECT a FROM Attendance a
+        JOIN FETCH a.student
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.student.id IN :studentIds
+          AND a.attendanceDate BETWEEN :startDate AND :endDate
+        """)
+    List<Attendance> findByDojangIdAndDateRangeAndStudentIds(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentIds") List<String> studentIds,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

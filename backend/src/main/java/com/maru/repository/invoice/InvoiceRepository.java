@@ -143,4 +143,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("dojangId") String dojangId,
             @Param("startYearMonth") YearMonth startYearMonth,
             @Param("endYearMonth") YearMonth endYearMonth);
+
+    @Query("""
+        SELECT i FROM Invoice i
+        JOIN FETCH i.student s
+        WHERE i.tenantId = :tenantId
+          AND i.dojangId = :dojangId
+          AND i.student.id IN :studentIds
+          AND (:status IS NULL OR i.status = :status)
+        ORDER BY i.dueDate DESC
+        """)
+    List<Invoice> findByDojangIdWithFiltersAndStudentIds(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentIds") List<String> studentIds,
+            @Param("status") InvoiceStatus status);
 }
