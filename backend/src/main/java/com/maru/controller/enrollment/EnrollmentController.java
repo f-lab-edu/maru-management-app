@@ -2,10 +2,10 @@ package com.maru.controller.enrollment;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.CommonErrorCode;
-import com.maru.controller.division.dto.BulkEnrollmentReq;
-import com.maru.controller.division.dto.BulkEnrollmentRes;
-import com.maru.controller.division.dto.EnrolledStudentListRes;
-import com.maru.controller.division.dto.EnrollStudentReq;
+import com.maru.controller.enrollment.dto.BulkEnrollmentReq;
+import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
+import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
+import com.maru.controller.enrollment.dto.EnrollStudentReq;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

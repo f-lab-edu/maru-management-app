@@ -1,4 +1,4 @@
-package com.maru.controller.division.dto;
+package com.maru.controller.enrollment.dto;
 
 import com.maru.domain.enrollment.Enrollment;
 import com.maru.domain.student.Student;
