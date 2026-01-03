@@ -45,14 +45,18 @@ public class StudentController {
      * 원생 목록 조회
      *
      * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @param userId 현재 사용자 ID
      * @return 원생 목록 (enrolled_at DESC, 최대 200건)
      */
     @GetMapping
     public ResponseEntity<StudentListRes> getStudents(
             @RequestParam String dojangId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String divisionId,
             @CurrentUserId String userId) {
-        StudentListRes response = studentService.getStudents(dojangId);
+        StudentListRes response = studentService.getStudents(dojangId, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 

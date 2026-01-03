@@ -25,14 +25,18 @@ public class PaymentController {
      * 미납자 목록 조회 API
      *
      * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @param userId 현재 인증된 사용자 ID
      * @return 미납자 목록
      */
     @GetMapping("/unpaid")
     public ResponseEntity<List<UnpaidListRes>> getUnpaidList(
             @RequestParam String dojangId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String divisionId,
             @CurrentUserId String userId) {
-        List<UnpaidListRes> response = paymentService.getUnpaidList(dojangId);
+        List<UnpaidListRes> response = paymentService.getUnpaidList(dojangId, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 

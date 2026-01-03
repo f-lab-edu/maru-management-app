@@ -209,6 +209,8 @@ public class AttendanceController {
      * @param dojangId 도장 ID
      * @param startDate 시작 날짜
      * @param endDate 종료 날짜
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @param userId 현재 인증된 사용자 ID
      * @return 기간별 출석 현황
      */
@@ -217,8 +219,10 @@ public class AttendanceController {
             @RequestParam String dojangId,
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String divisionId,
             @CurrentUserId String userId) {
-        RangeAttendanceRes response = attendanceService.getAttendanceRange(dojangId, startDate, endDate);
+        RangeAttendanceRes response = attendanceService.getAttendanceRange(dojangId, startDate, endDate, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 }

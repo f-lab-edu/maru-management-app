@@ -61,6 +61,8 @@ public class InvoiceController {
      *
      * @param dojangId 도장 ID
      * @param status 청구서 상태 필터 (선택)
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @param userId 현재 인증된 사용자 ID
      * @return 청구서 목록
      */
@@ -68,8 +70,10 @@ public class InvoiceController {
     public ResponseEntity<List<InvoiceListRes>> getInvoices(
             @RequestParam String dojangId,
             @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String divisionId,
             @CurrentUserId String userId) {
-        List<InvoiceListRes> response = invoiceService.getInvoices(dojangId, status);
+        List<InvoiceListRes> response = invoiceService.getInvoices(dojangId, status, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 
