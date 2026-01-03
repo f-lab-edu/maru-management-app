@@ -12,4 +12,12 @@ public record RangeAttendanceRes(
         int totalStudents,
         List<StudentAttendanceRowRes> students
 ) {
+    public static RangeAttendanceRes empty(LocalDate startDate, LocalDate endDate) {
+        return RangeAttendanceRes.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .totalStudents(0)
+                .students(List.of())
+                .build();
+    }
 }

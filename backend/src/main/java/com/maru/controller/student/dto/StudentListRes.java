@@ -25,4 +25,13 @@ public record StudentListRes(
                 .hasMore(false)
                 .build();
     }
+
+    public static StudentListRes empty() {
+        return StudentListRes.builder()
+                .students(List.of())
+                .totalCount(0)
+                .returnedCount(0)
+                .hasMore(false)
+                .build();
+    }
 }
