@@ -74,4 +74,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
     List<StudentCountByDivision> countStudentsByDivisionIds(
             @Param("dojangId") String dojangId,
             @Param("divisionIds") List<String> divisionIds);
+
+    @Query("""
+            SELECT DISTINCT e.student.id FROM Enrollment e
+            WHERE e.dojangId = :dojangId
+            AND e.student.id IN :studentIds
+            """)
+    List<String> findEnrolledStudentIds(
+            @Param("dojangId") String dojangId,
+            @Param("studentIds") List<String> studentIds);
 }

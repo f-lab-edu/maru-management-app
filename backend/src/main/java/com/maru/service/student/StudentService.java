@@ -7,6 +7,7 @@ import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
@@ -16,8 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -27,6 +30,7 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
     private final GuardianshipRepository guardianshipRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     /**
      * 원생 등록
@@ -72,7 +76,14 @@ public class StudentService {
         validateDojangAccess(dojangId, tenantId);
 
         List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
-        return StudentListRes.from(students);
+
+        Set<String> enrolledStudentIds = Set.of();
+        if (!students.isEmpty()) {
+            List<String> studentIds = students.stream().map(Student::getId).toList();
+            enrolledStudentIds = new HashSet<>(enrollmentRepository.findEnrolledStudentIds(dojangId, studentIds));
+        }
+
+        return StudentListRes.from(students, enrolledStudentIds);
     }
 
     /**

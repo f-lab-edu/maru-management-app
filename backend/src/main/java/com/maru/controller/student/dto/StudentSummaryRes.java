@@ -13,9 +13,10 @@ public record StudentSummaryRes(
         LocalDate birth,
         String photoUrl,
         LocalDate enrolledAt,
-        StudentStatus status
+        StudentStatus status,
+        boolean hasEnrollment
 ) {
-    public static StudentSummaryRes from(Student student) {
+    public static StudentSummaryRes from(Student student, boolean hasEnrollment) {
         return StudentSummaryRes.builder()
                 .id(student.getId())
                 .name(student.getName())
@@ -23,6 +24,7 @@ public record StudentSummaryRes(
                 .photoUrl(student.getPhotoUrl())
                 .enrolledAt(student.getEnrolledAt())
                 .status(student.getStatus())
+                .hasEnrollment(hasEnrollment)
                 .build();
     }
 }
