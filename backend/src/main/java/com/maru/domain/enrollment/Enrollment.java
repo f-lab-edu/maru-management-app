@@ -2,7 +2,7 @@ package com.maru.domain.enrollment;
 
 import com.maru.common.exception.DomainAssert;
 import com.maru.common.exception.EnrollmentErrorCode;
-import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.common.BaseEntity;
 import com.maru.domain.division.Division;
 import com.maru.domain.student.Student;
 import jakarta.persistence.Column;
@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "enrollment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Enrollment extends SoftDeletableEntity {
+public class Enrollment extends BaseEntity {
 
     @Column(nullable = false, length = 13)
     private String dojangId;
