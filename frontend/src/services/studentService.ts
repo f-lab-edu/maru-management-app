@@ -11,10 +11,18 @@ import type {
 
 const BASE_PATH = '/students';
 
+export interface StudentFilterParams {
+  sectionId?: string;
+  divisionId?: string;
+}
+
 export const studentService = {
-  getStudents: async (dojangId: string): Promise<StudentListResponse> => {
+  getStudents: async (
+    dojangId: string,
+    filters?: StudentFilterParams
+  ): Promise<StudentListResponse> => {
     const response = await apiClient.get<StudentListResponse>(BASE_PATH, {
-      params: { dojangId },
+      params: { dojangId, ...filters },
     });
     return response.data;
   },

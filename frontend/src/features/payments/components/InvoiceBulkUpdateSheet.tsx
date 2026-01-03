@@ -14,6 +14,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Label } from '@/shared/components/ui/label';
 import { Checkbox } from '@/shared/components/ui/checkbox';
+import { DatePicker } from '@/shared/components/ui/date-picker';
 import { useBulkUpdateInvoices } from '../hooks';
 import { useAlert } from '@/hooks';
 
@@ -53,6 +54,8 @@ export function InvoiceBulkUpdateSheet({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<BulkUpdateFormData>({
     resolver: zodResolver(bulkUpdateSchema),
@@ -145,10 +148,11 @@ export function InvoiceBulkUpdateSheet({
                 >
                   납부기한
                 </Label>
-                <Input
-                  type="date"
+                <DatePicker
+                  value={watch('dueDate')}
+                  onChange={(value) => setValue('dueDate', value)}
                   disabled={!enabledFields.dueDate}
-                  {...register('dueDate')}
+                  placeholder="납부 기한을 선택해주세요"
                 />
                 {errors.dueDate && (
                   <p className="text-sm text-destructive">{errors.dueDate.message}</p>

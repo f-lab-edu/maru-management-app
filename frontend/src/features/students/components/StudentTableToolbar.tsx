@@ -2,10 +2,12 @@ import { Search, Trash2, X } from 'lucide-react';
 import { Input } from '@/shared/components/ui/input';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/utils';
+import { SectionDivisionFilter } from '@/features/divisions';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'PAUSED';
 
 interface StudentTableToolbarProps {
+  dojangId: string | null;
   statusFilter: StatusFilter;
   onStatusFilterChange: (filter: StatusFilter) => void;
   searchQuery: string;
@@ -17,6 +19,11 @@ interface StudentTableToolbarProps {
     activeCount: number;
     pausedCount: number;
   };
+  // TODO: 백엔드 Enrollment API 구현 후 활성화
+  sectionId?: string | null;
+  divisionId?: string | null;
+  onSectionChange?: (sectionId: string | null) => void;
+  onDivisionChange?: (divisionId: string | null) => void;
 }
 
 const FILTER_TABS: { value: StatusFilter; label: string }[] = [
@@ -26,6 +33,7 @@ const FILTER_TABS: { value: StatusFilter; label: string }[] = [
 ];
 
 export function StudentTableToolbar({
+  dojangId,
   statusFilter,
   onStatusFilterChange,
   searchQuery,
@@ -33,6 +41,10 @@ export function StudentTableToolbar({
   selectedCount,
   onBulkDelete,
   stats,
+  sectionId,
+  divisionId,
+  onSectionChange,
+  onDivisionChange,
 }: StudentTableToolbarProps) {
   const getTabCount = (filter: StatusFilter) => {
     switch (filter) {
@@ -45,27 +57,43 @@ export function StudentTableToolbar({
     }
   };
 
+  const showDivisionFilter = dojangId && onSectionChange && onDivisionChange;
+
   return (
     <div className="space-y-4">
-      {/* 탭 필터 */}
-      <div className="inline-flex rounded-lg bg-muted p-1">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => onStatusFilterChange(tab.value)}
-            className={cn(
-              'rounded-md px-4 py-2 text-sm font-medium transition-all',
-              statusFilter === tab.value
-                ? 'bg-white text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {tab.label}
-            <span className="ml-1.5 text-xs text-muted-foreground">
-              {getTabCount(tab.value)}
-            </span>
-          </button>
-        ))}
+      {/* 탭 필터 + 수련부/반 필터 */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="inline-flex rounded-lg bg-muted p-1">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => onStatusFilterChange(tab.value)}
+              className={cn(
+                'rounded-md px-4 py-2 text-sm font-medium transition-all',
+                statusFilter === tab.value
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab.label}
+              <span className="ml-1.5 text-xs text-muted-foreground">
+                {getTabCount(tab.value)}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* 수련부/수련반 필터 - TODO: 백엔드 Enrollment API 구현 후 필터링 활성화 */}
+        {showDivisionFilter && (
+          <SectionDivisionFilter
+            dojangId={dojangId}
+            selectedSectionId={sectionId ?? null}
+            selectedDivisionId={divisionId ?? null}
+            onSectionChange={onSectionChange}
+            onDivisionChange={onDivisionChange}
+            compact
+          />
+        )}
       </div>
 
       {/* 검색 + 단체 액션 */}

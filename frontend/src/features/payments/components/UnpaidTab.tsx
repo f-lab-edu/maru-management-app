@@ -24,6 +24,7 @@ import { InvoiceDetailSheet } from './InvoiceDetailSheet';
 import { PAYMENT_COLORS } from '../constants/chartColors';
 import type { UnpaidListRes } from '../types';
 import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
+import { SectionDivisionFilter } from '@/features/divisions';
 
 const SEVERITY_CONFIG = {
   critical: { label: '심각', color: '#dc2626', bg: '#fee2e2', days: '7일+' },
@@ -41,7 +42,10 @@ export function UnpaidTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
 
-  const { data: unpaidList = [], isLoading } = useUnpaidList(dojangId);
+  const [sectionId, setSectionId] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+
+  const { data: unpaidList = [], isLoading } = useUnpaidList(dojangId, sectionId, divisionId);
 
   const yearOptions = useMemo(() => {
     const currentYear = now.getFullYear();
@@ -197,7 +201,7 @@ export function UnpaidTab() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0 flex-wrap">
         <Select
           value={yearFilter.toString()}
           onValueChange={(v) => setYearFilter(v === 'ALL' ? 'ALL' : parseInt(v, 10))}
@@ -231,6 +235,17 @@ export function UnpaidTab() {
             ))}
           </SelectContent>
         </Select>
+
+        {dojangId && (
+          <SectionDivisionFilter
+            dojangId={dojangId}
+            selectedSectionId={sectionId}
+            selectedDivisionId={divisionId}
+            onSectionChange={setSectionId}
+            onDivisionChange={setDivisionId}
+            compact
+          />
+        )}
 
         <Input
           placeholder="원생 또는 보호자 이름 검색..."

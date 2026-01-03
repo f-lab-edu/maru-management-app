@@ -23,10 +23,19 @@ import type {
 const INVOICE_BASE = '/invoices';
 const PAYMENT_BASE = '/payments';
 
+export interface InvoiceFilterParams {
+  status?: InvoiceStatus;
+  sectionId?: string;
+  divisionId?: string;
+}
+
 export const invoiceApi = {
-  getInvoices: async (dojangId: string, status?: InvoiceStatus): Promise<InvoiceListRes[]> => {
+  getInvoices: async (
+    dojangId: string,
+    filters?: InvoiceFilterParams
+  ): Promise<InvoiceListRes[]> => {
     const response = await apiClient.get<InvoiceListRes[]>(INVOICE_BASE, {
-      params: { dojangId, status },
+      params: { dojangId, ...filters },
     });
     return response.data;
   },
@@ -145,9 +154,13 @@ export const invoiceApi = {
     return response.data;
   },
 
-  getUnpaidList: async (dojangId: string): Promise<UnpaidListRes[]> => {
+  getUnpaidList: async (
+    dojangId: string,
+    sectionId?: string,
+    divisionId?: string
+  ): Promise<UnpaidListRes[]> => {
     const response = await apiClient.get<UnpaidListRes[]>(`${PAYMENT_BASE}/unpaid`, {
-      params: { dojangId },
+      params: { dojangId, sectionId, divisionId },
     });
     return response.data;
   },

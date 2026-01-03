@@ -29,6 +29,7 @@ import { PAYMENT_COLORS } from '../constants/chartColors';
 import { useAlert } from '@/hooks';
 import type { InvoiceStatus, InvoiceListRes } from '../types';
 import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
+import { SectionDivisionFilter } from '@/features/divisions';
 
 const getStatusBorderColor = (status: InvoiceStatus) => {
   switch (status) {
@@ -70,12 +71,17 @@ export function InvoiceTab() {
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [showBulkUpdateSheet, setShowBulkUpdateSheet] = useState(false);
 
+  // 수련부/수련반 필터 상태
+  const [sectionId, setSectionId] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+
   const { showSuccess, showError } = useAlert();
 
-  const { data: invoices = [], isLoading } = useInvoices(
-    dojangId,
-    statusFilter === 'ALL' ? undefined : statusFilter
-  );
+  const { data: invoices = [], isLoading } = useInvoices(dojangId, {
+    status: statusFilter === 'ALL' ? undefined : statusFilter,
+    sectionId: sectionId ?? undefined,
+    divisionId: divisionId ?? undefined,
+  });
 
   const { mutateAsync: bulkIssue, isPending: isIssuing } = useBulkIssueInvoices(dojangId);
 
@@ -292,6 +298,17 @@ export function InvoiceTab() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-[200px]"
           />
+
+          {dojangId && (
+            <SectionDivisionFilter
+              dojangId={dojangId}
+              selectedSectionId={sectionId}
+              selectedDivisionId={divisionId}
+              onSectionChange={setSectionId}
+              onDivisionChange={setDivisionId}
+              compact
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2">

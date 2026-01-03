@@ -1,17 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { studentService } from '@/services/studentService';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { studentService, type StudentFilterParams } from '@/services/studentService';
 import type { StudentCreateRequest, StudentUpdateRequest } from '@/types/student';
 
 const QUERY_KEYS = {
-  students: (dojangId: string) => ['students', dojangId] as const,
+  students: (dojangId: string, filters?: StudentFilterParams) =>
+    ['students', dojangId, filters] as const,
   student: (dojangId: string, studentId: string) => ['student', dojangId, studentId] as const,
 };
 
-export function useStudents(dojangId: string | null) {
+export function useStudents(dojangId: string | null, filters?: StudentFilterParams) {
   return useQuery({
-    queryKey: QUERY_KEYS.students(dojangId ?? ''),
-    queryFn: () => studentService.getStudents(dojangId!),
+    queryKey: QUERY_KEYS.students(dojangId ?? '', filters),
+    queryFn: () => studentService.getStudents(dojangId!, filters),
     enabled: !!dojangId,
+    placeholderData: keepPreviousData,
   });
 }
 

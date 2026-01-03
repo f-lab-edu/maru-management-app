@@ -4,6 +4,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Separator } from '@/shared/components/ui/separator';
+import { DatePicker } from '@/shared/components/ui/date-picker';
 import { Send, XCircle, RotateCcw, Trash2, CreditCard, Pencil, X } from 'lucide-react';
 import { PaymentRecordForm } from './PaymentRecordForm';
 import { PaymentList } from './PaymentList';
@@ -137,7 +138,11 @@ export function InvoiceCurrentTab({
 
           <div className="space-y-2">
             <Label htmlFor="dueDate">납부 기한 *</Label>
-            <Input type="date" {...editForm.register('dueDate')} />
+            <DatePicker
+              value={editForm.watch('dueDate')}
+              onChange={(value) => editForm.setValue('dueDate', value)}
+              placeholder="납부 기한을 선택해주세요"
+            />
             {editForm.formState.errors.dueDate && (
               <p className="text-sm text-destructive">
                 {editForm.formState.errors.dueDate.message}

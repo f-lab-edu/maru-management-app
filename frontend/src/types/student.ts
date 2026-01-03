@@ -31,6 +31,7 @@ export interface StudentSummary {
   status: StudentStatus;
   primaryGuardianName?: string;
   primaryGuardianPhone?: string;
+  hasEnrollment: boolean;
 }
 
 export interface StudentListResponse {

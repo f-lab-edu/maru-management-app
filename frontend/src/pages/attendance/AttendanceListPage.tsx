@@ -8,6 +8,7 @@ import { Input } from '@/shared/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Label } from '@/shared/components/ui/label';
+import { SectionDivisionFilter } from '@/features/divisions';
 import type { DateRange } from 'react-day-picker';
 import type { ViewMode, StudentAttendanceRow, CheckMethod, AttendanceStatus } from '@/features/attendance/types';
 import {
@@ -66,6 +67,10 @@ export default function AttendanceListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyNotCheckedIn, setShowOnlyNotCheckedIn] = useState(false);
 
+  // 수련부/수련반 필터 상태
+  const [sectionId, setSectionId] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+
   // 선택 상태
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -93,6 +98,8 @@ export default function AttendanceListPage() {
     dojangId,
     startDate,
     endDate,
+    sectionId,
+    divisionId,
   });
 
   // 날짜 배열 생성 (dateRange에서 직접 생성 - API 응답 기다리지 않음)
@@ -542,6 +549,16 @@ export default function AttendanceListPage() {
               오늘 미출석만
             </Label>
           </div>
+          {dojangId && (
+            <SectionDivisionFilter
+              dojangId={dojangId}
+              selectedSectionId={sectionId}
+              selectedDivisionId={divisionId}
+              onSectionChange={setSectionId}
+              onDivisionChange={setDivisionId}
+              compact
+            />
+          )}
         </div>
         <div className="flex items-center gap-3">
           {selectedStudents.length > 0 && (

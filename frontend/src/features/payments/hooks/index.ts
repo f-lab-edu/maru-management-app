@@ -1,7 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoiceApi } from '@/services/invoiceApi';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { invoiceApi, type InvoiceFilterParams } from '@/services/invoiceApi';
 import type {
-  InvoiceStatus,
   InvoiceCreateReq,
   InvoiceBulkCreateReq,
   InvoiceUpdateReq,
@@ -24,26 +23,28 @@ import type {
 export const invoiceKeys = {
   all: ['invoices'] as const,
   lists: () => [...invoiceKeys.all, 'list'] as const,
-  list: (dojangId: string, status?: InvoiceStatus) =>
-    [...invoiceKeys.lists(), { dojangId, status }] as const,
+  list: (dojangId: string, filters?: InvoiceFilterParams) =>
+    [...invoiceKeys.lists(), { dojangId, ...filters }] as const,
   details: () => [...invoiceKeys.all, 'detail'] as const,
   detail: (dojangId: string, id: string) => [...invoiceKeys.details(), dojangId, id] as const,
 };
 
 export const paymentKeys = {
   all: ['payments'] as const,
-  unpaid: (dojangId: string) => [...paymentKeys.all, 'unpaid', dojangId] as const,
+  unpaid: (dojangId: string, sectionId?: string, divisionId?: string) =>
+    [...paymentKeys.all, 'unpaid', dojangId, sectionId, divisionId] as const,
   statistics: (dojangId: string, year: number, month: number) =>
     [...paymentKeys.all, 'statistics', dojangId, year, month] as const,
   studentHistory: (dojangId: string, studentId: string) =>
     [...paymentKeys.all, 'history', dojangId, studentId] as const,
 };
 
-export function useInvoices(dojangId: string | null, status?: InvoiceStatus) {
+export function useInvoices(dojangId: string | null, filters?: InvoiceFilterParams) {
   return useQuery<InvoiceListRes[], Error>({
-    queryKey: invoiceKeys.list(dojangId!, status),
-    queryFn: () => invoiceApi.getInvoices(dojangId!, status),
+    queryKey: invoiceKeys.list(dojangId!, filters),
+    queryFn: () => invoiceApi.getInvoices(dojangId!, filters),
     enabled: !!dojangId,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -224,11 +225,25 @@ export function useBulkUpdateInvoices(dojangId: string | null) {
   });
 }
 
-export function useUnpaidList(dojangId: string | null) {
+export function useUnpaidList(
+  dojangId: string | null,
+  sectionId?: string | null,
+  divisionId?: string | null
+) {
   return useQuery<UnpaidListRes[], Error>({
-    queryKey: paymentKeys.unpaid(dojangId!),
-    queryFn: () => invoiceApi.getUnpaidList(dojangId!),
+    queryKey: paymentKeys.unpaid(
+      dojangId!,
+      sectionId ?? undefined,
+      divisionId ?? undefined
+    ),
+    queryFn: () =>
+      invoiceApi.getUnpaidList(
+        dojangId!,
+        sectionId ?? undefined,
+        divisionId ?? undefined
+      ),
     enabled: !!dojangId,
+    placeholderData: keepPreviousData,
   });
 }
 

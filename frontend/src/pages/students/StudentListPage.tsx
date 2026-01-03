@@ -37,11 +37,18 @@ export default function StudentListPage() {
   const { showError } = useAlert();
   const { confirmDelete } = useConfirm();
 
-  const { data: studentsData, isLoading } = useStudents(dojangId);
-
   // 필터 상태
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 수련부/수련반 필터 상태
+  const [sectionId, setSectionId] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(null);
+
+  const { data: studentsData, isLoading } = useStudents(dojangId, {
+    sectionId: sectionId ?? undefined,
+    divisionId: divisionId ?? undefined,
+  });
 
   // 선택 상태
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -260,8 +267,9 @@ export default function StudentListPage() {
         </Button>
       </header>
 
-      {/* 툴바 (탭 필터 + 검색 + 단체 액션) */}
+      {/* 툴바 (탭 필터 + 수련부/반 필터 + 검색 + 단체 액션) */}
       <StudentTableToolbar
+        dojangId={dojangId}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         searchQuery={searchQuery}
@@ -269,6 +277,10 @@ export default function StudentListPage() {
         selectedCount={selectedCount}
         onBulkDelete={handleBulkDeleteStudents}
         stats={stats}
+        sectionId={sectionId}
+        divisionId={divisionId}
+        onSectionChange={setSectionId}
+        onDivisionChange={setDivisionId}
       />
 
       {/* 테이블 */}

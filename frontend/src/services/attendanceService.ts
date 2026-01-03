@@ -12,14 +12,20 @@ import type {
 
 const BASE_PATH = '/attendance';
 
+export interface AttendanceFilterParams {
+  sectionId?: string;
+  divisionId?: string;
+}
+
 export const attendanceService = {
   getRange: async (
     dojangId: string,
     startDate: string,
-    endDate: string
+    endDate: string,
+    filters?: AttendanceFilterParams
   ): Promise<RangeAttendanceResponse> => {
     const response = await apiClient.get<RangeAttendanceResponse>(`${BASE_PATH}/range`, {
-      params: { dojangId, startDate, endDate },
+      params: { dojangId, startDate, endDate, ...filters },
     });
     return response.data;
   },
