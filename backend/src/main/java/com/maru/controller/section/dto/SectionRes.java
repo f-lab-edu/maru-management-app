@@ -8,14 +8,14 @@ public record SectionRes(
         String id,
         String name,
         Integer displayOrder,
-        Integer classCount
+        Integer divisionCount
 ) {
-    public static SectionRes from(Section section, int classCount) {
+    public static SectionRes from(Section section, int divisionCount) {
         return SectionRes.builder()
                 .id(section.getId())
                 .name(section.getName())
                 .displayOrder(section.getDisplayOrder())
-                .classCount(classCount)
+                .divisionCount(divisionCount)
                 .build();
     }
 }
