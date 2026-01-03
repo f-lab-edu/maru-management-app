@@ -1,13 +1,13 @@
 package com.maru.controller.enrollment;
 
-import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.enrollment.dto.BulkEnrollmentReq;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
 import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
 import com.maru.controller.enrollment.dto.EnrollStudentReq;
+import com.maru.service.enrollment.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class EnrollmentController {
 
+    private final EnrollmentService enrollmentService;
+
     /**
      * 원생을 수련반에 등록
      *
@@ -37,7 +39,8 @@ public class EnrollmentController {
             @RequestParam String divisionId,
             @Valid @RequestBody EnrollStudentReq request
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        enrollmentService.enrollStudent(dojangId, divisionId, request.studentId());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     /**
@@ -54,7 +57,8 @@ public class EnrollmentController {
             @RequestParam String divisionId,
             @PathVariable String studentId
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        enrollmentService.unenrollStudent(dojangId, divisionId, studentId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -71,15 +75,17 @@ public class EnrollmentController {
             @RequestParam String divisionId,
             @Valid @RequestBody BulkEnrollmentReq request
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        BulkEnrollmentRes response = enrollmentService.bulkEnrollStudents(dojangId, divisionId, request.studentIds());
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * 수련반에 등록된 원생 목록 조회
+     * 등록 정보 조회 (수련반별 원생 목록 또는 원생별 수련반 목록)
      *
      * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID
-     * @return 등록된 원생 목록
+     * @param divisionId 수련반 ID (optional)
+     * @param studentId 원생 ID (optional)
+     * @return 등록 목록
      */
     @GetMapping
     public ResponseEntity<EnrolledStudentListRes> getEnrollments(
@@ -87,6 +93,7 @@ public class EnrollmentController {
             @RequestParam(required = false) String divisionId,
             @RequestParam(required = false) String studentId
     ) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        EnrolledStudentListRes response = enrollmentService.getEnrollments(dojangId, divisionId, studentId);
+        return ResponseEntity.ok(response);
     }
 }
