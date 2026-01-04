@@ -132,7 +132,7 @@ public class DivisionService {
     @Transactional
     public void deleteDivision(String dojangId, String divisionId) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
-        division.markAsDeleted();
+        divisionRepository.delete(division);
     }
 
     /**

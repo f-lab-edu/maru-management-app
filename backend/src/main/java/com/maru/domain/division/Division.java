@@ -1,7 +1,7 @@
 package com.maru.domain.division;
 
 import com.maru.common.exception.DomainAssert;
-import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.common.BaseEntity;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
 import com.maru.domain.tenant.Dojang;
@@ -25,7 +25,7 @@ import java.util.Set;
 @Table(name = "division")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Division extends SoftDeletableEntity {
+public class Division extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dojang_id", nullable = false)

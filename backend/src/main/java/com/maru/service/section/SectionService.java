@@ -100,7 +100,7 @@ public class SectionService {
     public void deleteSection(String dojangId, String sectionId) {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
         validateNoDivisions(sectionId);
-        section.markAsDeleted();
+        sectionRepository.delete(section);
     }
 
     private void validateNoDivisions(String sectionId) {

@@ -43,7 +43,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
             WHERE e.dojangId = :dojangId
             AND e.division.id = :divisionId
             """)
-    int countByDivisionId(@Param("dojangId") String dojangId, @Param("divisionId") String divisionId);
+    int countByDivisionId(
+            @Param("dojangId") String dojangId,
+            @Param("divisionId") String divisionId);
 
     @Query("""
             SELECT e.student.id FROM Enrollment e

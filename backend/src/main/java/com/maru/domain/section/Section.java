@@ -1,7 +1,7 @@
 package com.maru.domain.section;
 
 import com.maru.common.exception.DomainAssert;
-import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.common.BaseEntity;
 import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.*;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "section")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Section extends SoftDeletableEntity {
+public class Section extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dojang_id", nullable = false)

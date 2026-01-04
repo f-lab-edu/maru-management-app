@@ -14,7 +14,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
     @Query("""
         SELECT d FROM Division d
         WHERE d.section.id = :sectionId
-          AND d.deletedAt IS NULL
         ORDER BY d.displayOrder
         """)
     List<Division> findAllBySectionIdOrderByDisplayOrder(@Param("sectionId") String sectionId);
@@ -24,7 +23,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         JOIN FETCH d.section s
         WHERE s.dojang.id = :dojangId
           AND s.id = :sectionId
-          AND d.deletedAt IS NULL
         ORDER BY d.displayOrder
         """)
     List<Division> findAllWithSectionByDojangIdAndSectionId(
@@ -36,7 +34,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         JOIN FETCH d.section s
         WHERE d.id = :divisionId
           AND s.dojang.id = :dojangId
-          AND d.deletedAt IS NULL
         """)
     Optional<Division> findByIdAndDojangIdWithSection(
             @Param("divisionId") String divisionId,
@@ -46,7 +43,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         SELECT COUNT(d) > 0 FROM Division d
         WHERE d.section.id = :sectionId
           AND d.name = :name
-          AND d.deletedAt IS NULL
         """)
     boolean existsBySectionIdAndName(
             @Param("sectionId") String sectionId,
@@ -57,7 +53,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         WHERE d.section.id = :sectionId
           AND d.name = :name
           AND d.id != :id
-          AND d.deletedAt IS NULL
         """)
     boolean existsBySectionIdAndNameAndIdNot(
             @Param("sectionId") String sectionId,
@@ -67,7 +62,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
     @Query("""
         SELECT COUNT(d) > 0 FROM Division d
         WHERE d.section.id = :sectionId
-          AND d.deletedAt IS NULL
         """)
     boolean existsBySectionId(@Param("sectionId") String sectionId);
 
@@ -75,7 +69,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         SELECT COALESCE(MAX(d.displayOrder), -1)
         FROM Division d
         WHERE d.section.id = :sectionId
-          AND d.deletedAt IS NULL
         """)
     int findMaxDisplayOrderBySectionId(@Param("sectionId") String sectionId);
 
@@ -83,7 +76,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         SELECT d.section.id AS sectionId, COUNT(d) AS divisionCount
         FROM Division d
         WHERE d.section.dojang.id = :dojangId
-          AND d.deletedAt IS NULL
         GROUP BY d.section.id
         """)
     List<DivisionCountBySection> countDivisionsBySectionForDojang(@Param("dojangId") String dojangId);

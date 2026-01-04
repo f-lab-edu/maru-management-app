@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -153,9 +154,7 @@ public class EnrollmentService {
     }
 
     private Set<String> findAlreadyEnrolledStudentIds(String dojangId, String divisionId, List<String> studentIds) {
-        return enrollmentRepository.findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds)
-                .stream()
-                .collect(Collectors.toSet());
+        return new HashSet<>(enrollmentRepository.findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds));
     }
 
 
