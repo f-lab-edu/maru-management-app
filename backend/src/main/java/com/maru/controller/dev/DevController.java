@@ -8,25 +8,34 @@ import com.maru.common.util.CookieUtil;
 import com.maru.common.util.JwtUtil;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.controller.dev.dto.CreateTestUserReq;
+import com.maru.domain.tenant.Dojang;
 import com.maru.domain.user.User;
+import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.user.UserRepository;
 import com.maru.security.JwtClaims;
 import com.maru.service.dev.DevDojangSeeder;
 import com.maru.service.dev.DevStudentSeeder;
-import com.maru.service.tenant.search.MemorySearchStrategy;
+import com.maru.service.search.dojang.DojangSearchIndexer;
+import com.maru.service.search.dojang.DojangSearchService;
+import com.maru.service.search.dojang.dto.DojangSearchDto;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @Profile({"dev", "local"})
@@ -40,7 +49,9 @@ public class DevController {
     private final CookieUtil cookieUtil;
     private final DevDojangSeeder devDojangSeeder;
     private final DevStudentSeeder devStudentSeeder;
-    private final MemorySearchStrategy memorySearchStrategy;
+    private final DojangSearchService dojangSearchService;
+    private final DojangSearchIndexer dojangSearchIndexer;
+    private final DojangRepository dojangRepository;
 
     @PostMapping("/create-test-user")
     @Transactional
@@ -70,7 +81,7 @@ public class DevController {
     public ResponseEntity<SeedDojangsRes> seedDojangs() {
         log.info("[DEV] 도장 시드 데이터 생성 시작");
         int count = devDojangSeeder.seedDojangs();
-        memorySearchStrategy.refresh();
+        dojangSearchService.refreshIndex();
         log.info("[DEV] 도장 시드 데이터 생성 완료: {}개", count);
         return ResponseEntity.ok(new SeedDojangsRes(count));
     }
@@ -127,4 +138,31 @@ public class DevController {
     public record SeedDojangsRes(int count) {}
 
     public record SeedStudentsRes(int count) {}
+
+    @GetMapping("/search/inverted")
+    public ResponseEntity<List<DojangSearchDto>> searchInverted(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(
+                dojangSearchIndexer.search(keyword, PageRequest.of(0, size)).getContent()
+        );
+    }
+
+    @GetMapping("/search/like")
+    public ResponseEntity<List<DojangSearchDto>> searchLike(@RequestParam String keyword) {
+        List<DojangSearchDto> results = dojangRepository.findByKeywordLike(keyword)
+                .stream()
+                .map(DojangSearchDto::from)
+                .toList();
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/search/fulltext")
+    public ResponseEntity<List<DojangSearchDto>> searchFullText(@RequestParam String keyword) {
+        List<DojangSearchDto> results = dojangRepository.findByKeywordFullText(keyword)
+                .stream()
+                .map(DojangSearchDto::from)
+                .toList();
+        return ResponseEntity.ok(results);
+    }
 }
