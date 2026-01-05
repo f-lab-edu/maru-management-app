@@ -16,8 +16,8 @@ import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
-import com.maru.repository.invoice.projection.InvoiceStatistics;
-import com.maru.repository.invoice.projection.MonthlyInvoiceStatistics;
+import com.maru.repository.invoice.view.InvoiceStatisticsView;
+import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
@@ -141,7 +141,7 @@ public class PaymentService {
         BigDecimal totalPaidAmount = paymentRepository.sumByTenantIdAndPeriod(
                 tenantId, dojangId, startOfMonth, startOfNextMonth);
 
-        InvoiceStatistics statistics = invoiceRepository.getStatistics(
+        InvoiceStatisticsView statistics = invoiceRepository.getStatistics(
                 tenantId, dojangId, YearMonth.of(year, month));
 
         return PaymentStatisticsRes.builder()
@@ -168,7 +168,7 @@ public class PaymentService {
         YearMonth startYearMonth = YearMonth.of(year, 1);
         YearMonth endYearMonth = YearMonth.of(year, 12);
 
-        List<MonthlyInvoiceStatistics> queryResult = invoiceRepository.getYearStatistics(
+        List<MonthlyInvoiceStatisticsView> queryResult = invoiceRepository.getYearStatistics(
                 tenantId, dojangId, startYearMonth, endYearMonth);
 
         List<MonthlyStatisticsData> monthlyData = buildMonthlyDataWithZeroFilling(year, queryResult);
@@ -195,8 +195,8 @@ public class PaymentService {
     }
 
     private List<MonthlyStatisticsData> buildMonthlyDataWithZeroFilling(
-            int year, List<MonthlyInvoiceStatistics> queryResult) {
-        Map<Integer, MonthlyInvoiceStatistics> resultMap = queryResult.stream()
+            int year, List<MonthlyInvoiceStatisticsView> queryResult) {
+        Map<Integer, MonthlyInvoiceStatisticsView> resultMap = queryResult.stream()
                 .collect(Collectors.toMap(
                         stat -> stat.getYearMonth().getMonthValue(),
                         stat -> stat
@@ -204,7 +204,7 @@ public class PaymentService {
 
         List<MonthlyStatisticsData> monthlyData = new ArrayList<>();
         for (int month = 1; month <= 12; month++) {
-            MonthlyInvoiceStatistics stat = resultMap.get(month);
+            MonthlyInvoiceStatisticsView stat = resultMap.get(month);
             if (stat != null) {
                 monthlyData.add(new MonthlyStatisticsData(
                         month,

@@ -1,7 +1,7 @@
 package com.maru.repository.enrollment;
 
 import com.maru.domain.enrollment.Enrollment;
-import com.maru.repository.enrollment.projection.StudentCountByDivision;
+import com.maru.repository.enrollment.view.StudentCountByDivisionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -73,7 +73,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
             AND e.division.id IN :divisionIds
             GROUP BY e.division.id
             """)
-    List<StudentCountByDivision> countStudentsByDivisionIds(
+    List<StudentCountByDivisionView> countStudentsByDivisionIds(
             @Param("dojangId") String dojangId,
             @Param("divisionIds") List<String> divisionIds);
 

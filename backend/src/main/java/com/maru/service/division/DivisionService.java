@@ -15,7 +15,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
-import com.maru.repository.enrollment.projection.StudentCountByDivision;
+import com.maru.repository.enrollment.view.StudentCountByDivisionView;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -217,7 +217,7 @@ public class DivisionService {
                 .toList();
         return enrollmentRepository.countStudentsByDivisionIds(dojangId, divisionIds).stream()
                 .collect(Collectors.toMap(
-                        StudentCountByDivision::getDivisionId,
-                        StudentCountByDivision::getStudentCount));
+                        StudentCountByDivisionView::getDivisionId,
+                        StudentCountByDivisionView::getStudentCount));
     }
 }

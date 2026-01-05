@@ -2,8 +2,8 @@ package com.maru.repository.invoice;
 
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
-import com.maru.repository.invoice.projection.InvoiceStatistics;
-import com.maru.repository.invoice.projection.MonthlyInvoiceStatistics;
+import com.maru.repository.invoice.view.InvoiceStatisticsView;
+import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -121,7 +121,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
           AND i.billingYearMonth = :yearMonth
           AND i.status != 'VOID'
         """)
-    InvoiceStatistics getStatistics(
+    InvoiceStatisticsView getStatistics(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("yearMonth") YearMonth yearMonth);
@@ -144,7 +144,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         GROUP BY i.billingYearMonth
         ORDER BY i.billingYearMonth
         """)
-    List<MonthlyInvoiceStatistics> getYearStatistics(
+    List<MonthlyInvoiceStatisticsView> getYearStatistics(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("startYearMonth") YearMonth startYearMonth,

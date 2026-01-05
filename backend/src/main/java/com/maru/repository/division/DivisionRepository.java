@@ -1,7 +1,7 @@
 package com.maru.repository.division;
 
 import com.maru.domain.division.Division;
-import com.maru.repository.division.projection.DivisionCountBySection;
+import com.maru.repository.division.view.DivisionCountBySectionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -78,5 +78,5 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         WHERE d.section.dojang.id = :dojangId
         GROUP BY d.section.id
         """)
-    List<DivisionCountBySection> countDivisionsBySectionForDojang(@Param("dojangId") String dojangId);
+    List<DivisionCountBySectionView> countDivisionsBySectionForDojang(@Param("dojangId") String dojangId);
 }

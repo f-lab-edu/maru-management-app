@@ -1,9 +1,9 @@
-package com.maru.repository.invoice.projection;
+package com.maru.repository.invoice.view;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
 
-public interface MonthlyInvoiceStatistics {
+public interface MonthlyInvoiceStatisticsView {
     YearMonth getYearMonth();
     BigDecimal getTotalAmount();
     BigDecimal getTotalPaidAmount();

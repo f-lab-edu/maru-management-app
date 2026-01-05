@@ -7,7 +7,7 @@ import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
-import com.maru.repository.division.projection.DivisionCountBySection;
+import com.maru.repository.division.view.DivisionCountBySectionView;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -65,8 +65,8 @@ public class SectionService {
     private Map<String, Integer> buildDivisionCountMap(String dojangId) {
         return divisionRepository.countDivisionsBySectionForDojang(dojangId).stream()
                 .collect(Collectors.toMap(
-                        DivisionCountBySection::getSectionId,
-                        DivisionCountBySection::getDivisionCount
+                        DivisionCountBySectionView::getSectionId,
+                        DivisionCountBySectionView::getDivisionCount
                 ));
     }
 
