@@ -58,4 +58,15 @@ public interface SectionRepository extends JpaRepository<Section, String> {
         ORDER BY s.displayOrder
         """)
     List<SectionView> findAllWithDivisionCount(@Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT s.id as id, s.name as name, s.displayOrder as displayOrder,
+               (SELECT COUNT(d) FROM Division d WHERE d.sectionId = s.id) as divisionCount
+        FROM Section s
+        WHERE s.id = :sectionId
+          AND s.dojangId = :dojangId
+        """)
+    Optional<SectionView> findDetailById(
+            @Param("sectionId") String sectionId,
+            @Param("dojangId") String dojangId);
 }

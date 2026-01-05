@@ -1,7 +1,9 @@
 package com.maru.service.section;
 
+import com.maru.common.exception.BusinessException;
 import com.maru.controller.section.dto.SectionListRes;
 import com.maru.controller.section.dto.SectionRes;
+import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.section.view.SectionView;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,21 @@ import java.util.List;
 public class SectionQueryService {
 
     private final SectionRepository sectionRepository;
+
+    /**
+     * 수련부 단건 조회
+     *
+     * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID
+     * @return 수련부 정보
+     * @throws BusinessException NOT_FOUND - 수련부를 찾을 수 없는 경우
+     */
+    public SectionRes getSection(String dojangId, String sectionId) {
+        SectionView view = sectionRepository.findDetailById(sectionId, dojangId)
+                .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
+
+        return toSectionRes(view);
+    }
 
     /**
      * 수련부 목록 조회

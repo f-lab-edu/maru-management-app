@@ -27,6 +27,7 @@ public class SectionService {
     private final SectionRepository sectionRepository;
     private final DojangRepository dojangRepository;
     private final DivisionRepository divisionRepository;
+    private final SectionQueryService sectionQueryService;
 
     /**
      * 수련부 생성
@@ -45,7 +46,7 @@ public class SectionService {
         Section section = Section.create(dojangId, request.name(), nextDisplayOrder);
         sectionRepository.save(section);
 
-        return SectionRes.from(section, 0);
+        return sectionQueryService.getSection(dojangId, section.getId());
     }
 
     /**
@@ -64,7 +65,7 @@ public class SectionService {
 
         section.updateName(request.name());
 
-        return SectionRes.from(section, 0);
+        return sectionQueryService.getSection(dojangId, sectionId);
     }
 
     /**
