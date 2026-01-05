@@ -49,7 +49,7 @@ public class StudentService {
             if (student.getStatus() == StudentStatus.WITHDRAWN) {
                 student.reactivate();
                 log.info("원생 재등록 - studentId: {}, dojangId: {}", student.getId(), dojangId);
-                return queryService.getStudent(student.getId(), dojangId);
+                return queryService.getStudent(dojangId, student.getId());
             }
             throw new BusinessException(StudentErrorCode.DUPLICATE);
         }
@@ -58,7 +58,7 @@ public class StudentService {
         studentRepository.save(student);
         log.info("원생 등록 - studentId: {}, dojangId: {}", student.getId(), dojangId);
 
-        return queryService.getStudent(student.getId(), dojangId);
+        return queryService.getStudent(dojangId, student.getId());
     }
 
     /**
