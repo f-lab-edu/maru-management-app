@@ -15,7 +15,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     @Query("""
         SELECT s FROM Student s
         WHERE s.tenantId = :tenantId
-          AND s.dojang.id = :dojangId
+          AND s.dojangId = :dojangId
           AND s.status != :excludeStatus
           AND s.deletedAt IS NULL
         ORDER BY s.enrolledAt DESC
@@ -42,7 +42,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     @Query("""
         SELECT s FROM Student s
         WHERE s.tenantId = :tenantId
-          AND s.dojang.id = :dojangId
+          AND s.dojangId = :dojangId
           AND s.status = 'ACTIVE'
           AND s.deletedAt IS NULL
           AND NOT EXISTS (
@@ -68,9 +68,9 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("excludeStatus") StudentStatus excludeStatus);
 
     @Query("""
-        SELECT s FROM Student s
-        JOIN FETCH s.dojang d
-        WHERE s.status = 'ACTIVE'
+        SELECT s FROM Student s, Dojang d
+        WHERE s.dojangId = d.id
+          AND s.status = 'ACTIVE'
           AND s.deletedAt IS NULL
           AND d.deletedAt IS NULL
           AND d.isActive = true
@@ -84,7 +84,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     @Query("""
         SELECT s FROM Student s
         WHERE s.tenantId = :tenantId
-          AND s.dojang.id = :dojangId
+          AND s.dojangId = :dojangId
           AND s.id IN :studentIds
           AND s.status != :excludeStatus
           AND s.deletedAt IS NULL
