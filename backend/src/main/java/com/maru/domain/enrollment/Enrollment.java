@@ -41,7 +41,7 @@ public class Enrollment extends BaseEntity {
     public static Enrollment create(Division division, Student student) {
         DomainAssert.notNull(division, EnrollmentErrorCode.DIVISION_REQUIRED);
         DomainAssert.notNull(student, EnrollmentErrorCode.STUDENT_REQUIRED);
-        String dojangId = division.getDojang().getId();
+        String dojangId = division.getDojangId();
         return new Enrollment(dojangId, division, student);
     }
 }

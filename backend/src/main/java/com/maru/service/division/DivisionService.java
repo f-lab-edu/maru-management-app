@@ -11,13 +11,10 @@ import com.maru.domain.division.Division;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.enrollment.view.StudentCountByDivisionView;
 import com.maru.repository.section.SectionRepository;
-import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +34,6 @@ public class DivisionService {
 
     private final DivisionRepository divisionRepository;
     private final SectionRepository sectionRepository;
-    private final DojangRepository dojangRepository;
     private final EnrollmentRepository enrollmentRepository;
 
     /**
@@ -50,13 +46,12 @@ public class DivisionService {
      */
     @Transactional
     public DivisionRes createDivision(String dojangId, DivisionCreateReq request) {
-        Dojang dojang = findDojangById(dojangId);
         Section section = findSectionByIdAndDojangId(request.sectionId(), dojangId);
 
         validateDuplicateName(request.sectionId(), request.name());
 
         int nextDisplayOrder = divisionRepository.findMaxDisplayOrderBySectionId(request.sectionId()) + 1;
-        Division division = Division.create(dojang, section, request.name(), nextDisplayOrder);
+        Division division = Division.create(dojangId, section, request.name(), nextDisplayOrder);
 
         if (request.scheduleDays() != null && !request.scheduleDays().isEmpty()) {
             division.updateSchedule(request.scheduleDays(), request.startTime(), request.endTime());
@@ -179,11 +174,6 @@ public class DivisionService {
             }
             division.updateDisplayOrder(i);
         }
-    }
-
-    private Dojang findDojangById(String dojangId) {
-        return dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
     }
 
     private Section findSectionByIdAndDojangId(String sectionId, String dojangId) {
