@@ -33,21 +33,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @Query("""
         SELECT i FROM Invoice i
         JOIN FETCH i.student s
-        WHERE i.tenantId = :tenantId
-          AND i.dojangId = :dojangId
-          AND i.status IN ('OPEN', 'PARTIAL')
-          AND i.dueDate = :dueDate
-        """)
-    List<Invoice> findUnpaidByDueDate(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("dueDate") LocalDate dueDate);
-
-    @Query("""
-        SELECT i FROM Invoice i
-        JOIN FETCH i.student s
         LEFT JOIN Enrollment e ON e.student.id = s.id
-            AND e.division.dojang.id = :dojangId
+            AND e.division.dojangId = :dojangId
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.status IN ('OPEN', 'PARTIAL')
