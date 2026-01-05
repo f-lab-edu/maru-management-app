@@ -269,7 +269,6 @@ export function DivisionList({ dojangId, sectionId, sectionName }: DivisionListP
 
       <DivisionEnrollmentSheet
         dojangId={dojangId}
-        sectionId={sectionId}
         division={enrollmentDivision}
         open={!!enrollmentDivision}
         onOpenChange={(open) => !open && setEnrollmentDivision(null)}

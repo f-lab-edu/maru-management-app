@@ -20,7 +20,6 @@ import type { StudentStatus } from '../../../types/student';
 
 interface StudentSelectDialogProps {
   dojangId: string;
-  sectionId: string;
   divisionId: string;
   divisionName: string;
   enrolledStudentIds: string[];
@@ -30,7 +29,6 @@ interface StudentSelectDialogProps {
 
 export function StudentSelectDialog({
   dojangId,
-  sectionId,
   divisionId,
   divisionName,
   enrolledStudentIds,
@@ -42,7 +40,7 @@ export function StudentSelectDialog({
   const [hideEnrolledElsewhere, setHideEnrolledElsewhere] = useState(false);
 
   const { data: studentsData, isLoading } = useStudents(dojangId);
-  const bulkEnrollMutation = useBulkEnrollStudents(dojangId, divisionId, sectionId);
+  const bulkEnrollMutation = useBulkEnrollStudents(dojangId, divisionId);
 
   const availableStudents = useMemo(() => {
     const students = studentsData?.students ?? [];

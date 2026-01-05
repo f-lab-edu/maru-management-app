@@ -10,9 +10,14 @@ import type {
   AttendanceTimeChangeRequest,
 } from '../types';
 
-/**
- * 출석 체크 mutation
- */
+export const attendanceKeys = {
+  all: (dojangId: string) => ['attendance', dojangId] as const,
+  range: (dojangId: string, startDate: string, endDate: string, filters?: object) =>
+    [...attendanceKeys.all(dojangId), 'range', startDate, endDate, filters] as const,
+  student: (dojangId: string, studentId: string, startDate: string, endDate: string) =>
+    [...attendanceKeys.all(dojangId), 'student', studentId, startDate, endDate] as const,
+};
+
 export function useAttendanceCheck(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -22,14 +27,13 @@ export function useAttendanceCheck(dojangId: string | null) {
       return attendanceService.checkIn(dojangId, request);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 일괄 출석 체크 mutation
- */
 export function useBulkCheckIn(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -39,14 +43,13 @@ export function useBulkCheckIn(dojangId: string | null) {
       return attendanceService.bulkCheckIn(dojangId, request);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 퇴관 처리 mutation
- */
 export function useAttendanceCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -56,14 +59,13 @@ export function useAttendanceCheckout(dojangId: string | null) {
       return attendanceService.checkout(dojangId, attendanceId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 퇴관 취소 mutation
- */
 export function useCancelCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -73,14 +75,13 @@ export function useCancelCheckout(dojangId: string | null) {
       return attendanceService.cancelCheckout(dojangId, attendanceId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 일괄 퇴관 처리 mutation
- */
 export function useBulkCheckout(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -90,14 +91,13 @@ export function useBulkCheckout(dojangId: string | null) {
       return attendanceService.bulkCheckout(dojangId, attendanceIds);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 출석 상태 수정 mutation
- */
 export function useAttendanceStatusUpdate(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -111,14 +111,13 @@ export function useAttendanceStatusUpdate(dojangId: string | null) {
       return attendanceService.changeStatus(dojangId, attendanceId, request);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 일괄 상태 변경 mutation
- */
 export function useBulkStatusChange(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -128,14 +127,13 @@ export function useBulkStatusChange(dojangId: string | null) {
       return attendanceService.bulkChangeStatus(dojangId, request);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }
 
-/**
- * 시간 변경 mutation
- */
 export function useAttendanceTimeChange(dojangId: string | null) {
   const queryClient = useQueryClient();
 
@@ -149,7 +147,9 @@ export function useAttendanceTimeChange(dojangId: string | null) {
       return attendanceService.changeTime(dojangId, attendanceId, request);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (dojangId) {
+        queryClient.invalidateQueries({ queryKey: attendanceKeys.all(dojangId) });
+      }
     },
   });
 }

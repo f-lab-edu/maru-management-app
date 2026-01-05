@@ -17,7 +17,6 @@ import type { DivisionRes } from '../types';
 
 interface DivisionEnrollmentSheetProps {
   dojangId: string;
-  sectionId: string;
   division: DivisionRes | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,7 +24,6 @@ interface DivisionEnrollmentSheetProps {
 
 export function DivisionEnrollmentSheet({
   dojangId,
-  sectionId,
   division,
   open,
   onOpenChange,
@@ -36,7 +34,7 @@ export function DivisionEnrollmentSheet({
     dojangId,
     division?.id ?? null
   );
-  const unenrollMutation = useUnenrollStudent(dojangId, division?.id ?? null, sectionId);
+  const unenrollMutation = useUnenrollStudent(dojangId, division?.id ?? null);
 
   const students = studentsData?.students ?? [];
   const enrolledStudentIds = students.map((s) => s.studentId);
@@ -147,7 +145,6 @@ export function DivisionEnrollmentSheet({
       {division && (
         <StudentSelectDialog
           dojangId={dojangId}
-          sectionId={sectionId}
           divisionId={division.id}
           divisionName={division.name}
           enrolledStudentIds={enrolledStudentIds}
