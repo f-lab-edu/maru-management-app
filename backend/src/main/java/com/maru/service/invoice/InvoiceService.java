@@ -329,7 +329,7 @@ public class InvoiceService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
-        if (!dojangId.equals(student.getDojang().getId())) {
+        if (!dojangId.equals(student.getDojangId())) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
 
@@ -351,7 +351,7 @@ public class InvoiceService {
             int totalCount = request.studentIds().size();
             List<Student> students = studentRepository.findAllActiveByIds(
                     request.studentIds(), tenantId, StudentStatus.WITHDRAWN).stream()
-                    .filter(s -> dojangId.equals(s.getDojang().getId()))
+                    .filter(s -> dojangId.equals(s.getDojangId()))
                     .toList();
             return new TargetStudentsResult(students, totalCount);
         }

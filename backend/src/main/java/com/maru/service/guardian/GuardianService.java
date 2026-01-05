@@ -192,7 +192,7 @@ public class GuardianService {
     }
 
     private void validateStudentBelongsToDojang(Student student, String dojangId) {
-        if (!student.getDojang().getId().equals(dojangId)) {
+        if (!student.getDojangId().equals(dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
     }

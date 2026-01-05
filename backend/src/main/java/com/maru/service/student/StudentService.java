@@ -59,7 +59,7 @@ public class StudentService {
             throw new BusinessException(StudentErrorCode.DUPLICATE);
         }
 
-        Student student = Student.create(dojang, req.name(), req.birth(), req.photoUrl(), req.phone());
+        Student student = Student.create(tenantId, dojangId, req.name(), req.birth(), req.photoUrl(), req.phone());
         studentRepository.save(student);
         log.info("원생 등록 - studentId: {}, dojangId: {}", student.getId(), dojangId);
 
@@ -189,8 +189,8 @@ public class StudentService {
         List<Student> students = studentRepository.findAllById(studentIds);
 
         for (Student student : students) {
-            if (!student.getDojang().getId().equals(dojangId) ||
-                !student.getDojang().getTenantId().equals(tenantId)) {
+            if (!student.getDojangId().equals(dojangId) ||
+                !student.getTenantId().equals(tenantId)) {
                 throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
             }
             if (student.getStatus() == StudentStatus.WITHDRAWN) {

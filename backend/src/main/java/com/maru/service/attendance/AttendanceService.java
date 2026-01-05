@@ -361,7 +361,7 @@ public class AttendanceService {
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
-        if (!student.getDojang().getId().equals(dojangId)) {
+        if (!student.getDojangId().equals(dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
         return student;
@@ -431,7 +431,7 @@ public class AttendanceService {
             failureList.add(buildFailure(studentId, StudentErrorCode.NOT_FOUND.getMessage()));
             return;
         }
-        if (!student.getDojang().getId().equals(dojangId)) {
+        if (!student.getDojangId().equals(dojangId)) {
             failureList.add(buildFailure(studentId, DojangErrorCode.UNAUTHORIZED_ACCESS.getMessage()));
             return;
         }

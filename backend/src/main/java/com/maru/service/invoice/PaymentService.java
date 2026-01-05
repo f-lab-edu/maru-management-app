@@ -372,7 +372,7 @@ public class PaymentService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
-        if (!student.getDojang().getId().equals(dojangId)) {
+        if (!student.getDojangId().equals(dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
 

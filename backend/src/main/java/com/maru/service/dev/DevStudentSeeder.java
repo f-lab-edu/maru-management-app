@@ -71,7 +71,7 @@ public class DevStudentSeeder {
         for (int i = 0; i < DEFAULT_STUDENT_COUNT; i++) {
             String name = generateRandomKoreanName();
             LocalDate birth = generateRandomBirth();
-            Student student = Student.create(dojang, name, birth, null, null);
+            Student student = Student.create(tenantId, dojangId, name, birth, null, null);
             students.add(student);
         }
 
