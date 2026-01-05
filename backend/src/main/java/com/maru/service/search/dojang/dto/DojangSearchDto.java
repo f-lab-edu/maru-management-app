@@ -1,4 +1,4 @@
-package com.maru.service.tenant.search.dto;
+package com.maru.service.search.dojang.dto;
 
 import com.maru.domain.tenant.Dojang;
 import lombok.Builder;

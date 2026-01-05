@@ -1,6 +1,6 @@
 package com.maru.controller.tenant.dto;
 
-import com.maru.service.tenant.search.dto.DojangSearchDto;
+import com.maru.service.search.dojang.dto.DojangSearchDto;
 import lombok.Builder;
 
 @Builder
