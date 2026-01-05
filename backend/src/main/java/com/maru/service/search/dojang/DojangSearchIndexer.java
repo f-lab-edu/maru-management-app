@@ -1,11 +1,11 @@
-package com.maru.service.tenant.search;
+package com.maru.service.search.dojang;
 
 import com.maru.domain.tenant.Dojang;
 import com.maru.repository.tenant.DojangRepository;
-import com.maru.service.search.dojang.DojangAddressTokenizer;
-import com.maru.service.search.dojang.DojangNameTokenizer;
-import com.maru.service.search.dojang.DojangQueryTokenizer;
-import com.maru.service.tenant.search.dto.DojangSearchDto;
+import com.maru.service.search.dojang.analyzer.DojangAddressAnalyzer;
+import com.maru.service.search.dojang.analyzer.DojangNameAnalyzer;
+import com.maru.service.search.dojang.analyzer.DojangQueryAnalyzer;
+import com.maru.service.search.dojang.dto.DojangSearchDto;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,35 +14,43 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MemorySearchStrategy implements SearchStrategy {
+public class DojangSearchIndexer {
 
     private final DojangRepository dojangRepository;
-    private final DojangNameTokenizer nameTokenizer;
-    private final DojangAddressTokenizer addressTokenizer;
-    private final DojangQueryTokenizer queryTokenizer;
+    private final DojangNameAnalyzer nameAnalyzer;
+    private final DojangAddressAnalyzer addressAnalyzer;
+    private final DojangQueryAnalyzer queryAnalyzer;
 
     private final Map<String, Set<String>> invertedIndex = new ConcurrentHashMap<>();
-    private final Map<String, DojangSearchDto> dojangData = new ConcurrentHashMap<>();
+    private final Map<String, DojangSearchDto> dataCache = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
-        refresh();
+        rebuildIndex();
     }
 
-    @Override
+    /**
+     * @param keyword 검색어
+     * @param pageable 페이지네이션
+     * @return 검색 결과
+     */
     public Page<DojangSearchDto> search(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
             return Page.empty(pageable);
         }
 
-        Set<String> queryTokens = queryTokenizer.tokenize(keyword);
+        Set<String> queryTokens = queryAnalyzer.analyze(keyword);
         if (queryTokens.isEmpty()) {
             return Page.empty(pageable);
         }
@@ -79,7 +87,7 @@ public class MemorySearchStrategy implements SearchStrategy {
         }
 
         List<DojangSearchDto> content = sortedIds.subList(start, end).stream()
-                .map(dojangData::get)
+                .map(dataCache::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -89,11 +97,11 @@ public class MemorySearchStrategy implements SearchStrategy {
     /**
      * 전체 인덱스 재구축
      */
-    public void refresh() {
+    public void rebuildIndex() {
         log.info("도장 검색 인덱스 재구축 시작");
 
         invertedIndex.clear();
-        dojangData.clear();
+        dataCache.clear();
 
         List<Dojang> dojangs = dojangRepository.findAllActiveWithOwner();
 
@@ -105,28 +113,24 @@ public class MemorySearchStrategy implements SearchStrategy {
     }
 
     /**
-     * 단건 도장 추가
+     * @param dojang 도장 엔티티
      */
-    public void addDojang(Dojang dojang) {
+    public void addToIndex(Dojang dojang) {
         indexDojang(dojang);
         log.debug("도장 인덱스 추가: {}", dojang.getName());
     }
 
     private void indexDojang(Dojang dojang) {
         DojangSearchDto dto = DojangSearchDto.from(dojang);
-        dojangData.put(dojang.getId(), dto);
+        dataCache.put(dojang.getId(), dto);
 
         Set<String> tokens = new HashSet<>();
 
-        // 도장명 토큰화
-        tokens.addAll(nameTokenizer.tokenize(dto.name()));
+        tokens.addAll(nameAnalyzer.analyze(dto.name()));
+        tokens.addAll(addressAnalyzer.analyze(dto.address()));
 
-        // 주소 토큰화
-        tokens.addAll(addressTokenizer.tokenize(dto.address()));
-
-        // 관장명 토큰화 (이름 + 초성)
         if (dto.ownerName() != null && !dto.ownerName().isBlank()) {
-            tokens.addAll(queryTokenizer.tokenize(dto.ownerName()));
+            tokens.addAll(queryAnalyzer.analyze(dto.ownerName()));
         }
 
         for (String token : tokens) {
