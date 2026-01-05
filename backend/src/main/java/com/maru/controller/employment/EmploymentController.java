@@ -1,14 +1,12 @@
 package com.maru.controller.employment;
 
-import com.maru.common.exception.AuthErrorCode;
-import com.maru.common.exception.BusinessException;
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.tenant.Dojang;
-import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.CurrentUserId;
 import com.maru.service.employment.EmploymentService;
+import com.maru.service.tenant.DojangQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +21,7 @@ import java.util.List;
 public class EmploymentController {
 
     private final EmploymentService employmentService;
-    private final DojangRepository dojangRepository;
+    private final DojangQueryService dojangQueryService;
 
     /**
      * 승인 요청 API (사범 → 도장)
@@ -65,8 +63,7 @@ public class EmploymentController {
      */
     @GetMapping("/pending")
     public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId String userId) {
-        Dojang dojang = dojangRepository.findByOwnerId(userId)
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCESS_DENIED));
+        Dojang dojang = dojangQueryService.getByOwnerId(userId);
 
         List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
                 .stream()
