@@ -33,13 +33,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     @Query("""
         SELECT i FROM Invoice i
         JOIN FETCH i.student s
-        LEFT JOIN Enrollment e ON e.student.id = s.id
-            AND e.division.dojangId = :dojangId
+        LEFT JOIN Enrollment e ON e.studentId = s.id
+            AND e.dojangId = :dojangId
+        LEFT JOIN Division d ON e.divisionId = d.id
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.status IN ('OPEN', 'PARTIAL')
-          AND (:sectionId IS NULL OR e.division.section.id = :sectionId)
-          AND (:divisionId IS NULL OR e.division.id = :divisionId)
+          AND (:sectionId IS NULL OR d.section.id = :sectionId)
+          AND (:divisionId IS NULL OR e.divisionId = :divisionId)
         ORDER BY i.dueDate ASC
         """)
     List<Invoice> findUnpaidInvoices(

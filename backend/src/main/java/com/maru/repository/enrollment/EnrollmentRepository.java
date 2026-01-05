@@ -1,6 +1,7 @@
 package com.maru.repository.enrollment;
 
 import com.maru.domain.enrollment.Enrollment;
+import com.maru.repository.enrollment.view.EnrollmentStudentView;
 import com.maru.repository.enrollment.view.StudentCountByDivisionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -13,26 +14,16 @@ import java.util.Optional;
 public interface EnrollmentRepository extends JpaRepository<Enrollment, String> {
 
     @Query("""
-            SELECT e FROM Enrollment e
-            JOIN FETCH e.student s
+            SELECT e.studentId AS studentId, s.name AS studentName, e.createdAt AS createdAt
+            FROM Enrollment e
+            JOIN Student s ON e.studentId = s.id
             WHERE e.dojangId = :dojangId
-            AND e.division.id = :divisionId
+            AND e.divisionId = :divisionId
             ORDER BY s.name
             """)
-    List<Enrollment> findAllWithStudentByDivisionId(
+    List<EnrollmentStudentView> findAllWithStudentByDivisionId(
             @Param("dojangId") String dojangId,
             @Param("divisionId") String divisionId);
-
-    @Query("""
-            SELECT e FROM Enrollment e
-            JOIN FETCH e.division d
-            WHERE e.dojangId = :dojangId
-            AND e.student.id = :studentId
-            ORDER BY d.displayOrder
-            """)
-    List<Enrollment> findAllWithDivisionByStudentId(
-            @Param("dojangId") String dojangId,
-            @Param("studentId") String studentId);
 
     boolean existsByDojangIdAndDivisionIdAndStudentId(String dojangId, String divisionId, String studentId);
 
@@ -41,17 +32,17 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
     @Query("""
             SELECT COUNT(e) FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.division.id = :divisionId
+            AND e.divisionId = :divisionId
             """)
     int countByDivisionId(
             @Param("dojangId") String dojangId,
             @Param("divisionId") String divisionId);
 
     @Query("""
-            SELECT e.student.id FROM Enrollment e
+            SELECT e.studentId FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.division.id = :divisionId
-            AND e.student.id IN :studentIds
+            AND e.divisionId = :divisionId
+            AND e.studentId IN :studentIds
             """)
     List<String> findAlreadyEnrolledStudentIds(
             @Param("dojangId") String dojangId,
@@ -62,43 +53,44 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, String> 
     @Query("""
             DELETE FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.division.id = :divisionId
+            AND e.divisionId = :divisionId
             """)
     void deleteAllByDivisionId(@Param("dojangId") String dojangId, @Param("divisionId") String divisionId);
 
     @Query("""
-            SELECT e.division.id AS divisionId, COUNT(e) AS studentCount
+            SELECT e.divisionId AS divisionId, COUNT(e) AS studentCount
             FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.division.id IN :divisionIds
-            GROUP BY e.division.id
+            AND e.divisionId IN :divisionIds
+            GROUP BY e.divisionId
             """)
     List<StudentCountByDivisionView> countStudentsByDivisionIds(
             @Param("dojangId") String dojangId,
             @Param("divisionIds") List<String> divisionIds);
 
     @Query("""
-            SELECT DISTINCT e.student.id FROM Enrollment e
+            SELECT DISTINCT e.studentId FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.student.id IN :studentIds
+            AND e.studentId IN :studentIds
             """)
     List<String> findEnrolledStudentIds(
             @Param("dojangId") String dojangId,
             @Param("studentIds") List<String> studentIds);
 
     @Query("""
-            SELECT DISTINCT e.student.id FROM Enrollment e
+            SELECT DISTINCT e.studentId FROM Enrollment e
             WHERE e.dojangId = :dojangId
-            AND e.division.id = :divisionId
+            AND e.divisionId = :divisionId
             """)
     List<String> findStudentIdsByDivisionId(
             @Param("dojangId") String dojangId,
             @Param("divisionId") String divisionId);
 
     @Query("""
-            SELECT DISTINCT e.student.id FROM Enrollment e
+            SELECT DISTINCT e.studentId FROM Enrollment e
+            JOIN Division d ON e.divisionId = d.id
             WHERE e.dojangId = :dojangId
-            AND e.division.section.id = :sectionId
+            AND d.section.id = :sectionId
             """)
     List<String> findStudentIdsBySectionId(
             @Param("dojangId") String dojangId,
