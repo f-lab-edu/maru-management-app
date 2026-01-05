@@ -2,6 +2,7 @@ package com.maru.service.search.dojang;
 
 import com.maru.domain.tenant.Dojang;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.repository.tenant.view.DojangSearchView;
 import com.maru.service.search.dojang.analyzer.DojangAddressAnalyzer;
 import com.maru.service.search.dojang.analyzer.DojangNameAnalyzer;
 import com.maru.service.search.dojang.analyzer.DojangQueryAnalyzer;
@@ -103,26 +104,26 @@ public class DojangSearchIndexer {
         invertedIndex.clear();
         dataCache.clear();
 
-        List<Dojang> dojangs = dojangRepository.findAllActiveWithOwner();
+        List<DojangSearchView> views = dojangRepository.findAllActiveForSearch();
 
-        for (Dojang dojang : dojangs) {
-            indexDojang(dojang);
+        for (DojangSearchView view : views) {
+            indexDojangDto(view.getId(), DojangSearchDto.from(view));
         }
 
-        log.info("도장 검색 인덱스 재구축 완료: {} 건, 토큰 수: {}", dojangs.size(), invertedIndex.size());
+        log.info("도장 검색 인덱스 재구축 완료: {} 건, 토큰 수: {}", views.size(), invertedIndex.size());
     }
 
     /**
      * @param dojang 도장 엔티티
+     * @param ownerName 관장 이름
      */
-    public void addToIndex(Dojang dojang) {
-        indexDojang(dojang);
+    public void addToIndex(Dojang dojang, String ownerName) {
+        indexDojangDto(dojang.getId(), DojangSearchDto.from(dojang, ownerName));
         log.debug("도장 인덱스 추가: {}", dojang.getName());
     }
 
-    private void indexDojang(Dojang dojang) {
-        DojangSearchDto dto = DojangSearchDto.from(dojang);
-        dataCache.put(dojang.getId(), dto);
+    private void indexDojangDto(String id, DojangSearchDto dto) {
+        dataCache.put(id, dto);
 
         Set<String> tokens = new HashSet<>();
 
@@ -136,7 +137,7 @@ public class DojangSearchIndexer {
         for (String token : tokens) {
             if (token == null || token.isBlank()) continue;
             invertedIndex.computeIfAbsent(token, k -> ConcurrentHashMap.newKeySet())
-                    .add(dojang.getId());
+                    .add(id);
         }
     }
 }

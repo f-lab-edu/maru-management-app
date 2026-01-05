@@ -23,9 +23,10 @@ public class DojangSearchService implements SearchService<DojangSearchDto> {
 
     /**
      * @param dojang 도장 엔티티
+     * @param ownerName 관장 이름
      */
-    public void addToIndex(Dojang dojang) {
-        indexer.addToIndex(dojang);
+    public void addToIndex(Dojang dojang, String ownerName) {
+        indexer.addToIndex(dojang, ownerName);
     }
 
     /**

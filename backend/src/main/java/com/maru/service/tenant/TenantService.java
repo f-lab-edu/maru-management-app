@@ -55,7 +55,7 @@ public class TenantService {
 
         user.updateOnboardingStep(OnboardingStep.COMPLETED);
 
-        dojangSearchService.addToIndex(dojang);
+        dojangSearchService.addToIndex(dojang, user.getName());
 
         log.info("테넌트 및 도장 생성 완료: userId={}, tenantId={}, dojangId={}",
             userId, tenant.getId(), dojang.getId());

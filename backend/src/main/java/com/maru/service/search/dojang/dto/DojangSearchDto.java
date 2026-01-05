@@ -1,9 +1,8 @@
 package com.maru.service.search.dojang.dto;
 
 import com.maru.domain.tenant.Dojang;
-import lombok.Builder;
+import com.maru.repository.tenant.view.DojangSearchView;
 
-@Builder
 public record DojangSearchDto(
         String id,
         String name,
@@ -11,11 +10,10 @@ public record DojangSearchDto(
         String ownerName
 ) {
     public static DojangSearchDto from(Dojang dojang, String ownerName) {
-        return DojangSearchDto.builder()
-                .id(dojang.getId())
-                .name(dojang.getName())
-                .address(dojang.getAddress())
-                .ownerName(ownerName)
-                .build();
+        return new DojangSearchDto(dojang.getId(), dojang.getName(), dojang.getAddress(), ownerName);
+    }
+
+    public static DojangSearchDto from(DojangSearchView view) {
+        return new DojangSearchDto(view.getId(), view.getName(), view.getAddress(), view.getOwnerName());
     }
 }

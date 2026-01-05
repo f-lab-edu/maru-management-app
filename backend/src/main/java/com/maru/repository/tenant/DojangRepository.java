@@ -1,6 +1,7 @@
 package com.maru.repository.tenant;
 
 import com.maru.domain.tenant.Dojang;
+import com.maru.repository.tenant.view.DojangSearchView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,33 +14,33 @@ import java.util.Optional;
 public interface DojangRepository extends JpaRepository<Dojang, String> {
 
     @Query("""
-        SELECT d
-        FROM Dojang d
-        JOIN FETCH d.owner
+        SELECT d.id as id, d.name as name, d.address as address, u.name as ownerName
+        FROM Dojang d JOIN User u ON d.ownerId = u.id
         WHERE d.deletedAt IS NULL
         AND d.isActive = true
         """)
-    List<Dojang> findAllActiveWithOwner();
+    List<DojangSearchView> findAllActiveForSearch();
 
     @Query("""
-        SELECT d FROM Dojang d
-        JOIN FETCH d.owner o
+        SELECT d.id as id, d.name as name, d.address as address, u.name as ownerName
+        FROM Dojang d JOIN User u ON d.ownerId = u.id
         WHERE d.deletedAt IS NULL
           AND d.isActive = true
           AND (d.name LIKE %:keyword%
                OR d.address LIKE %:keyword%
-               OR o.name LIKE %:keyword%)
+               OR u.name LIKE %:keyword%)
         """)
-    List<Dojang> findByKeywordLike(@Param("keyword") String keyword);
+    List<DojangSearchView> findByKeywordLike(@Param("keyword") String keyword);
 
     @Query(value = """
-        SELECT d.* FROM dojang d
+        SELECT d.id as id, d.name as name, d.address as address, u.name as ownerName
+        FROM dojang d
         JOIN users u ON d.user_id = u.id
         WHERE d.deleted_at IS NULL
           AND d.is_active = true
           AND MATCH(d.name, d.address) AGAINST(:keyword IN BOOLEAN MODE)
         """, nativeQuery = true)
-    List<Dojang> findByKeywordFullText(@Param("keyword") String keyword);
+    List<DojangSearchView> findByKeywordFullText(@Param("keyword") String keyword);
 
     Optional<Dojang> findByOwnerId(String ownerId);
 }
