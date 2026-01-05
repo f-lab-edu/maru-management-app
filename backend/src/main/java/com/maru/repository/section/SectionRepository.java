@@ -12,21 +12,21 @@ public interface SectionRepository extends JpaRepository<Section, String> {
 
     @Query("""
         SELECT s FROM Section s
-        WHERE s.dojang.id = :dojangId
+        WHERE s.dojangId = :dojangId
         ORDER BY s.displayOrder
         """)
     List<Section> findAllByDojangIdOrderByDisplayOrder(@Param("dojangId") String dojangId);
 
     @Query("""
         SELECT COUNT(s) > 0 FROM Section s
-        WHERE s.dojang.id = :dojangId
+        WHERE s.dojangId = :dojangId
           AND s.name = :name
         """)
     boolean existsByDojangIdAndName(@Param("dojangId") String dojangId, @Param("name") String name);
 
     @Query("""
         SELECT COUNT(s) > 0 FROM Section s
-        WHERE s.dojang.id = :dojangId
+        WHERE s.dojangId = :dojangId
           AND s.name = :name
           AND s.id != :id
         """)
@@ -38,14 +38,14 @@ public interface SectionRepository extends JpaRepository<Section, String> {
     @Query("""
         SELECT s FROM Section s
         WHERE s.id = :id
-          AND s.dojang.id = :dojangId
+          AND s.dojangId = :dojangId
         """)
     Optional<Section> findByIdAndDojangId(@Param("id") String id, @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT COALESCE(MAX(s.displayOrder), -1)
         FROM Section s
-        WHERE s.dojang.id = :dojangId
+        WHERE s.dojangId = :dojangId
         """)
     int findMaxDisplayOrderByDojangId(@Param("dojangId") String dojangId);
 }

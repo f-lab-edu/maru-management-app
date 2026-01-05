@@ -21,7 +21,7 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
     @Query("""
         SELECT d FROM Division d
         JOIN FETCH d.section s
-        WHERE s.dojang.id = :dojangId
+        WHERE s.dojangId = :dojangId
           AND s.id = :sectionId
         ORDER BY d.displayOrder
         """)
@@ -33,7 +33,7 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         SELECT d FROM Division d
         JOIN FETCH d.section s
         WHERE d.id = :divisionId
-          AND s.dojang.id = :dojangId
+          AND s.dojangId = :dojangId
         """)
     Optional<Division> findByIdAndDojangIdWithSection(
             @Param("divisionId") String divisionId,
@@ -75,7 +75,7 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
     @Query("""
         SELECT d.section.id AS sectionId, COUNT(d) AS divisionCount
         FROM Division d
-        WHERE d.section.dojang.id = :dojangId
+        WHERE d.section.dojangId = :dojangId
         GROUP BY d.section.id
         """)
     List<DivisionCountBySectionView> countDivisionsBySectionForDojang(@Param("dojangId") String dojangId);

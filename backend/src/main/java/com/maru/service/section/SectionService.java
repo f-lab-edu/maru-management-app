@@ -4,7 +4,6 @@ import com.maru.common.exception.BusinessException;
 import com.maru.controller.section.dto.*;
 import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
-import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
 import com.maru.repository.division.view.DivisionCountBySectionView;
@@ -36,15 +35,15 @@ public class SectionService {
      * @param dojangId 도장 ID
      * @param request  생성 요청
      * @return 생성된 수련부 정보
-     * @throws BusinessException 중복 이름인 경우
+     * @throws BusinessException 도장을 찾을 수 없거나 중복 이름인 경우
      */
     @Transactional
     public SectionRes createSection(String dojangId, SectionCreateReq request) {
-        Dojang dojang = findDojangById(dojangId);
+        validateDojangExists(dojangId);
         validateDuplicateName(dojangId, request.name());
 
         int nextDisplayOrder = sectionRepository.findMaxDisplayOrderByDojangId(dojangId) + 1;
-        Section section = Section.create(dojang, request.name(), nextDisplayOrder);
+        Section section = Section.create(dojangId, request.name(), nextDisplayOrder);
         sectionRepository.save(section);
 
         return SectionRes.from(section, 0);
@@ -125,9 +124,10 @@ public class SectionService {
         updateDisplayOrders(allSections, sectionIds);
     }
 
-    private Dojang findDojangById(String dojangId) {
-        return dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+    private void validateDojangExists(String dojangId) {
+        if (!dojangRepository.existsById(dojangId)) {
+            throw new BusinessException(DojangErrorCode.NOT_FOUND);
+        }
     }
 
     private Section findSectionByIdAndDojangId(String sectionId, String dojangId) {
