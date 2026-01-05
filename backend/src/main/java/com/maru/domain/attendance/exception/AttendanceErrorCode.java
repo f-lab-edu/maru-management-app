@@ -13,12 +13,14 @@ public enum AttendanceErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND, "ATTENDANCE_001", "출석 기록을 찾을 수 없습니다"),
 
     // 필수값 누락
-    STUDENT_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_101", "student는 필수입니다"),
+    TENANT_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_100", "tenantId는 필수입니다"),
+    STUDENT_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_101", "studentId는 필수입니다"),
     METHOD_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_102", "method는 필수입니다"),
     DATE_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_103", "date는 필수입니다"),
     CHECKIN_AT_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_104", "checkinAt은 필수입니다"),
     STATUS_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_105", "status는 필수입니다"),
     CHECKOUT_AT_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_106", "checkoutAt은 필수입니다"),
+    DOJANG_REQUIRED(HttpStatus.BAD_REQUEST, "ATTENDANCE_107", "dojangId는 필수입니다"),
 
     // 유효성 검증
     STATUS_INVALID(HttpStatus.BAD_REQUEST, "ATTENDANCE_201", "유효하지 않은 출석 상태입니다"),

@@ -25,9 +25,8 @@ public class Attendance extends BaseEntity {
     @Column(nullable = false, length = 13)
     private String dojangId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    @Column(name = "student_id", nullable = false, length = 13)
+    private String studentId;
 
     @Column(length = 13)
     private String checkedBy;
@@ -51,14 +50,18 @@ public class Attendance extends BaseEntity {
     @Column(length = 500)
     private String note;
 
-    private Attendance(Student student, CheckMethod method, AttendanceStatus status, LocalDateTime checkinAt, String note) {
-        validateCommonRules(student);
+    private Attendance(String tenantId, String dojangId, String studentId, 
+                       CheckMethod method, AttendanceStatus status, 
+                       LocalDateTime checkinAt, String note) {
+        DomainAssert.hasText(tenantId, AttendanceErrorCode.TENANT_REQUIRED);
+        DomainAssert.hasText(dojangId, AttendanceErrorCode.DOJANG_REQUIRED);
+        DomainAssert.hasText(studentId, AttendanceErrorCode.STUDENT_REQUIRED);
         DomainAssert.notNull(method, AttendanceErrorCode.METHOD_REQUIRED);
         DomainAssert.notNull(status, AttendanceErrorCode.STATUS_REQUIRED);
 
-        this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojangId();
-        this.student = student;
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
+        this.studentId = studentId;
         this.status = status;
         this.method = method;
         this.note = note;
@@ -73,29 +76,36 @@ public class Attendance extends BaseEntity {
         }
     }
 
-    private Attendance(Student student, LocalDate date, CheckMethod method) {
-        validateCommonRules(student);
+    private Attendance(String tenantId, String dojangId, String studentId, 
+                       LocalDate date, CheckMethod method) {
+        DomainAssert.hasText(tenantId, AttendanceErrorCode.TENANT_REQUIRED);
+        DomainAssert.hasText(dojangId, AttendanceErrorCode.DOJANG_REQUIRED);
+        DomainAssert.hasText(studentId, AttendanceErrorCode.STUDENT_REQUIRED);
         DomainAssert.notNull(date, AttendanceErrorCode.DATE_REQUIRED);
 
-        this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojangId();
-        this.student = student;
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
+        this.studentId = studentId;
         this.attendanceDate = date;
         this.status = AttendanceStatus.ABSENT;
         this.method = method;
         this.checkinAt = date.atStartOfDay();
     }
 
-    public static Attendance create(Student student, CheckMethod method, AttendanceStatus status, LocalDateTime checkinAt, String note) {
-        return new Attendance(student, method, status, checkinAt, note);
+    public static Attendance create(String tenantId, String dojangId, String studentId,
+                                    CheckMethod method, AttendanceStatus status, 
+                                    LocalDateTime checkinAt, String note) {
+        return new Attendance(tenantId, dojangId, studentId, method, status, checkinAt, note);
     }
 
-    public static Attendance create(Student student, CheckMethod method, LocalDateTime checkinAt, String note) {
-        return new Attendance(student, method, AttendanceStatus.PRESENT, checkinAt, note);
+    public static Attendance create(String tenantId, String dojangId, String studentId,
+                                    CheckMethod method, LocalDateTime checkinAt, String note) {
+        return new Attendance(tenantId, dojangId, studentId, method, AttendanceStatus.PRESENT, checkinAt, note);
     }
 
-    public static Attendance createAutoAbsent(Student student, LocalDate date) {
-        return new Attendance(student, date, CheckMethod.AUTO);
+    public static Attendance createAutoAbsent(String tenantId, String dojangId, String studentId, 
+                                              LocalDate date) {
+        return new Attendance(tenantId, dojangId, studentId, date, CheckMethod.AUTO);
     }
 
     public void checkOut(LocalDateTime checkoutAt) {
@@ -140,9 +150,5 @@ public class Attendance extends BaseEntity {
             }
             this.checkoutAt = newCheckoutAt;
         }
-    }
-
-    private void validateCommonRules(Student student) {
-        DomainAssert.notNull(student, AttendanceErrorCode.STUDENT_REQUIRED);
     }
 }
