@@ -10,12 +10,12 @@ public record DojangSearchDto(
         String address,
         String ownerName
 ) {
-    public static DojangSearchDto from(Dojang dojang) {
+    public static DojangSearchDto from(Dojang dojang, String ownerName) {
         return DojangSearchDto.builder()
                 .id(dojang.getId())
                 .name(dojang.getName())
                 .address(dojang.getAddress())
-                .ownerName(dojang.getOwner().getName())
+                .ownerName(ownerName)
                 .build();
     }
 }

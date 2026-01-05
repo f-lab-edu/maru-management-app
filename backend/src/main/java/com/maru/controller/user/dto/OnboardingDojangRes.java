@@ -32,7 +32,7 @@ public record OnboardingDojangRes(
     public static OnboardingDojangRes from(User user, Dojang dojang) {
         return OnboardingDojangRes.builder()
                 .userId(user.getId())
-                .tenantId(dojang.getTenant().getId())
+                .tenantId(dojang.getTenantId())
                 .dojang(DojangInfo.from(dojang))
                 .onboardingStep(user.getOnboardingStep())
                 .build();
