@@ -6,11 +6,14 @@ import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.Tenant;
 import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.repository.tenant.TenantRepository;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ public class EmploymentService {
 
     private final EmploymentRepository employmentRepository;
     private final DojangRepository dojangRepository;
+    private final TenantRepository tenantRepository;
     private final UserService userService;
 
     /**
@@ -61,7 +65,9 @@ public class EmploymentService {
 
     private Employment createNewEmployment(String userId, Dojang dojang) {
         User user = userService.getUserById(userId);
-        Employment employment = Employment.create(user, dojang.getTenant(), dojang);
+        Tenant tenant = tenantRepository.findById(dojang.getTenantId())
+                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
+        Employment employment = Employment.create(user, tenant, dojang);
         Employment saved = employmentRepository.save(employment);
 
         log.info("승인 요청 생성: employmentId={}, userId={}, dojangId={}, dojangName={}",
@@ -176,7 +182,7 @@ public class EmploymentService {
     }
 
     private void validateOwnerPermission(Employment employment, String ownerId) {
-        String dojangOwnerId = employment.getDojang().getOwner().getId();
+        String dojangOwnerId = employment.getDojang().getOwnerId();
         if (!dojangOwnerId.equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
                     employment.getId(), ownerId, dojangOwnerId);

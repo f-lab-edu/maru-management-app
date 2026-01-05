@@ -43,7 +43,6 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
         SELECT e
         FROM Employment e
         JOIN FETCH e.dojang d
-        JOIN FETCH d.owner
         JOIN FETCH e.tenant
         WHERE e.user.id = :userId
           AND e.status = :status
@@ -67,7 +66,6 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
     @Query("""
         SELECT e FROM Employment e
         JOIN FETCH e.dojang d
-        JOIN FETCH d.owner
         JOIN FETCH e.tenant
         WHERE e.user.id = :userId
           AND e.dojang.id = :dojangId

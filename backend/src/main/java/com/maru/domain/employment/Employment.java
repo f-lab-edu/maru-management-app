@@ -130,7 +130,7 @@ public class Employment extends BaseEntity {
     }
 
     public UserRole resolveRole(String userId) {
-        boolean isOwner = this.dojang.getOwner().getId().equals(userId);
+        boolean isOwner = this.dojang.getOwnerId().equals(userId);
         return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }
 
@@ -141,7 +141,7 @@ public class Employment extends BaseEntity {
     }
 
     private void validateTenantIntegrity(Tenant tenant, Dojang dojang) {
-        if (!dojang.getTenant().getId().equals(tenant.getId())) {
+        if (!dojang.getTenantId().equals(tenant.getId())) {
             throw new BusinessException(EmploymentErrorCode.TENANT_MISMATCH);
         }
     }

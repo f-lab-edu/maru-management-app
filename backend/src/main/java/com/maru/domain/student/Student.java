@@ -43,7 +43,7 @@ public class Student extends SoftDeletableEntity {
 
     private Student(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
         validateNotNull(dojang, name, birth);
-        this.tenantId = dojang.getTenant().getId();
+        this.tenantId = dojang.getTenantId();
         this.dojang = dojang;
         this.name = name;
         this.birth = birth;
