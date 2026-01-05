@@ -72,7 +72,7 @@ public class DevDojangSeeder {
         log.info("관장 {} 명 저장 완료", savedUsers.size());
 
         for (User owner : savedUsers) {
-            Tenant tenant = Tenant.create(owner);
+            Tenant tenant = Tenant.create(owner.getId());
             tenants.add(tenant);
         }
 
@@ -84,7 +84,7 @@ public class DevDojangSeeder {
             User owner = savedUsers.get(i);
             Tenant tenant = savedTenants.get(i);
 
-            Dojang dojang = Dojang.create(tenant, owner, row.name(), row.address(), null);
+            Dojang dojang = Dojang.create(tenant.getId(), owner.getId(), row.name(), row.address(), null);
             dojangs.add(dojang);
         }
 

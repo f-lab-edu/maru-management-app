@@ -76,12 +76,12 @@ public class TenantService {
     }
 
     private Tenant createTenant(User owner) {
-        Tenant tenant = Tenant.create(owner);
+        Tenant tenant = Tenant.create(owner.getId());
         return tenantRepository.save(tenant);
     }
 
     private Dojang createDojang(Tenant tenant, User owner, String name, String address, String phone) {
-        Dojang dojang = Dojang.create(tenant, owner, name, address, phone);
+        Dojang dojang = Dojang.create(tenant.getId(), owner.getId(), name, address, phone);
         return dojangRepository.save(dojang);
     }
 
