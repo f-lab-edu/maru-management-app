@@ -3,7 +3,6 @@ package com.maru.domain.tenant;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
 import com.maru.domain.tenant.exception.TenantErrorCode;
-import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,9 +16,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Tenant extends SoftDeletableEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User owner;
+    @Column(name = "user_id", nullable = false)
+    private String ownerId;
 
     @Column(unique = true, nullable = false, length = 8)
     private String slug;
@@ -27,16 +25,16 @@ public class Tenant extends SoftDeletableEntity {
     @Column(nullable = false)
     private Boolean isActive = true;
 
-    private Tenant(User owner, String slug) {
-        validateNotNull(owner, slug);
-        this.owner = owner;
+    private Tenant(String ownerId, String slug) {
+        validateNotNull(ownerId, slug);
+        this.ownerId = ownerId;
         this.slug = slug;
         this.isActive = true;
     }
 
-    public static Tenant create(User owner) {
+    public static Tenant create(String ownerId) {
         String slug = generateSlug();
-        return new Tenant(owner, slug);
+        return new Tenant(ownerId, slug);
     }
 
     private static String generateSlug() {
@@ -51,8 +49,8 @@ public class Tenant extends SoftDeletableEntity {
         this.isActive = false;
     }
 
-    private void validateNotNull(User owner, String slug) {
-        DomainAssert.notNull(owner, TenantErrorCode.OWNER_REQUIRED);
+    private void validateNotNull(String ownerId, String slug) {
+        DomainAssert.hasText(ownerId, TenantErrorCode.OWNER_REQUIRED);
         DomainAssert.hasText(slug, TenantErrorCode.SLUG_REQUIRED);
     }
 }
