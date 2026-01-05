@@ -2,6 +2,7 @@ package com.maru.repository.student;
 
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
+import com.maru.repository.student.view.StudentDetailView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,22 +39,6 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("excludeStatus") StudentStatus excludeStatus);
 
     Optional<Student> findByDojangIdAndNameAndBirth(String dojangId, String name, LocalDate birth);
-
-    @Query("""
-        SELECT s FROM Student s
-        WHERE s.tenantId = :tenantId
-          AND s.dojangId = :dojangId
-          AND s.status = 'ACTIVE'
-          AND s.deletedAt IS NULL
-          AND NOT EXISTS (
-              SELECT 1 FROM Attendance a
-              WHERE a.student.id = s.id AND a.attendanceDate = :date
-          )
-        """)
-    List<Student> findActiveStudentsWithoutAttendance(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("date") LocalDate date);
 
     @Query("""
         SELECT s FROM Student s
@@ -118,6 +103,21 @@ public interface StudentRepository extends JpaRepository<Student, String> {
         """)
     List<String> findActiveStudentIds(
             @Param("ids") List<String> ids,
+            @Param("tenantId") String tenantId,
+            @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT s.id as id, s.name as name, s.birth as birth,
+               s.photoUrl as photoUrl, s.phone as phone,
+               s.enrolledAt as enrolledAt, s.status as status
+        FROM Student s
+        WHERE s.id = :id
+          AND s.tenantId = :tenantId
+          AND s.status != :excludeStatus
+          AND s.deletedAt IS NULL
+        """)
+    Optional<StudentDetailView> findViewById(
+            @Param("id") String id,
             @Param("tenantId") String tenantId,
             @Param("excludeStatus") StudentStatus excludeStatus);
 }

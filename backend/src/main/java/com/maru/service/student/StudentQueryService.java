@@ -12,6 +12,7 @@ import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
+import com.maru.repository.student.view.StudentDetailView;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentService;
@@ -77,10 +78,10 @@ public class StudentQueryService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
+        StudentDetailView view = studentRepository.findViewById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
-        return StudentRes.from(student, getGuardianResponses(studentId));
+        return toStudentRes(view, getGuardianResponses(studentId));
     }
 
     private void validateDojangAccess(String dojangId, String tenantId) {
@@ -96,5 +97,18 @@ public class StudentQueryService {
         return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
                 .map(GuardianRes::from)
                 .toList();
+    }
+
+    private StudentRes toStudentRes(StudentDetailView view, List<GuardianRes> guardians) {
+        return StudentRes.builder()
+                .id(view.getId())
+                .name(view.getName())
+                .birth(view.getBirth())
+                .photoUrl(view.getPhotoUrl())
+                .phone(view.getPhone())
+                .enrolledAt(view.getEnrolledAt())
+                .status(view.getStatus())
+                .guardians(guardians)
+                .build();
     }
 }
