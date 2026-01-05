@@ -6,6 +6,7 @@ import com.maru.controller.division.dto.DivisionListRes;
 import com.maru.controller.division.dto.DivisionReorderReq;
 import com.maru.controller.division.dto.DivisionRes;
 import com.maru.controller.division.dto.DivisionUpdateReq;
+import com.maru.service.division.DivisionQueryService;
 import com.maru.service.division.DivisionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DivisionController {
 
     private final DivisionService divisionService;
+    private final DivisionQueryService divisionQueryService;
 
     /**
      * 수련반 생성
@@ -55,7 +57,7 @@ public class DivisionController {
             @RequestParam String dojangId,
             @RequestParam String sectionId
     ) {
-        DivisionListRes response = divisionService.getDivisions(dojangId, sectionId);
+        DivisionListRes response = divisionQueryService.getDivisions(dojangId, sectionId);
         return ResponseEntity.ok(response);
     }
 
@@ -71,7 +73,7 @@ public class DivisionController {
             @RequestParam String dojangId,
             @PathVariable String divisionId
     ) {
-        DivisionDetailRes response = divisionService.getDivisionDetail(dojangId, divisionId);
+        DivisionDetailRes response = divisionQueryService.getDivisionDetail(dojangId, divisionId);
         return ResponseEntity.ok(response);
     }
 

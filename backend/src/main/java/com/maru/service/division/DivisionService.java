@@ -2,8 +2,6 @@ package com.maru.service.division;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.division.dto.DivisionCreateReq;
-import com.maru.controller.division.dto.DivisionDetailRes;
-import com.maru.controller.division.dto.DivisionListRes;
 import com.maru.controller.division.dto.DivisionReorderReq;
 import com.maru.controller.division.dto.DivisionRes;
 import com.maru.controller.division.dto.DivisionUpdateReq;
@@ -12,14 +10,11 @@ import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.repository.division.DivisionRepository;
-import com.maru.repository.enrollment.EnrollmentRepository;
-import com.maru.repository.enrollment.view.StudentCountByDivisionView;
 import com.maru.repository.section.SectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +29,7 @@ public class DivisionService {
 
     private final DivisionRepository divisionRepository;
     private final SectionRepository sectionRepository;
-    private final EnrollmentRepository enrollmentRepository;
+    private final DivisionQueryService divisionQueryService;
 
     /**
      * 수련반 생성
@@ -59,40 +54,7 @@ public class DivisionService {
 
         divisionRepository.save(division);
 
-        return DivisionRes.from(division, 0);
-    }
-
-    /**
-     * 수련반 목록 조회
-     *
-     * @param dojangId 도장 ID
-     * @param sectionId 수련부 ID
-     * @return 수련반 목록 (displayOrder 순)
-     */
-    public DivisionListRes getDivisions(String dojangId, String sectionId) {
-        List<Division> divisions = divisionRepository.findAllWithSectionByDojangIdAndSectionId(dojangId, sectionId);
-
-        Map<String, Integer> studentCountMap = getStudentCountMap(dojangId, divisions);
-
-        List<DivisionRes> divisionResList = divisions.stream()
-                .map(division -> DivisionRes.from(division, studentCountMap.getOrDefault(division.getId(), 0)))
-                .toList();
-
-        return DivisionListRes.from(divisionResList);
-    }
-
-    /**
-     * 수련반 상세
-     *
-     * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID
-     * @return 수련반 상세 정보
-     * @throws BusinessException 수련반을 찾을 수 없는 경우
-     */
-    public DivisionDetailRes getDivisionDetail(String dojangId, String divisionId) {
-        Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
-        int studentCount = enrollmentRepository.countByDivisionId(dojangId, divisionId);
-        return DivisionDetailRes.from(division, studentCount);
+        return divisionQueryService.getDivision(dojangId, division.getId());
     }
 
     /**
@@ -113,8 +75,7 @@ public class DivisionService {
         division.updateName(request.name());
         division.updateSchedule(request.scheduleDays(), request.startTime(), request.endTime());
 
-        int studentCount = enrollmentRepository.countByDivisionId(dojangId, divisionId);
-        return DivisionRes.from(division, studentCount);
+        return divisionQueryService.getDivision(dojangId, divisionId);
     }
 
     /**
@@ -196,18 +157,5 @@ public class DivisionService {
         if (divisionRepository.existsBySectionIdAndNameAndIdNot(sectionId, name, excludeId)) {
             throw new BusinessException(DivisionErrorCode.DUPLICATE_NAME);
         }
-    }
-
-    private Map<String, Integer> getStudentCountMap(String dojangId, List<Division> divisions) {
-        if (divisions.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        List<String> divisionIds = divisions.stream()
-                .map(Division::getId)
-                .toList();
-        return enrollmentRepository.countStudentsByDivisionIds(dojangId, divisionIds).stream()
-                .collect(Collectors.toMap(
-                        StudentCountByDivisionView::getDivisionId,
-                        StudentCountByDivisionView::getStudentCount));
     }
 }
