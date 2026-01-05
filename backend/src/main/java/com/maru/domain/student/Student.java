@@ -3,7 +3,6 @@ package com.maru.domain.student;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,9 +19,8 @@ public class Student extends SoftDeletableEntity {
     @Column(nullable = false, length = 13)
     private String tenantId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dojang_id", nullable = false)
-    private Dojang dojang;
+    @Column(name = "dojang_id", nullable = false, length = 13)
+    private String dojangId;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -41,10 +39,10 @@ public class Student extends SoftDeletableEntity {
 
     private LocalDate enrolledAt;
 
-    private Student(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
-        validateNotNull(dojang, name, birth);
-        this.tenantId = dojang.getTenantId();
-        this.dojang = dojang;
+    private Student(String tenantId, String dojangId, String name, LocalDate birth, String photoUrl, String phone) {
+        validateNotNull(tenantId, dojangId, name, birth);
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
         this.name = name;
         this.birth = birth;
         this.photoUrl = photoUrl;
@@ -53,8 +51,8 @@ public class Student extends SoftDeletableEntity {
         this.enrolledAt = LocalDate.now();
     }
 
-    public static Student create(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
-        return new Student(dojang, name, birth, photoUrl, phone);
+    public static Student create(String tenantId, String dojangId, String name, LocalDate birth, String photoUrl, String phone) {
+        return new Student(tenantId, dojangId, name, birth, photoUrl, phone);
     }
 
     public void update(String name, LocalDate birth, String photoUrl, String phone) {
@@ -79,8 +77,9 @@ public class Student extends SoftDeletableEntity {
         restore();
     }
 
-    private void validateNotNull(Dojang dojang, String name, LocalDate birth) {
-        DomainAssert.notNull(dojang, StudentErrorCode.DOJANG_REQUIRED);
+    private void validateNotNull(String tenantId, String dojangId, String name, LocalDate birth) {
+        DomainAssert.hasText(tenantId, StudentErrorCode.TENANT_REQUIRED);
+        DomainAssert.hasText(dojangId, StudentErrorCode.DOJANG_REQUIRED);
         DomainAssert.hasText(name, StudentErrorCode.NAME_REQUIRED);
         DomainAssert.notNull(birth, StudentErrorCode.BIRTH_REQUIRED);
     }

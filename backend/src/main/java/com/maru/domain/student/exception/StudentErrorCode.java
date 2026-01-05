@@ -13,7 +13,8 @@ public enum StudentErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND, "STUDENT_001", "원생을 찾을 수 없습니다"),
 
     // 필수값 누락
-    DOJANG_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_101", "dojang은 필수입니다"),
+    TENANT_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_100", "tenantId는 필수입니다"),
+    DOJANG_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_101", "dojangId는 필수입니다"),
     NAME_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_102", "name은 필수입니다"),
     BIRTH_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_103", "birth는 필수입니다"),
 
