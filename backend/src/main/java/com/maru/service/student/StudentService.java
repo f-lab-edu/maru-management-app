@@ -190,7 +190,7 @@ public class StudentService {
 
         for (Student student : students) {
             if (!student.getDojang().getId().equals(dojangId) ||
-                !student.getDojang().getTenant().getId().equals(tenantId)) {
+                !student.getDojang().getTenantId().equals(tenantId)) {
                 throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
             }
             if (student.getStatus() == StudentStatus.WITHDRAWN) {
@@ -206,7 +206,7 @@ public class StudentService {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
-        if (!dojang.getTenant().getId().equals(tenantId)) {
+        if (!dojang.getTenantId().equals(tenantId)) {
             throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
         }
 

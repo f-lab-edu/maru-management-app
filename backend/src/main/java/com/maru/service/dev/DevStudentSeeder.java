@@ -63,7 +63,7 @@ public class DevStudentSeeder {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
-        if (!dojang.getTenant().getId().equals(tenantId)) {
+        if (!dojang.getTenantId().equals(tenantId)) {
             throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
         }
 
