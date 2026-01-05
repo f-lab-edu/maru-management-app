@@ -4,15 +4,15 @@ import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.GuardianRes;
 import com.maru.controller.student.dto.StudentListRes;
 import com.maru.controller.student.dto.StudentRes;
-import com.maru.domain.student.Student;
+import com.maru.controller.student.dto.StudentSummaryRes;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.student.view.StudentDetailView;
+import com.maru.repository.student.view.StudentSummaryView;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentService;
@@ -20,9 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +30,6 @@ public class StudentQueryService {
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
     private final GuardianshipRepository guardianshipRepository;
-    private final EnrollmentRepository enrollmentRepository;
     private final EnrollmentService enrollmentService;
 
     /**
@@ -53,17 +50,20 @@ public class StudentQueryService {
             return StudentListRes.empty();
         }
 
-        List<Student> students = (filteredStudentIds != null)
-                ? studentRepository.findActiveStudentsByIds(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN)
-                : studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
+        List<StudentSummaryView> views = (filteredStudentIds != null)
+                ? studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN)
+                : studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
 
-        Set<String> enrolledStudentIds = Set.of();
-        if (!students.isEmpty()) {
-            List<String> studentIds = students.stream().map(Student::getId).toList();
-            enrolledStudentIds = new HashSet<>(enrollmentRepository.findEnrolledStudentIds(dojangId, studentIds));
-        }
+        List<StudentSummaryRes> summaries = views.stream()
+                .map(this::toStudentSummaryRes)
+                .toList();
 
-        return StudentListRes.from(students, enrolledStudentIds);
+        return StudentListRes.builder()
+                .students(summaries)
+                .totalCount(summaries.size())
+                .returnedCount(summaries.size())
+                .hasMore(false)
+                .build();
     }
 
     /**
@@ -78,7 +78,7 @@ public class StudentQueryService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        StudentDetailView view = studentRepository.findViewById(studentId, tenantId, StudentStatus.WITHDRAWN)
+        StudentDetailView view = studentRepository.findDetailById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         return toStudentRes(view, getGuardianResponses(studentId));
@@ -97,6 +97,18 @@ public class StudentQueryService {
         return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
                 .map(GuardianRes::from)
                 .toList();
+    }
+
+    private StudentSummaryRes toStudentSummaryRes(StudentSummaryView view) {
+        return StudentSummaryRes.builder()
+                .id(view.getId())
+                .name(view.getName())
+                .birth(view.getBirth())
+                .photoUrl(view.getPhotoUrl())
+                .enrolledAt(view.getEnrolledAt())
+                .status(view.getStatus())
+                .hasEnrollment(Boolean.TRUE.equals(view.getHasEnrollment()))
+                .build();
     }
 
     private StudentRes toStudentRes(StudentDetailView view, List<GuardianRes> guardians) {
