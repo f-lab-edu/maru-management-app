@@ -95,4 +95,29 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("dojangId") String dojangId,
             @Param("studentIds") List<String> studentIds,
             @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
+        FROM Student s
+        WHERE s.id = :id
+          AND s.tenantId = :tenantId
+          AND s.status != :excludeStatus
+          AND s.deletedAt IS NULL
+        """)
+    boolean existsActiveById(
+            @Param("id") String id,
+            @Param("tenantId") String tenantId,
+            @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT s.id FROM Student s
+        WHERE s.id IN :ids
+          AND s.tenantId = :tenantId
+          AND s.status != :excludeStatus
+          AND s.deletedAt IS NULL
+        """)
+    List<String> findActiveStudentIds(
+            @Param("ids") List<String> ids,
+            @Param("tenantId") String tenantId,
+            @Param("excludeStatus") StudentStatus excludeStatus);
 }
