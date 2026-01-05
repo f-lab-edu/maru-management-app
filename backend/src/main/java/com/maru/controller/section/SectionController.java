@@ -1,6 +1,7 @@
 package com.maru.controller.section;
 
 import com.maru.controller.section.dto.*;
+import com.maru.service.section.SectionQueryService;
 import com.maru.service.section.SectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class SectionController {
 
     private final SectionService sectionService;
+    private final SectionQueryService sectionQueryService;
 
     /**
      * 수련부 생성
@@ -40,7 +42,7 @@ public class SectionController {
     public ResponseEntity<SectionListRes> getSections(
             @RequestParam String dojangId
     ) {
-        SectionListRes response = sectionService.getSections(dojangId);
+        SectionListRes response = sectionQueryService.getSections(dojangId);
         return ResponseEntity.ok(response);
     }
 

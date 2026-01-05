@@ -1,6 +1,7 @@
 package com.maru.repository.section;
 
 import com.maru.domain.section.Section;
+import com.maru.repository.section.view.SectionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,4 +49,13 @@ public interface SectionRepository extends JpaRepository<Section, String> {
         WHERE s.dojangId = :dojangId
         """)
     int findMaxDisplayOrderByDojangId(@Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT s.id as id, s.name as name, s.displayOrder as displayOrder,
+               (SELECT COUNT(d) FROM Division d WHERE d.sectionId = s.id) as divisionCount
+        FROM Section s
+        WHERE s.dojangId = :dojangId
+        ORDER BY s.displayOrder
+        """)
+    List<SectionView> findAllWithDivisionCount(@Param("dojangId") String dojangId);
 }

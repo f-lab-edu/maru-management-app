@@ -6,7 +6,6 @@ import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.division.DivisionRepository;
-import com.maru.repository.division.view.DivisionCountBySectionView;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,26 +46,6 @@ public class SectionService {
         sectionRepository.save(section);
 
         return SectionRes.from(section, 0);
-    }
-
-    /**
-     * 수련부 목록 조회
-     *
-     * @param dojangId 도장 ID
-     * @return 수련부 목록 (displayOrder 순, groupCount 포함)
-     */
-    public SectionListRes getSections(String dojangId) {
-        List<Section> sections = sectionRepository.findAllByDojangIdOrderByDisplayOrder(dojangId);
-        Map<String, Integer> divisionCountMap = buildDivisionCountMap(dojangId);
-        return toSectionListRes(sections, divisionCountMap);
-    }
-
-    private Map<String, Integer> buildDivisionCountMap(String dojangId) {
-        return divisionRepository.countDivisionsBySectionForDojang(dojangId).stream()
-                .collect(Collectors.toMap(
-                        DivisionCountBySectionView::getSectionId,
-                        DivisionCountBySectionView::getDivisionCount
-                ));
     }
 
     /**
@@ -133,13 +112,6 @@ public class SectionService {
     private Section findSectionByIdAndDojangId(String sectionId, String dojangId) {
         return sectionRepository.findByIdAndDojangId(sectionId, dojangId)
                 .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
-    }
-
-    private SectionListRes toSectionListRes(List<Section> sections, Map<String, Integer> groupCountMap) {
-        List<SectionRes> sectionResList = sections.stream()
-                .map(section -> SectionRes.from(section, groupCountMap.getOrDefault(section.getId(), 0)))
-                .toList();
-        return SectionListRes.from(sectionResList);
     }
 
     private void validateDuplicateName(String dojangId, String name) {
