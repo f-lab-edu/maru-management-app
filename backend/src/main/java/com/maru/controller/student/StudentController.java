@@ -5,6 +5,7 @@ import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.student.dto.*;
 import com.maru.security.CurrentUserId;
 import com.maru.service.guardian.GuardianService;
+import com.maru.service.student.StudentQueryService;
 import com.maru.service.student.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,9 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 원생 관리 API
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/students")
@@ -22,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentQueryService studentQueryService;
     private final GuardianService guardianService;
 
     /**
@@ -48,7 +47,7 @@ public class StudentController {
      * @param sectionId 수련부 ID (선택)
      * @param divisionId 수련반 ID (선택)
      * @param userId 현재 사용자 ID
-     * @return 원생 목록 (enrolled_at DESC, 최대 200건)
+     * @return 원생 목록 (enrolled_at DESC 정렬)
      */
     @GetMapping
     public ResponseEntity<StudentListRes> getStudents(
@@ -56,7 +55,7 @@ public class StudentController {
             @RequestParam(required = false) String sectionId,
             @RequestParam(required = false) String divisionId,
             @CurrentUserId String userId) {
-        StudentListRes response = studentService.getStudents(dojangId, sectionId, divisionId);
+        StudentListRes response = studentQueryService.getStudents(dojangId, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 
@@ -73,7 +72,7 @@ public class StudentController {
             @PathVariable String id,
             @RequestParam String dojangId,
             @CurrentUserId String userId) {
-        StudentRes response = studentService.getStudent(dojangId, id);
+        StudentRes response = studentQueryService.getStudent(dojangId, id);
         return ResponseEntity.ok(response);
     }
 
