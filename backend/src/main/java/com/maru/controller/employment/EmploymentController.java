@@ -3,7 +3,6 @@ package com.maru.controller.employment;
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
 import com.maru.domain.employment.Employment;
-import com.maru.domain.tenant.Dojang;
 import com.maru.security.CurrentUserId;
 import com.maru.service.employment.EmploymentService;
 import com.maru.service.tenant.DojangQueryService;
@@ -63,9 +62,9 @@ public class EmploymentController {
      */
     @GetMapping("/pending")
     public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId String userId) {
-        Dojang dojang = dojangQueryService.getByOwnerId(userId);
+        String dojangId = dojangQueryService.getDojangIdByOwnerId(userId);
 
-        List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
+        List<PendingApprovalRes> results = employmentService.getPendingRequests(dojangId)
                 .stream()
                 .map(PendingApprovalRes::from)
                 .toList();
