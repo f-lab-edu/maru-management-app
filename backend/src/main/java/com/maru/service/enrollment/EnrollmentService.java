@@ -8,11 +8,11 @@ import com.maru.domain.division.Division;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.enrollment.Enrollment;
 import com.maru.common.exception.EnrollmentErrorCode;
-import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.repository.division.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
+import com.maru.repository.enrollment.view.EnrollmentStudentView;
 import com.maru.repository.student.StudentRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,12 +43,11 @@ public class EnrollmentService {
      */
     @Transactional
     public void enrollStudent(String dojangId, String divisionId, String studentId) {
-        Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
-        Student student = findActiveStudentById(studentId);
-
+        validateDivisionExists(divisionId, dojangId);
+        validateStudentExists(studentId);
         validateNotAlreadyEnrolled(dojangId, divisionId, studentId);
 
-        Enrollment enrollment = Enrollment.create(division, student);
+        Enrollment enrollment = Enrollment.create(dojangId, divisionId, studentId);
         enrollmentRepository.save(enrollment);
     }
 
@@ -80,7 +78,7 @@ public class EnrollmentService {
      */
     @Transactional
     public BulkEnrollmentRes bulkEnrollStudents(String dojangId, String divisionId, List<String> studentIds) {
-        Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
+        validateDivisionExists(divisionId, dojangId);
 
         Set<String> alreadyEnrolledIds = findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds);
 
@@ -89,22 +87,18 @@ public class EnrollmentService {
                 .toList();
 
         String tenantId = TenantContextHolder.getTenantId();
-        List<Student> studentsToEnroll = studentRepository.findAllActiveByIds(
+        List<String> activeStudentIds = studentRepository.findActiveStudentIds(
                 toEnrollIds, tenantId, StudentStatus.WITHDRAWN);
 
         List<Enrollment> enrollments = new ArrayList<>();
-        for (Student student : studentsToEnroll) {
-            enrollments.add(Enrollment.create(division, student));
+        for (String studentId : activeStudentIds) {
+            enrollments.add(Enrollment.create(dojangId, divisionId, studentId));
         }
         enrollmentRepository.saveAll(enrollments);
 
         List<String> skippedStudentIds = new ArrayList<>(alreadyEnrolledIds);
 
-        return BulkEnrollmentRes.builder()
-                .enrolledCount(enrollments.size())
-                .skippedCount(skippedStudentIds.size())
-                .skippedStudentIds(skippedStudentIds)
-                .build();
+        return BulkEnrollmentRes.of(enrollments.size(), skippedStudentIds);
     }
 
     /**
@@ -115,14 +109,22 @@ public class EnrollmentService {
      * @return 등록된 원생 목록
      */
     public EnrolledStudentListRes getEnrollments(String dojangId, String divisionId) {
-        List<Enrollment> enrollments = enrollmentRepository
+        List<EnrollmentStudentView> enrollmentStudentView = enrollmentRepository
                 .findAllWithStudentByDivisionId(dojangId, divisionId);
 
-        List<EnrolledStudentRes> students = enrollments.stream()
-                .map(EnrolledStudentRes::from)
+        List<EnrolledStudentRes> students = enrollmentStudentView.stream()
+                .map(this::createEnrolledStudentRes)
                 .toList();
 
         return EnrolledStudentListRes.from(students);
+    }
+
+    private EnrolledStudentRes createEnrolledStudentRes(EnrollmentStudentView view) {
+        return EnrolledStudentRes.builder()
+                .studentId(view.getStudentId())
+                .studentName(view.getStudentName())
+                .enrolledAt(view.getCreatedAt())
+                .build();
     }
 
     /**
@@ -136,15 +138,17 @@ public class EnrollmentService {
         return enrollmentRepository.countByDivisionId(dojangId, divisionId);
     }
 
-    private Division findDivisionByIdAndDojangId(String divisionId, String dojangId) {
-        return divisionRepository.findByIdAndDojangIdWithSection(divisionId, dojangId)
-                .orElseThrow(() -> new BusinessException(DivisionErrorCode.NOT_FOUND));
+    private void validateDivisionExists(String divisionId, String dojangId) {
+        if (!divisionRepository.findByIdAndDojangIdWithSection(divisionId, dojangId).isPresent()) {
+            throw new BusinessException(DivisionErrorCode.NOT_FOUND);
+        }
     }
 
-    private Student findActiveStudentById(String studentId) {
+    private void validateStudentExists(String studentId) {
         String tenantId = TenantContextHolder.getTenantId();
-        return studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+        if (!studentRepository.existsActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)) {
+            throw new BusinessException(StudentErrorCode.NOT_FOUND);
+        }
     }
 
     private void validateNotAlreadyEnrolled(String dojangId, String divisionId, String studentId) {
