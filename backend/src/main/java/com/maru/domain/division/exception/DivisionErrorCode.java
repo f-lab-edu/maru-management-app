@@ -11,6 +11,7 @@ public enum DivisionErrorCode implements BaseErrorCode {
 
     NOT_FOUND(HttpStatus.NOT_FOUND, "DIVISION_001", "수련반을 찾을 수 없습니다"),
 
+    DOJANG_REQUIRED(HttpStatus.BAD_REQUEST, "DIVISION_100", "도장 정보는 필수입니다"),
     SECTION_REQUIRED(HttpStatus.BAD_REQUEST, "DIVISION_101", "수련부 선택은 필수입니다"),
     NAME_REQUIRED(HttpStatus.BAD_REQUEST, "DIVISION_102", "수련반 이름은 필수입니다"),
 

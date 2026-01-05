@@ -4,7 +4,6 @@ import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
-import com.maru.domain.tenant.Dojang;
 import com.maru.common.converter.ScheduleDaysConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -27,9 +26,8 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Division extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dojang_id", nullable = false)
-    private Dojang dojang;
+    @Column(name = "dojang_id", nullable = false)
+    private String dojangId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
@@ -51,17 +49,18 @@ public class Division extends BaseEntity {
     @Column(name = "display_order")
     private Integer displayOrder;
 
-    private Division(Dojang dojang, Section section, String name, Integer displayOrder) {
-        this.dojang = dojang;
+    private Division(String dojangId, Section section, String name, Integer displayOrder) {
+        this.dojangId = dojangId;
         this.section = section;
         this.name = name;
         this.displayOrder = displayOrder;
     }
 
-    public static Division create(Dojang dojang, Section section, String name, Integer displayOrder) {
+    public static Division create(String dojangId, Section section, String name, Integer displayOrder) {
+        DomainAssert.hasText(dojangId, DivisionErrorCode.DOJANG_REQUIRED);
         DomainAssert.notNull(section, DivisionErrorCode.SECTION_REQUIRED);
         DomainAssert.hasText(name, DivisionErrorCode.NAME_REQUIRED);
-        return new Division(dojang, section, name, displayOrder);
+        return new Division(dojangId, section, name, displayOrder);
     }
 
     public void updateName(String name) {
