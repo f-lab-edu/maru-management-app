@@ -12,6 +12,7 @@ public enum EnrollmentErrorCode implements BaseErrorCode {
     NOT_ENROLLED(HttpStatus.NOT_FOUND, "ENROLLMENT_001", "등록되지 않은 원생입니다"),
 
     // 필수값 누락
+    DOJANG_REQUIRED(HttpStatus.BAD_REQUEST, "ENROLLMENT_100", "도장 정보는 필수입니다"),
     DIVISION_REQUIRED(HttpStatus.BAD_REQUEST, "ENROLLMENT_101", "수련반 정보는 필수입니다"),
     STUDENT_REQUIRED(HttpStatus.BAD_REQUEST, "ENROLLMENT_102", "원생 정보는 필수입니다"),
 
