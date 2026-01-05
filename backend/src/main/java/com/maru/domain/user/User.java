@@ -1,23 +1,17 @@
 package com.maru.domain.user;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.user.exception.UserErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "users",
-    indexes = {
-        @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_phone", columnList = "phone"),
-        @Index(name = "idx_user_role", columnList = "role")
-    }
-)
+@Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends SoftDeletableEntity {
@@ -39,7 +33,6 @@ public class User extends SoftDeletableEntity {
     @Column(nullable = false, length = 30)
     private OnboardingStep onboardingStep;
 
-    @Column
     private LocalDateTime lastLoginAt;
 
     private User(String name, String email, String phone, UserRole role, OnboardingStep initialStep) {
@@ -84,7 +77,7 @@ public class User extends SoftDeletableEntity {
     }
 
     private void validateNotNull(String name, OnboardingStep initialStep) {
-        Assert.hasText(name, "name은 필수입니다.");
-        Assert.notNull(initialStep, "initialStep은 필수입니다.");
+        DomainAssert.hasText(name, UserErrorCode.NAME_REQUIRED);
+        DomainAssert.notNull(initialStep, UserErrorCode.INITIAL_STEP_REQUIRED);
     }
 }

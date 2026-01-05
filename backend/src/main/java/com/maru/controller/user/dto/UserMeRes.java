@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Builder
 public record UserMeRes(
-        Long id,
+        String id,
         String name,
         String email,
         String phone,

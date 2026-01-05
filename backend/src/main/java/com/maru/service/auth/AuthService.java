@@ -1,5 +1,7 @@
 package com.maru.service.auth;
 
+import com.maru.common.exception.AuthErrorCode;
+import com.maru.common.exception.AuthException;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
@@ -11,7 +13,6 @@ import com.maru.repository.user.OAuthAccountRepository;
 import com.maru.repository.user.UserRepository;
 import com.maru.security.JwtClaims;
 import com.maru.service.auth.dto.OAuthUserInfo;
-import com.maru.common.exception.AuthException;
 import com.maru.common.util.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -64,8 +63,8 @@ public class AuthService {
 
         User user = findUserById(claims.userId());
         Employment employment = findActiveEmployment(claims.userId(), claims.dojangId());
-        Long tenantId = employment != null ? employment.getTenant().getId() : null;
-        Long dojangId = employment != null ? employment.getDojang().getId() : null;
+        String tenantId = employment != null ? employment.getTenant().getId() : null;
+        String dojangId = employment != null ? employment.getDojang().getId() : null;
         String role = resolveRole(user, employment, claims.role());
 
         return generateTokenResponse(user, tenantId, dojangId, role);
@@ -103,12 +102,12 @@ public class AuthService {
      * @return 새로운 Access/Refresh Token
      */
     @Transactional(readOnly = true)
-    public TokenRes selectDojang(Long userId, Long dojangId) {
+    public TokenRes selectDojang(String userId, String dojangId) {
         User user = findUserById(userId);
         Employment employment = findActiveEmployment(userId, dojangId);
 
-        Long tenantId = employment.getTenant().getId();
-        Long resolvedDojangId = employment.getDojang().getId();
+        String tenantId = employment.getTenant().getId();
+        String resolvedDojangId = employment.getDojang().getId();
         String role = resolveRole(user, employment, null);
 
         return generateTokenResponse(user, tenantId, resolvedDojangId, role);
@@ -118,7 +117,7 @@ public class AuthService {
         OAuthService service = oauthServices.get(provider);
         if (service == null) {
             log.error("지원하지 않는 OAuth Provider: {}", provider);
-            throw new AuthException(AUTH_OAUTH_FAILED);
+            throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
         return service;
     }
@@ -127,22 +126,22 @@ public class AuthService {
         JwtUtil.TokenValidationResult validationResult = jwtUtil.validateRefreshToken(refreshToken);
 
         if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_EXPIRED);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         } else if (validationResult != JwtUtil.TokenValidationResult.VALID) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_INVALID);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_INVALID);
         }
     }
 
-    private User findUserById(Long userId) {
+    private User findUserById(String userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new AuthException(AUTH_INVALID_TOKEN));
+            .orElseThrow(() -> new AuthException(AuthErrorCode.INVALID_TOKEN));
     }
 
     private TokenRes generateTokenResponse(User user) {
         return generateTokenResponse(user, null, null, extractRoleString(user));
     }
 
-    private TokenRes generateTokenResponse(User user, Long tenantId, Long dojangId, String role) {
+    private TokenRes generateTokenResponse(User user, String tenantId, String dojangId, String role) {
         String accessToken = jwtUtil.generateAccessToken(
             user.getId(),
             tenantId,
@@ -171,13 +170,13 @@ public class AuthService {
         return user.getRole() != null ? user.getRole().name() : ROLE_PENDING;
     }
 
-    private Employment findActiveEmployment(Long userId, Long dojangId) {
+    private Employment findActiveEmployment(String userId, String dojangId) {
         if (dojangId == null) {
             return null;
         }
 
         return employmentRepository.findByUserIdAndDojangIdAndStatus(userId, dojangId, EmploymentStatus.ACTIVE)
-            .orElseThrow(() -> new AuthException(AUTH_ACCESS_DENIED));
+            .orElseThrow(() -> new AuthException(AuthErrorCode.ACCESS_DENIED));
     }
 
     private String resolveRole(User user, Employment employment, String fallbackRole) {

@@ -4,6 +4,7 @@ import com.maru.domain.student.Student;
 import lombok.Builder;
 
 import java.util.List;
+import java.util.Set;
 
 @Builder
 public record StudentListRes(
@@ -12,15 +13,24 @@ public record StudentListRes(
         int returnedCount,
         boolean hasMore
 ) {
-    public static StudentListRes from(List<Student> students) {
+    public static StudentListRes from(List<Student> students, Set<String> enrolledStudentIds) {
         List<StudentSummaryRes> summaries = students.stream()
-                .map(StudentSummaryRes::from)
+                .map(student -> StudentSummaryRes.from(student, enrolledStudentIds.contains(student.getId())))
                 .toList();
 
         return StudentListRes.builder()
                 .students(summaries)
                 .totalCount(summaries.size())
                 .returnedCount(summaries.size())
+                .hasMore(false)
+                .build();
+    }
+
+    public static StudentListRes empty() {
+        return StudentListRes.builder()
+                .students(List.of())
+                .totalCount(0)
+                .returnedCount(0)
                 .hasMore(false)
                 .build();
     }

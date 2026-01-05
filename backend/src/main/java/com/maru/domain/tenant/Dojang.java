@@ -1,22 +1,17 @@
 package com.maru.domain.tenant;
 
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
-@Table(
-    name = "dojang",
-    indexes = {
-        @Index(name = "idx_dojang_tenant_id", columnList = "tenant_id"),
-        @Index(name = "idx_dojang_user_id", columnList = "user_id"),
-        @Index(name = "idx_dojang_plan", columnList = "plan")
-    }
-)
+@Table(name = "dojang")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Dojang extends SoftDeletableEntity {
@@ -82,14 +77,14 @@ public class Dojang extends SoftDeletableEntity {
     }
 
     private void validateNotNull(Tenant tenant, User owner, String name) {
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(owner, "owner는 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
+        DomainAssert.notNull(tenant, DojangErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(owner, DojangErrorCode.OWNER_REQUIRED);
+        DomainAssert.hasText(name, DojangErrorCode.NAME_REQUIRED);
     }
 
     private void validateOwnership(Tenant tenant, User owner) {
         if (!tenant.getOwner().getId().equals(owner.getId())) {
-            throw new IllegalStateException("도장 소유자는 테넌트 소유자와 일치해야 합니다.");
+            throw new BusinessException(DojangErrorCode.OWNER_TENANT_MISMATCH);
         }
     }
 }

@@ -11,7 +11,7 @@ const KONAMI_CODE = [
 ];
 
 export function useKonamiCode(onActivate: () => void) {
-  const [inputSequence, setInputSequence] = useState<string[]>([]);
+  const [, setInputSequence] = useState<string[]>([]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const key = event.code;

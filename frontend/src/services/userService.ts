@@ -1,5 +1,5 @@
 import apiClient from './api';
-import { User, UserRole, OnboardingStep } from '../types/auth';
+import { User, UserRole, OnboardingStep, MyDojangsRes } from '../types/auth';
 
 export interface OnboardingProfileReq {
   name: string;
@@ -46,6 +46,11 @@ export interface OnboardingDojangRes {
 export const userService = {
   getMe: async (): Promise<User> => {
     const response = await apiClient.get<User>('/users/me');
+    return response.data;
+  },
+
+  getMyDojangs: async (): Promise<MyDojangsRes> => {
+    const response = await apiClient.get<MyDojangsRes>('/users/me/dojangs');
     return response.data;
   },
 

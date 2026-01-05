@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '../shared/components/ui/dropdown-menu';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser, useLogout } from '../hooks';
+import { DojangSwitcher } from '../components/auth/DojangSwitcher';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -18,10 +19,11 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { data: user } = useUser();
+  const logoutMutation = useLogout();
 
   const handleLogout = async () => {
-    await logout();
+    await logoutMutation.mutateAsync();
     navigate('/login');
   };
 
@@ -32,16 +34,19 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden"
-        onClick={onMenuClick}
-      >
-        <Menu className="h-6 w-6" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+        <DojangSwitcher />
+      </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-900">
           <MessageSquare className="h-5 w-5" />
         </Button>

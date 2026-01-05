@@ -28,7 +28,7 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
      * @param ttl 유효 기간
      */
     @Override
-    public void save(String phone, String code, Long userId, Duration ttl) {
+    public void save(String phone, String code, String userId, Duration ttl) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
         store.put(phone, new VerificationEntry(code, userId, now, expiresAt));
@@ -41,7 +41,7 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
      * @return 요청자 ID (만료되었거나 없으면 empty)
      */
     @Override
-    public Optional<Long> getUserId(String phone) {
+    public Optional<String> getUserId(String phone) {
         VerificationEntry entry = store.get(phone);
         if (entry == null || entry.isExpired()) {
             return Optional.empty();
@@ -151,12 +151,12 @@ public class MemoryVerificationCodeStore implements VerificationCodeStore {
 
     private static class VerificationEntry {
         private final String code;
-        private final Long userId;
+        private final String userId;
         private final Instant createdAt;
         private final Instant expiresAt;
         private final AtomicInteger failCount;
 
-        VerificationEntry(String code, Long userId, Instant createdAt, Instant expiresAt) {
+        VerificationEntry(String code, String userId, Instant createdAt, Instant expiresAt) {
             this.code = code;
             this.userId = userId;
             this.createdAt = createdAt;

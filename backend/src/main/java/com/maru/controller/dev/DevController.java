@@ -2,19 +2,26 @@ package com.maru.controller.dev;
 
 // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
 
+import com.maru.common.exception.AuthErrorCode;
+import com.maru.common.exception.BusinessException;
 import com.maru.common.util.CookieUtil;
 import com.maru.common.util.JwtUtil;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.controller.dev.dto.CreateTestUserReq;
 import com.maru.domain.user.User;
 import com.maru.repository.user.UserRepository;
+import com.maru.security.JwtClaims;
 import com.maru.service.dev.DevDojangSeeder;
+import com.maru.service.dev.DevStudentSeeder;
+import com.maru.service.tenant.search.MemorySearchStrategy;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +39,8 @@ public class DevController {
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
     private final DevDojangSeeder devDojangSeeder;
+    private final DevStudentSeeder devStudentSeeder;
+    private final MemorySearchStrategy memorySearchStrategy;
 
     @PostMapping("/create-test-user")
     @Transactional
@@ -57,11 +66,36 @@ public class DevController {
     }
 
     @PostMapping("/seed-dojangs")
+    @Transactional
     public ResponseEntity<SeedDojangsRes> seedDojangs() {
         log.info("[DEV] 도장 시드 데이터 생성 시작");
         int count = devDojangSeeder.seedDojangs();
+        memorySearchStrategy.refresh();
         log.info("[DEV] 도장 시드 데이터 생성 완료: {}개", count);
         return ResponseEntity.ok(new SeedDojangsRes(count));
+    }
+
+    @PostMapping("/seed-students")
+    public ResponseEntity<SeedStudentsRes> seedStudents() {
+        JwtClaims claims = getCurrentJwtClaims();
+        if (claims.tenantId() == null || claims.dojangId() == null) {
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
+        }
+
+        log.info("[DEV] 테스트 학생 생성 시작 - tenantId: {}, dojangId: {}",
+                claims.tenantId(), claims.dojangId());
+        int count = devStudentSeeder.seedStudents(claims.tenantId(), claims.dojangId());
+        log.info("[DEV] 테스트 학생 생성 완료: {}명", count);
+
+        return ResponseEntity.ok(new SeedStudentsRes(count));
+    }
+
+    private JwtClaims getCurrentJwtClaims() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof JwtClaims)) {
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
+        }
+        return (JwtClaims) auth.getPrincipal();
     }
 
     private TokenRes generateTokenResponse(User user) {
@@ -91,4 +125,6 @@ public class DevController {
     }
 
     public record SeedDojangsRes(int count) {}
+
+    public record SeedStudentsRes(int count) {}
 }

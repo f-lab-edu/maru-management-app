@@ -1,0 +1,44 @@
+package com.maru.controller.invoice.dto;
+
+import com.maru.domain.invoice.Invoice;
+import com.maru.domain.invoice.InvoiceStatus;
+import lombok.Builder;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
+@Builder
+public record InvoiceDetailRes(
+        String id,
+        String studentId,
+        String studentName,
+        BigDecimal amount,
+        BigDecimal paidAmount,
+        BigDecimal remainingAmount,
+        InvoiceStatus status,
+        LocalDate dueDate,
+        LocalDate issueDate,
+        String note,
+        YearMonth billingYearMonth,
+        List<PaymentRes> payments
+) {
+
+    public static InvoiceDetailRes from(Invoice invoice, List<PaymentRes> payments) {
+        return InvoiceDetailRes.builder()
+                .id(invoice.getId())
+                .studentId(invoice.getStudent().getId())
+                .studentName(invoice.getStudent().getName())
+                .amount(invoice.getAmount())
+                .paidAmount(invoice.getPaidAmount())
+                .remainingAmount(invoice.getRemainingAmount())
+                .status(invoice.getStatus())
+                .dueDate(invoice.getDueDate())
+                .issueDate(invoice.getIssueDate())
+                .note(invoice.getNote())
+                .billingYearMonth(invoice.getBillingYearMonth())
+                .payments(payments)
+                .build();
+    }
+}

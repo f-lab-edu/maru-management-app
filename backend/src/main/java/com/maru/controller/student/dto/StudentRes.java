@@ -9,7 +9,7 @@ import java.util.List;
 
 @Builder
 public record StudentRes(
-        Long id,
+        String id,
         String name,
         LocalDate birth,
         String photoUrl,

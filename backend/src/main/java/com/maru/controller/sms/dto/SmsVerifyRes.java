@@ -5,6 +5,6 @@ import lombok.Builder;
 @Builder
 public record SmsVerifyRes(
     boolean verified,
-    Long userId,
+    String userId,
     boolean isExistingUser
 ) {}

@@ -1,9 +1,8 @@
 package com.maru.controller.auth;
 
+import com.maru.common.exception.AuthErrorCode;
 import com.maru.common.exception.AuthException;
 import com.maru.common.util.CookieUtil;
-
-import static com.maru.common.exception.ErrorCode.*;
 import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
 import com.maru.domain.user.OAuthProvider;
@@ -41,7 +40,7 @@ public class AuthController {
         HttpServletResponse response) {
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_REQUIRED);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_REQUIRED);
         }
 
         TokenRes tokenRes = authService.refreshAccessToken(refreshToken);
@@ -60,12 +59,12 @@ public class AuthController {
      */
     @PostMapping("/select-dojang")
     public ResponseEntity<Void> selectDojang(
-        @CurrentUserId Long userId,
-        @RequestParam @NotNull Long dojangId,
+        @CurrentUserId String userId,
+        @RequestParam @NotNull String dojangId,
         HttpServletResponse response
     ) {
         if (userId == null) {
-            throw new AuthException(AUTH_REQUIRED);
+            throw new AuthException(AuthErrorCode.REQUIRED);
         }
 
         TokenRes tokenRes = authService.selectDojang(userId, dojangId);

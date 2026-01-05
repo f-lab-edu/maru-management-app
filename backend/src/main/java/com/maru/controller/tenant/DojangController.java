@@ -32,8 +32,8 @@ public class DojangController {
      */
     @GetMapping("/search")
     public ResponseEntity<Page<DojangSearchRes>> searchDojangs(
-//            @CurrentUserId Long userId,
-            @AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : userId") Long userId, // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
+//            @CurrentUserId String userId,
+            @AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : userId") String userId, // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
             @RequestParam String keyword,
             @RequestParam(defaultValue = "MEMORY") SearchType strategy,
             @PageableDefault(size = 10) Pageable pageable) {

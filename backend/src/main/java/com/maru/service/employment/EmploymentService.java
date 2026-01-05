@@ -3,8 +3,10 @@ package com.maru.service.employment;
 import com.maru.common.exception.BusinessException;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.repository.employment.EmploymentRepository;
@@ -17,8 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.maru.common.exception.ErrorCode.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,33 +29,44 @@ public class EmploymentService {
     private final UserService userService;
 
     /**
-     * 사범이 도장에 승인 요청
+     * 사범이 도장에 승인 요청 (거절/퇴사 후 재요청 시 기존 레코드 재활용)
      *
      * @param userId 요청자(사범) ID
      * @param dojangId 도장 ID
-     * @return 생성된 Employment
+     * @return 생성 또는 재활용된 Employment
      */
     @Transactional
-    public Employment requestApproval(Long userId, Long dojangId) {
-        validateNoDuplicateRequest(userId, dojangId);
-
-        User user = userService.getUserById(userId);
+    public Employment requestApproval(String userId, String dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DOJANG_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
+        return employmentRepository.findByUserIdAndDojangId(userId, dojangId)
+                .map(existing -> handleExistingEmployment(existing, dojang.getName()))
+                .orElseGet(() -> createNewEmployment(userId, dojang));
+    }
+
+    private Employment handleExistingEmployment(Employment employment, String dojangName) {
+        EmploymentStatus status = employment.getStatus();
+
+        if (status == EmploymentStatus.REJECTED || status == EmploymentStatus.LEFT) {
+            employment.rejoin();
+            log.info("승인 재요청 (rejoin): employmentId={}, userId={}, dojangName={}",
+                    employment.getId(), employment.getUser().getId(), dojangName);
+            return employment;
+        }
+
+        log.warn("재요청 불가: employmentId={}, status={}", employment.getId(), status);
+        throw new BusinessException(EmploymentErrorCode.ALREADY_EXISTS);
+    }
+
+    private Employment createNewEmployment(String userId, Dojang dojang) {
+        User user = userService.getUserById(userId);
         Employment employment = Employment.create(user, dojang.getTenant(), dojang);
         Employment saved = employmentRepository.save(employment);
 
         log.info("승인 요청 생성: employmentId={}, userId={}, dojangId={}, dojangName={}",
-                saved.getId(), userId, dojangId, dojang.getName());
+                saved.getId(), userId, dojang.getId(), dojang.getName());
         return saved;
-    }
-
-    private void validateNoDuplicateRequest(Long userId, Long dojangId) {
-        if (employmentRepository.existsByUserIdAndDojangId(userId, dojangId)) {
-            log.warn("중복 승인 요청 시도: userId={}, dojangId={}", userId, dojangId);
-            throw new BusinessException(EMPLOYMENT_ALREADY_EXISTS);
-        }
     }
 
     /**
@@ -65,7 +76,7 @@ public class EmploymentService {
      * @return 대기 중인 Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getPendingRequests(Long dojangId) {
+    public List<Employment> getPendingRequests(String dojangId) {
         return employmentRepository.findByDojangIdAndStatus(dojangId, EmploymentStatus.PENDING);
     }
 
@@ -76,7 +87,7 @@ public class EmploymentService {
      * @return Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getMyRequests(Long userId) {
+    public List<Employment> getMyRequests(String userId) {
         return employmentRepository.findByUserId(userId);
     }
 
@@ -87,7 +98,7 @@ public class EmploymentService {
      * @return Employment 목록
      */
     @Transactional(readOnly = true)
-    public List<Employment> getMyDojangs(Long userId) {
+    public List<Employment> getMyDojangs(String userId) {
         return employmentRepository.findActiveWithDojangAndTenant(userId, EmploymentStatus.ACTIVE);
     }
 
@@ -99,7 +110,7 @@ public class EmploymentService {
      * @return 승인된 Employment
      */
     @Transactional
-    public Employment approve(Long employmentId, Long ownerId) {
+    public Employment approve(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -122,7 +133,7 @@ public class EmploymentService {
      * @return 거절된 Employment
      */
     @Transactional
-    public Employment reject(Long employmentId, Long ownerId) {
+    public Employment reject(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -141,7 +152,7 @@ public class EmploymentService {
      * @param userId 요청자 ID
      */
     @Transactional
-    public void cancel(Long employmentId, Long userId) {
+    public void cancel(String employmentId, String userId) {
         Employment employment = getEmploymentById(employmentId);
         validateRequesterPermission(employment, userId);
         validatePendingStatus(employment);
@@ -151,25 +162,25 @@ public class EmploymentService {
                 employmentId, userId, employment.getDojang().getId());
     }
 
-    private void validateRequesterPermission(Employment employment, Long userId) {
+    private void validateRequesterPermission(Employment employment, String userId) {
         if (!employment.getUser().getId().equals(userId)) {
             log.warn("본인이 아닌 사용자가 취소 시도: employmentId={}, requesterId={}, actualUserId={}",
                     employment.getId(), userId, employment.getUser().getId());
-            throw new BusinessException(EMPLOYMENT_NOT_REQUESTER);
+            throw new BusinessException(EmploymentErrorCode.NOT_REQUESTER);
         }
     }
 
-    private Employment getEmploymentById(Long employmentId) {
+    private Employment getEmploymentById(String employmentId) {
         return employmentRepository.findById(employmentId)
-                .orElseThrow(() -> new BusinessException(EMPLOYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(EmploymentErrorCode.NOT_FOUND));
     }
 
-    private void validateOwnerPermission(Employment employment, Long ownerId) {
-        Long dojangOwnerId = employment.getDojang().getOwner().getId();
+    private void validateOwnerPermission(Employment employment, String ownerId) {
+        String dojangOwnerId = employment.getDojang().getOwner().getId();
         if (!dojangOwnerId.equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
                     employment.getId(), ownerId, dojangOwnerId);
-            throw new BusinessException(EMPLOYMENT_NOT_OWNER);
+            throw new BusinessException(EmploymentErrorCode.NOT_OWNER);
         }
     }
 
@@ -177,7 +188,7 @@ public class EmploymentService {
         if (employment.getStatus() != EmploymentStatus.PENDING) {
             log.warn("PENDING 상태가 아닌 요청 처리 시도: employmentId={}, currentStatus={}",
                     employment.getId(), employment.getStatus());
-            throw new BusinessException(EMPLOYMENT_NOT_PENDING);
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
     }
 

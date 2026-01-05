@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface DojangRepository extends JpaRepository<Dojang, Long> {
+public interface DojangRepository extends JpaRepository<Dojang, String> {
 
     @Query("""
         SELECT d
@@ -41,5 +41,5 @@ public interface DojangRepository extends JpaRepository<Dojang, Long> {
         """, nativeQuery = true)
     List<Dojang> findByKeywordFullText(@Param("keyword") String keyword);
 
-    Optional<Dojang> findByOwnerId(Long ownerId);
+    Optional<Dojang> findByOwnerId(String ownerId);
 }

@@ -1,30 +1,24 @@
 package com.maru.domain.student;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDate;
 
 @Entity
-@Table(
-    name = "student",
-    indexes = {
-        @Index(name = "idx_student_tenant_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_student_dojang_status", columnList = "dojang_id, status"),
-        @Index(name = "idx_student_tenant_name", columnList = "tenant_id, name")
-    }
-)
+@Table(name = "student")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Student extends SoftDeletableEntity {
 
-    @Column(nullable = false)
-    private Long tenantId;
+    @Column(nullable = false, length = 13)
+    private String tenantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dojang_id", nullable = false)
@@ -39,14 +33,12 @@ public class Student extends SoftDeletableEntity {
     @Column(length = 20)
     private String phone;
 
-    @Column
     private LocalDate birth;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StudentStatus status;
 
-    @Column
     private LocalDate enrolledAt;
 
     private Student(Dojang dojang, String name, LocalDate birth, String photoUrl, String phone) {
@@ -88,8 +80,8 @@ public class Student extends SoftDeletableEntity {
     }
 
     private void validateNotNull(Dojang dojang, String name, LocalDate birth) {
-        Assert.notNull(dojang, "dojang은 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
-        Assert.notNull(birth, "birth는 필수입니다.");
+        DomainAssert.notNull(dojang, StudentErrorCode.DOJANG_REQUIRED);
+        DomainAssert.hasText(name, StudentErrorCode.NAME_REQUIRED);
+        DomainAssert.notNull(birth, StudentErrorCode.BIRTH_REQUIRED);
     }
 }

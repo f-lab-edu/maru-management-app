@@ -1,7 +1,7 @@
 package com.maru.controller.employment;
 
+import com.maru.common.exception.AuthErrorCode;
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
 import com.maru.domain.employment.Employment;
@@ -34,8 +34,8 @@ public class EmploymentController {
      */
     @PostMapping("/request")
     public ResponseEntity<EmploymentRes> requestApproval(
-            @CurrentUserId Long userId,
-            @RequestParam Long dojangId) {
+            @CurrentUserId String userId,
+            @RequestParam String dojangId) {
 
         Employment employment = employmentService.requestApproval(userId, dojangId);
         return ResponseEntity.ok(EmploymentRes.from(employment));
@@ -48,7 +48,7 @@ public class EmploymentController {
      * @return 본인이 보낸 Employment 목록
      */
     @GetMapping("/my-requests")
-    public ResponseEntity<List<EmploymentRes>> getMyRequests(@CurrentUserId Long userId) {
+    public ResponseEntity<List<EmploymentRes>> getMyRequests(@CurrentUserId String userId) {
         List<EmploymentRes> results = employmentService.getMyRequests(userId)
                 .stream()
                 .map(EmploymentRes::from)
@@ -64,9 +64,9 @@ public class EmploymentController {
      * @return 대기 중인 Employment 목록
      */
     @GetMapping("/pending")
-    public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId Long userId) {
+    public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId String userId) {
         Dojang dojang = dojangRepository.findByOwnerId(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_ACCESS_DENIED));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.ACCESS_DENIED));
 
         List<PendingApprovalRes> results = employmentService.getPendingRequests(dojang.getId())
                 .stream()
@@ -85,8 +85,8 @@ public class EmploymentController {
      */
     @PatchMapping("/{id}/approve")
     public ResponseEntity<EmploymentRes> approve(
-            @CurrentUserId Long userId,
-            @PathVariable Long id) {
+            @CurrentUserId String userId,
+            @PathVariable String id) {
 
         Employment employment = employmentService.approve(id, userId);
         return ResponseEntity.ok(EmploymentRes.from(employment));
@@ -101,8 +101,8 @@ public class EmploymentController {
      */
     @PatchMapping("/{id}/reject")
     public ResponseEntity<EmploymentRes> reject(
-            @CurrentUserId Long userId,
-            @PathVariable Long id) {
+            @CurrentUserId String userId,
+            @PathVariable String id) {
 
         Employment employment = employmentService.reject(id, userId);
         return ResponseEntity.ok(EmploymentRes.from(employment));
@@ -117,8 +117,8 @@ public class EmploymentController {
      */
     @DeleteMapping("/{id}/cancel")
     public ResponseEntity<Void> cancel(
-            @CurrentUserId Long userId,
-            @PathVariable Long id) {
+            @CurrentUserId String userId,
+            @PathVariable String id) {
 
         employmentService.cancel(id, userId);
         return ResponseEntity.noContent().build();

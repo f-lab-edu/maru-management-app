@@ -1,6 +1,7 @@
 package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.SmsErrorCode;
 import com.maru.common.exception.SmsVerificationException;
 import com.maru.common.util.MaskingUtil;
 import com.maru.config.properties.SmsVerificationProperties;
@@ -10,8 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -30,7 +29,7 @@ public class PhoneVerificationService {
      * @param userId 요청자 ID
      * @return 만료 시간(초)
      */
-    public int sendVerificationCode(String phone, Long userId) {
+    public int sendVerificationCode(String phone, String userId) {
         validateResendLimit(phone);
         String code = generateAndSaveCode(phone, userId);
         sendSmsWithRollback(phone, code);
@@ -46,7 +45,7 @@ public class PhoneVerificationService {
      * @throws BusinessException SMS_CODE_NOT_FOUND, SMS_CODE_EXPIRED, SMS_MAX_ATTEMPTS_EXCEEDED, SMS_USER_MISMATCH
      * @throws SmsVerificationException SMS_CODE_INVALID (남은 시도 횟수 포함)
      */
-    public void verifyCode(String phone, String code, Long userId) {
+    public void verifyCode(String phone, String code, String userId) {
         String storedCode = getStoredCodeOrThrow(phone);
         validateUserMatch(phone, userId);
 
@@ -59,11 +58,11 @@ public class PhoneVerificationService {
 
     private void validateResendLimit(String phone) {
         if (verificationCodeStore.isResendLimited(phone)) {
-            throw new BusinessException(SMS_RESEND_TOO_FAST);
+            throw new BusinessException(SmsErrorCode.RESEND_TOO_FAST);
         }
     }
 
-    private String generateAndSaveCode(String phone, Long userId) {
+    private String generateAndSaveCode(String phone, String userId) {
         String code = generateCode();
         Duration ttl = Duration.ofMinutes(properties.ttlMinutes());
         verificationCodeStore.save(phone, code, userId, ttl);
@@ -93,20 +92,20 @@ public class PhoneVerificationService {
         VerificationCodeStatus status = verificationCodeStore.getStatus(phone);
 
         return switch (status) {
-            case NOT_FOUND -> throw new BusinessException(SMS_CODE_NOT_FOUND);
+            case NOT_FOUND -> throw new BusinessException(SmsErrorCode.CODE_NOT_FOUND);
             case EXPIRED -> {
                 verificationCodeStore.delete(phone);
-                throw new BusinessException(SMS_CODE_EXPIRED);
+                throw new BusinessException(SmsErrorCode.CODE_EXPIRED);
             }
             case VALID -> verificationCodeStore.get(phone).orElseThrow();
         };
     }
 
-    private void validateUserMatch(String phone, Long userId) {
-        Long storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
+    private void validateUserMatch(String phone, String userId) {
+        String storedUserId = verificationCodeStore.getUserId(phone).orElse(null);
         if (storedUserId != null && !storedUserId.equals(userId)) {
             log.warn("인증 요청자 불일치: phone={}, storedUserId={}, requestUserId={}", MaskingUtil.phone(phone), storedUserId, userId);
-            throw new BusinessException(SMS_USER_MISMATCH);
+            throw new BusinessException(SmsErrorCode.USER_MISMATCH);
         }
     }
 
@@ -116,11 +115,11 @@ public class PhoneVerificationService {
         if (remainingAttempts <= 0) {
             verificationCodeStore.delete(phone);
             log.warn("인증 시도 횟수 초과: phone={}", MaskingUtil.phone(phone));
-            throw new BusinessException(SMS_MAX_ATTEMPTS_EXCEEDED);
+            throw new BusinessException(SmsErrorCode.MAX_ATTEMPTS_EXCEEDED);
         }
 
         log.info("인증번호 불일치: phone={}, 남은 시도={}", MaskingUtil.phone(phone), remainingAttempts);
-        throw new SmsVerificationException(SMS_CODE_INVALID, remainingAttempts);
+        throw new SmsVerificationException(SmsErrorCode.CODE_INVALID, remainingAttempts);
     }
 
     private int calculateRemainingAttempts(String phone) {

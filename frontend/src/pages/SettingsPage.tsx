@@ -1,6 +1,7 @@
-import { Users, Shield, Bell, User } from 'lucide-react';
+import { Users, Shield, Bell, User, GraduationCap } from 'lucide-react';
 import { SettingsLayout } from '../features/settings/components/SettingsLayout';
 import { InstructorApproval } from '../features/settings/components/InstructorApproval';
+import { DivisionSettings } from '../features/divisions';
 import { SettingsTab } from '../features/settings/types';
 
 export default function SettingsPage() {
@@ -11,6 +12,13 @@ export default function SettingsPage() {
       icon: Users,
       description: '도장 가입을 요청한 사범님들을 승인하거나 관리합니다.',
       component: <InstructorApproval />
+    },
+    {
+      id: 'divisions',
+      label: '수련반 관리',
+      icon: GraduationCap,
+      description: '수련부와 수련반을 생성하고 관리합니다.',
+      component: <DivisionSettings />
     },
     {
       id: 'permissions',

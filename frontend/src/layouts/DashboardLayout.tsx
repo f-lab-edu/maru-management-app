@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../widgets/Sidebar';
 import { Header } from '../widgets/Header';
+import { useAuthStore } from '../stores/authStore';
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const dojangId = useAuthStore((state) => state.selectedDojang?.dojangId);
 
   return (
     <div className="h-screen bg-slate-50 flex overflow-hidden">
@@ -17,7 +19,7 @@ export default function DashboardLayout() {
         <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
 
         <main className="flex-1 overflow-hidden bg-slate-50/50 flex flex-col">
-          <div className="w-full h-full">
+          <div key={dojangId} className="w-full h-full">
             <Outlet />
           </div>
         </main>

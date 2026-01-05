@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '../../hooks';
 import { userService } from '../../services/userService';
 import { Button } from '../../shared/components/ui/button';
 import { Input } from '../../shared/components/ui/input';
@@ -22,7 +22,7 @@ type CreateDojangForm = z.infer<typeof createDojangSchema>;
 
 export default function CreateDojangPage() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { refetch: refreshUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateDojangForm>({

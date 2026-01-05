@@ -1,7 +1,7 @@
 package com.maru.controller.student;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.ErrorCode;
+import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.student.dto.*;
 import com.maru.security.CurrentUserId;
 import com.maru.service.guardian.GuardianService;
@@ -34,9 +34,9 @@ public class StudentController {
      */
     @PostMapping
     public ResponseEntity<StudentRes> createStudent(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody StudentCreateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         StudentRes response = studentService.createStudent(dojangId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -45,14 +45,18 @@ public class StudentController {
      * 원생 목록 조회
      *
      * @param dojangId 도장 ID
+     * @param sectionId 수련부 ID (선택)
+     * @param divisionId 수련반 ID (선택)
      * @param userId 현재 사용자 ID
      * @return 원생 목록 (enrolled_at DESC, 최대 200건)
      */
     @GetMapping
     public ResponseEntity<StudentListRes> getStudents(
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
-        StudentListRes response = studentService.getStudents(dojangId);
+            @RequestParam String dojangId,
+            @RequestParam(required = false) String sectionId,
+            @RequestParam(required = false) String divisionId,
+            @CurrentUserId String userId) {
+        StudentListRes response = studentService.getStudents(dojangId, sectionId, divisionId);
         return ResponseEntity.ok(response);
     }
 
@@ -66,9 +70,9 @@ public class StudentController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<StudentRes> getStudent(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         StudentRes response = studentService.getStudent(dojangId, id);
         return ResponseEntity.ok(response);
     }
@@ -84,10 +88,10 @@ public class StudentController {
      */
     @PatchMapping("/{id}")
     public ResponseEntity<StudentRes> updateStudent(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @Valid @RequestBody StudentUpdateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         StudentRes response = studentService.updateStudent(dojangId, id, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -103,10 +107,10 @@ public class StudentController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(
-            @PathVariable Long id,
-            @RequestParam Long dojangId,
+            @PathVariable String id,
+            @RequestParam String dojangId,
             @RequestParam(required = false) String reason,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         studentService.deleteStudent(dojangId, id, reason, userId);
         return ResponseEntity.noContent().build();
     }
@@ -121,9 +125,9 @@ public class StudentController {
      */
     @DeleteMapping("/bulk")
     public ResponseEntity<Void> bulkDeleteStudents(
-            @RequestParam Long dojangId,
+            @RequestParam String dojangId,
             @Valid @RequestBody BulkDeleteReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         studentService.bulkDeleteStudents(dojangId, request.studentIds(), userId);
         return ResponseEntity.noContent().build();
     }
@@ -139,10 +143,10 @@ public class StudentController {
      */
     @PostMapping("/{studentId}/guardians")
     public ResponseEntity<GuardianRes> addGuardian(
-            @PathVariable Long studentId,
-            @RequestParam Long dojangId,
+            @PathVariable String studentId,
+            @RequestParam String dojangId,
             @Valid @RequestBody GuardianCreateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         GuardianRes response = guardianService.addGuardian(dojangId, studentId, request);
         return ResponseEntity.ok(response);
     }
@@ -159,11 +163,11 @@ public class StudentController {
      */
     @PatchMapping("/{studentId}/guardians/{guardianId}")
     public ResponseEntity<GuardianRes> updateGuardian(
-            @PathVariable Long studentId,
-            @PathVariable Long guardianId,
-            @RequestParam Long dojangId,
+            @PathVariable String studentId,
+            @PathVariable String guardianId,
+            @RequestParam String dojangId,
             @Valid @RequestBody GuardianUpdateReq request,
-            @CurrentUserId Long userId) {
+            @CurrentUserId String userId) {
         GuardianRes response = guardianService.updateGuardian(dojangId, studentId, guardianId, request);
         return ResponseEntity.ok(response);
     }
@@ -179,10 +183,10 @@ public class StudentController {
      */
     @PatchMapping("/{studentId}/guardians/{guardianId}/primary")
     public ResponseEntity<Void> setPrimaryGuardian(
-            @PathVariable Long studentId,
-            @PathVariable Long guardianId,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String studentId,
+            @PathVariable String guardianId,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         guardianService.setPrimaryGuardian(dojangId, studentId, guardianId);
         return ResponseEntity.noContent().build();
     }
@@ -198,10 +202,10 @@ public class StudentController {
      */
     @DeleteMapping("/{studentId}/guardians/{guardianId}")
     public ResponseEntity<Void> removeGuardian(
-            @PathVariable Long studentId,
-            @PathVariable Long guardianId,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
+            @PathVariable String studentId,
+            @PathVariable String guardianId,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
         guardianService.removeGuardian(dojangId, studentId, guardianId);
         return ResponseEntity.noContent().build();
     }
@@ -217,10 +221,10 @@ public class StudentController {
      */
     @PostMapping("/{studentId}/guardians/{guardianId}/invite-sms")
     public ResponseEntity<Void> sendInviteSms(
-            @PathVariable Long studentId,
-            @PathVariable Long guardianId,
-            @RequestParam Long dojangId,
-            @CurrentUserId Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+            @PathVariable String studentId,
+            @PathVariable String guardianId,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
+        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
     }
 }

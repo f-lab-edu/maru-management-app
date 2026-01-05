@@ -1,6 +1,7 @@
 package com.maru.service.tenant;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.OnboardingErrorCode;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
@@ -8,6 +9,7 @@ import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.domain.user.UserRole;
+import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.TenantRepository;
@@ -17,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -43,7 +43,7 @@ public class TenantService {
      * @throws BusinessException ONBOARDING_STAGE_INVALID - 온보딩 단계가 DOJANG_INFO가 아닌 경우
      */
     @Transactional
-    public Dojang createTenantWithDojang(Long userId, String dojangName, String address, String phone) {
+    public Dojang createTenantWithDojang(String userId, String dojangName, String address, String phone) {
         User user = userService.getUserById(userId);
         validateOwnerRole(user);
         validateOnboardingStep(user);
@@ -65,13 +65,13 @@ public class TenantService {
 
     private void validateOwnerRole(User user) {
         if (user.getRole() != UserRole.OWNER) {
-            throw new BusinessException(USER_INVALID_ROLE);
+            throw new BusinessException(UserErrorCode.INVALID_ROLE);
         }
     }
 
     private void validateOnboardingStep(User user) {
         if (user.getOnboardingStep() != OnboardingStep.DOJANG_INFO) {
-            throw new BusinessException(ONBOARDING_STAGE_INVALID);
+            throw new BusinessException(OnboardingErrorCode.STAGE_INVALID);
         }
     }
 

@@ -13,16 +13,15 @@ export const employmentService = {
   searchDojangs: async (
     keyword: string,
     page: number = 0,
-    size: number = 10,
-    strategy: string = 'MEMORY'
+    size: number = 5,
   ): Promise<PagedResult<DojangSearchResult>> => {
     const response = await apiClient.get<PagedResult<DojangSearchResult>>('/dojangs/search', {
-      params: { keyword, page, size, strategy },
+      params: { keyword, page, size },
     });
     return response.data;
   },
 
-  requestApproval: async (dojangId: number): Promise<Employment> => {
+  requestApproval: async (dojangId: string): Promise<Employment> => {
     const response = await apiClient.post<Employment>('/employments/request', null, {
       params: { dojangId },
     });
@@ -39,17 +38,17 @@ export const employmentService = {
     return response.data;
   },
 
-  approve: async (employmentId: number): Promise<Employment> => {
+  approve: async (employmentId: string): Promise<Employment> => {
     const response = await apiClient.patch<Employment>(`/employments/${employmentId}/approve`);
     return response.data;
   },
 
-  reject: async (employmentId: number): Promise<Employment> => {
+  reject: async (employmentId: string): Promise<Employment> => {
     const response = await apiClient.patch<Employment>(`/employments/${employmentId}/reject`);
     return response.data;
   },
 
-  cancel: async (employmentId: number): Promise<void> => {
+  cancel: async (employmentId: string): Promise<void> => {
     await apiClient.delete(`/employments/${employmentId}/cancel`);
   },
 };

@@ -1,0 +1,5 @@
+-- 다중 요일 지원을 위해 day_of_week를 비트마스크 TINYINT로 변경
+-- MONDAY=1, TUESDAY=2, WEDNESDAY=4, THURSDAY=8, FRIDAY=16, SATURDAY=32, SUNDAY=64
+
+ALTER TABLE division DROP COLUMN day_of_week;
+ALTER TABLE division ADD COLUMN schedule_days TINYINT NULL COMMENT '요일 비트마스크 (MON=1,TUE=2,WED=4,THU=8,FRI=16,SAT=32,SUN=64)';

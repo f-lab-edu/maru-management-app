@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '../../hooks';
 import { userService } from '../../services/userService';
 import { CardHeader, CardTitle, CardDescription, CardContent } from '../../shared/components/ui/card';
 import { Search, MapPin, User, Loader2, Send, CheckCircle2, ChevronLeft, ChevronRight, Clock, Building2 } from 'lucide-react';
@@ -10,11 +10,10 @@ import { useDojangSearch, useRequestApproval, useMyRequests, useCancelRequest } 
 import { DojangSearchResult } from '../../types/employment';
 
 export default function SearchDojangPage() {
-  const { refreshUser } = useAuth();
+  const { refetch: refreshUser } = useUser();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
   const [page, setPage] = useState(0);
-  const [requestedDojangIds, setRequestedDojangIds] = useState<Set<number>>(new Set());
 
   const { data: myRequests, isLoading: isLoadingRequests } = useMyRequests();
   const { data: searchResult, isLoading: isSearching } = useDojangSearch(debouncedKeyword, page);
@@ -44,13 +43,17 @@ export default function SearchDojangPage() {
   const handleRequest = async (dojang: DojangSearchResult) => {
     try {
       await requestApproval.mutateAsync(dojang.id);
-      setRequestedDojangIds(prev => new Set(prev).add(dojang.id));
     } catch (error) {
       console.error('승인 요청 실패:', error);
     }
   };
 
-  const isRequested = (dojangId: number) => requestedDojangIds.has(dojangId);
+  const isAlreadyRequested = (dojangId: string) => {
+    return myRequests?.some(r =>
+      r.dojangId === dojangId &&
+      (r.status === 'PENDING' || r.status === 'ACTIVE')
+    ) ?? false;
+  };
 
   const handleCancel = async () => {
     if (!pendingRequest) return;
@@ -162,10 +165,10 @@ export default function SearchDojangPage() {
                   <Button
                     size="sm"
                     onClick={() => handleRequest(dojang)}
-                    disabled={isRequested(dojang.id) || requestApproval.isPending}
-                    className={`shrink-0 h-8 px-3 text-xs ${isRequested(dojang.id) ? 'bg-green-600 hover:bg-green-600' : ''}`}
+                    disabled={isAlreadyRequested(dojang.id) || requestApproval.isPending}
+                    className={`shrink-0 h-8 px-3 text-xs ${isAlreadyRequested(dojang.id) ? 'bg-green-600 hover:bg-green-600' : ''}`}
                   >
-                    {isRequested(dojang.id) ? (
+                    {isAlreadyRequested(dojang.id) ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                         완료

@@ -1,23 +1,18 @@
 package com.maru.domain.tenant;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
+import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.util.UUID;
 
 @Entity
-@Table(
-    name = "tenant",
-    indexes = {
-        @Index(name = "idx_tenant_user_id", columnList = "user_id"),
-        @Index(name = "idx_tenant_slug", columnList = "slug")
-    }
-)
+@Table(name = "tenant")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Tenant extends SoftDeletableEntity {
@@ -57,7 +52,7 @@ public class Tenant extends SoftDeletableEntity {
     }
 
     private void validateNotNull(User owner, String slug) {
-        Assert.notNull(owner, "owner는 필수입니다.");
-        Assert.hasText(slug, "slug는 필수입니다.");
+        DomainAssert.notNull(owner, TenantErrorCode.OWNER_REQUIRED);
+        DomainAssert.hasText(slug, TenantErrorCode.SLUG_REQUIRED);
     }
 }

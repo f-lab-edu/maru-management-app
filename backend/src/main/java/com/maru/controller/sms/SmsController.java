@@ -32,7 +32,7 @@ public class SmsController {
      */
     @PostMapping("/send")
     public ResponseEntity<SmsSendRes> sendVerificationCode(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody SmsSendReq request) {
         int expiresIn = phoneVerificationService.sendVerificationCode(request.phone(), userId);
 
@@ -52,7 +52,7 @@ public class SmsController {
      */
     @PostMapping("/verify")
     public ResponseEntity<SmsVerifyRes> verifyCode(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody SmsVerifyReq request) {
         PhoneVerificationRes result = userService.verifyPhoneAndMerge(
                 userId, request.phone(), request.code());

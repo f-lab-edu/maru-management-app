@@ -32,7 +32,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <div className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
-          const isEnabled = item.label === '설정' || item.label === '대시보드';
+          const isEnabled = item.label === '설정' || item.label === '대시보드' || item.label === '원생 관리' || item.label === '출석 관리' || item.label === '수납 관리';
 
           if (isEnabled) {
             return (
