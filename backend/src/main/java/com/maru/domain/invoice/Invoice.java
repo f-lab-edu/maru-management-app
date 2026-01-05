@@ -63,7 +63,7 @@ public class Invoice extends BaseEntity {
         DomainAssert.notNull(amount, InvoiceErrorCode.AMOUNT_REQUIRED);
 
         this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojang().getId();
+        this.dojangId = student.getDojangId();
         this.student = student;
         this.billingYearMonth = billingYearMonth;
         this.issueDate = null;

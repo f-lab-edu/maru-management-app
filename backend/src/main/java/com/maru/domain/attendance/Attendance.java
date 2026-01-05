@@ -57,7 +57,7 @@ public class Attendance extends BaseEntity {
         DomainAssert.notNull(status, AttendanceErrorCode.STATUS_REQUIRED);
 
         this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojang().getId();
+        this.dojangId = student.getDojangId();
         this.student = student;
         this.status = status;
         this.method = method;
@@ -78,7 +78,7 @@ public class Attendance extends BaseEntity {
         DomainAssert.notNull(date, AttendanceErrorCode.DATE_REQUIRED);
 
         this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojang().getId();
+        this.dojangId = student.getDojangId();
         this.student = student;
         this.attendanceDate = date;
         this.status = AttendanceStatus.ABSENT;
