@@ -3,7 +3,6 @@ package com.maru.domain.section;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
 import com.maru.domain.section.exception.SectionErrorCode;
-import com.maru.domain.tenant.Dojang;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,9 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Section extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dojang_id", nullable = false)
-    private Dojang dojang;
+    @Column(name = "dojang_id", nullable = false)
+    private String dojangId;
 
     @Column(nullable = false)
     private String name;
@@ -28,17 +26,17 @@ public class Section extends BaseEntity {
     @Column(name = "display_order")
     private Integer displayOrder;
 
-    private Section(Dojang dojang, String name, Integer displayOrder) {
-        this.dojang = dojang;
+    private Section(String dojangId, String name, Integer displayOrder) {
+        this.dojangId = dojangId;
         this.name = name;
         this.isActive = true;
         this.displayOrder = displayOrder;
     }
 
-    public static Section create(Dojang dojang, String name, Integer displayOrder) {
-        DomainAssert.notNull(dojang, SectionErrorCode.DOJANG_REQUIRED);
+    public static Section create(String dojangId, String name, Integer displayOrder) {
+        DomainAssert.hasText(dojangId, SectionErrorCode.DOJANG_REQUIRED);
         DomainAssert.hasText(name, SectionErrorCode.NAME_REQUIRED);
-        return new Section(dojang, name, displayOrder);
+        return new Section(dojangId, name, displayOrder);
     }
 
     public void updateName(String name) {
