@@ -1,8 +1,8 @@
 package com.maru.service.search;
 
-import com.maru.service.search.dojang.DojangAddressTokenizer;
-import com.maru.service.search.dojang.DojangNameTokenizer;
-import com.maru.service.search.dojang.DojangQueryTokenizer;
+import com.maru.service.search.dojang.analyzer.DojangAddressAnalyzer;
+import com.maru.service.search.dojang.analyzer.DojangNameAnalyzer;
+import com.maru.service.search.dojang.analyzer.DojangQueryAnalyzer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,9 +22,9 @@ class DojangSearchIntegrationTest {
 
     private static final String CSV_PATH = "src/test/resources/dojang_list.csv";
 
-    private static final DojangNameTokenizer nameTokenizer = new DojangNameTokenizer();
-    private static final DojangAddressTokenizer addressTokenizer = new DojangAddressTokenizer();
-    private static final DojangQueryTokenizer queryTokenizer = new DojangQueryTokenizer();
+    private static final DojangNameAnalyzer nameAnalyzer = new DojangNameAnalyzer();
+    private static final DojangAddressAnalyzer addressAnalyzer = new DojangAddressAnalyzer();
+    private static final DojangQueryAnalyzer queryAnalyzer = new DojangQueryAnalyzer();
 
     private static final Map<String, Set<Integer>> invertedIndex = new ConcurrentHashMap<>();
     private static final Map<Integer, DojangData> dojangMap = new HashMap<>();
@@ -63,8 +63,8 @@ class DojangSearchIntegrationTest {
                 dojangMap.put(id, dojang);
 
                 Set<String> tokens = new HashSet<>();
-                tokens.addAll(nameTokenizer.tokenize(name));
-                tokens.addAll(addressTokenizer.tokenize(address));
+                tokens.addAll(nameAnalyzer.analyze(name));
+                tokens.addAll(addressAnalyzer.analyze(address));
 
                 for (String token : tokens) {
                     if (token == null || token.isBlank()) continue;
@@ -98,7 +98,7 @@ class DojangSearchIntegrationTest {
     }
 
     private List<DojangData> search(String keyword) {
-        Set<String> queryTokens = queryTokenizer.tokenize(keyword);
+        Set<String> queryTokens = queryAnalyzer.analyze(keyword);
         if (queryTokens.isEmpty()) {
             return List.of();
         }
