@@ -15,7 +15,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
         SELECT a FROM Attendance a
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
-          AND a.student.id = :studentId
+          AND a.studentId = :studentId
           AND a.attendanceDate BETWEEN :startDate AND :endDate
         """)
     List<Attendance> findByTenantIdAndDojangIdAndStudentIdAndAttendanceDateBetween(
@@ -37,10 +37,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("dojangId") String dojangId);
 
     @Query("""
-        SELECT a.student.id FROM Attendance a
+        SELECT a.studentId FROM Attendance a
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
-          AND a.student.id IN :studentIds
+          AND a.studentId IN :studentIds
           AND a.attendanceDate = :date
         """)
     List<String> findStudentIdsWithAttendanceToday(
@@ -51,7 +51,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
 
     @Query("""
         SELECT a FROM Attendance a
-        JOIN FETCH a.student
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
           AND a.attendanceDate BETWEEN :startDate AND :endDate
@@ -87,17 +86,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
 
     @Query("""
         SELECT a FROM Attendance a
-        JOIN FETCH a.student
-        WHERE a.id = :id
-        """)
-    Optional<Attendance> findByIdWithStudent(@Param("id") String id);
-
-    @Query("""
-        SELECT a FROM Attendance a
-        JOIN FETCH a.student
         WHERE a.tenantId = :tenantId
           AND a.dojangId = :dojangId
-          AND a.student.id IN :studentIds
+          AND a.studentId IN :studentIds
           AND a.attendanceDate BETWEEN :startDate AND :endDate
         """)
     List<Attendance> findByDojangIdAndDateRangeAndStudentIds(
