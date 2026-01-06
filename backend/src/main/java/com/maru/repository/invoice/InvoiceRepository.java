@@ -3,12 +3,12 @@ package com.maru.repository.invoice;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
+import com.maru.repository.invoice.view.InvoiceStudentView;
 import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -18,22 +18,48 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     Optional<Invoice> findByIdAndTenantIdAndDojangId(String id, String tenantId, String dojangId);
 
     @Query("""
-        SELECT i FROM Invoice i
-        JOIN FETCH i.student s
+        SELECT i.id as id, i.studentId as studentId, s.name as studentName,
+               i.amount as amount, i.paidAmount as paidAmount, i.status as status,
+               i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
+               i.billingYearMonth as billingYearMonth
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND (:status IS NULL OR i.status = :status)
         ORDER BY i.dueDate DESC
         """)
-    List<Invoice> findByDojangIdWithFilters(
+    List<InvoiceStudentView> findAllWithStudent(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("status") InvoiceStatus status);
 
     @Query("""
-        SELECT i FROM Invoice i
-        JOIN FETCH i.student s
+        SELECT i.id as id, i.studentId as studentId, s.name as studentName,
+               i.amount as amount, i.paidAmount as paidAmount, i.status as status,
+               i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
+               i.billingYearMonth as billingYearMonth
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
         LEFT JOIN Enrollment e ON e.studentId = s.id
+            AND e.dojangId = :dojangId
+        LEFT JOIN Division d ON e.divisionId = d.id
+        WHERE i.tenantId = :tenantId
+          AND i.dojangId = :dojangId
+          AND i.status IN ('OPEN', 'PARTIAL')
+          AND (:sectionId IS NULL OR d.section.id = :sectionId)
+          AND (:divisionId IS NULL OR e.divisionId = :divisionId)
+        ORDER BY i.dueDate ASC
+        """)
+    List<InvoiceStudentView> findUnpaidWithStudent(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("sectionId") String sectionId,
+            @Param("divisionId") String divisionId);
+
+    @Query("""
+        SELECT i FROM Invoice i
+        LEFT JOIN Enrollment e ON e.studentId = i.studentId
             AND e.dojangId = :dojangId
         LEFT JOIN Division d ON e.divisionId = d.id
         WHERE i.tenantId = :tenantId
@@ -54,7 +80,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.student.id = :studentId
+          AND i.studentId = :studentId
           AND i.billingYearMonth = :yearMonth
         """)
     boolean existsByBillingYearMonth(
@@ -64,7 +90,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("yearMonth") YearMonth yearMonth);
 
     @Query("""
-        SELECT i.student.id FROM Invoice i
+        SELECT i.studentId FROM Invoice i
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.billingYearMonth = :yearMonth
@@ -86,13 +112,17 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("ids") List<String> ids);
 
     @Query("""
-        SELECT i FROM Invoice i
-        JOIN FETCH i.student s
+        SELECT i.id as id, i.studentId as studentId, s.name as studentName,
+               i.amount as amount, i.paidAmount as paidAmount, i.status as status,
+               i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
+               i.billingYearMonth as billingYearMonth
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
         WHERE i.id = :id
           AND i.tenantId = :tenantId
           AND i.dojangId = :dojangId
         """)
-    Optional<Invoice> findByIdAndDojangIdWithStudent(
+    Optional<InvoiceStudentView> findDetailById(
             @Param("id") String id,
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId);
@@ -139,15 +169,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("endYearMonth") YearMonth endYearMonth);
 
     @Query("""
-        SELECT i FROM Invoice i
-        JOIN FETCH i.student s
+        SELECT i.id as id, i.studentId as studentId, s.name as studentName,
+               i.amount as amount, i.paidAmount as paidAmount, i.status as status,
+               i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
+               i.billingYearMonth as billingYearMonth
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
-          AND i.student.id IN :studentIds
+          AND i.studentId IN :studentIds
           AND (:status IS NULL OR i.status = :status)
         ORDER BY i.dueDate DESC
         """)
-    List<Invoice> findByDojangIdWithFiltersAndStudentIds(
+    List<InvoiceStudentView> findAllWithStudentByStudentIds(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("studentIds") List<String> studentIds,
