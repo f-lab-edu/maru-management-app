@@ -1,6 +1,9 @@
 package com.maru.repository.attendance;
 
 import com.maru.domain.attendance.Attendance;
+import com.maru.domain.student.StudentStatus;
+import com.maru.repository.attendance.view.AttendanceStudentView;
+import com.maru.repository.attendance.view.RangeAttendanceView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +13,53 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AttendanceRepository extends JpaRepository<Attendance, String> {
+
+    @Query("""
+        SELECT a.id as id, a.studentId as studentId, s.name as studentName,
+               a.status as status, a.method as method, a.attendanceDate as attendanceDate,
+               a.checkinAt as checkinAt, a.checkoutAt as checkoutAt,
+               a.note as note, a.createdAt as createdAt
+        FROM Attendance a
+        JOIN Student s ON a.studentId = s.id
+        WHERE a.id = :id AND a.dojangId = :dojangId
+        """)
+    Optional<AttendanceStudentView> findDetailById(
+            @Param("id") String id,
+            @Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT a.id as id, a.studentId as studentId, s.name as studentName,
+               a.status as status, a.method as method, a.attendanceDate as attendanceDate,
+               a.checkinAt as checkinAt, a.checkoutAt as checkoutAt,
+               a.note as note, a.createdAt as createdAt
+        FROM Attendance a
+        JOIN Student s ON a.studentId = s.id
+        
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.studentId = :studentId
+          AND a.attendanceDate BETWEEN :startDate AND :endDate
+        ORDER BY a.attendanceDate DESC
+        """)
+    List<AttendanceStudentView> findAllWithStudentByDateRange(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentId") String studentId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("""
+        SELECT a.id as id, a.studentId as studentId, s.name as studentName,
+               a.status as status, a.method as method, a.attendanceDate as attendanceDate,
+               a.checkinAt as checkinAt, a.checkoutAt as checkoutAt,
+               a.note as note, a.createdAt as createdAt
+        FROM Attendance a
+        JOIN Student s ON a.studentId = s.id
+        WHERE a.dojangId = :dojangId AND a.id IN :ids
+        """)
+    List<AttendanceStudentView> findAllDetailByIds(
+            @Param("dojangId") String dojangId,
+            @Param("ids") List<String> ids);
 
     @Query("""
         SELECT a FROM Attendance a
@@ -97,4 +147,44 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("studentIds") List<String> studentIds,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("""
+        SELECT s.id as studentId, s.name as studentName, s.photoUrl as studentPhotoUrl,
+               a.id as attendanceId, a.status as status, a.attendanceDate as attendanceDate,
+               a.checkinAt as checkinAt, a.checkoutAt as checkoutAt
+        FROM Student s
+        LEFT JOIN Attendance a ON s.id = a.studentId
+            AND a.attendanceDate BETWEEN :startDate AND :endDate
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+          AND s.status != :excludeStatus
+        ORDER BY s.name, a.attendanceDate
+        """)
+    List<RangeAttendanceView> findRangeWithStudent(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT s.id as studentId, s.name as studentName, s.photoUrl as studentPhotoUrl,
+               a.id as attendanceId, a.status as status, a.attendanceDate as attendanceDate,
+               a.checkinAt as checkinAt, a.checkoutAt as checkoutAt
+        FROM Student s
+        LEFT JOIN Attendance a ON s.id = a.studentId
+            AND a.attendanceDate BETWEEN :startDate AND :endDate
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+          AND s.status != :excludeStatus
+          AND s.id IN :studentIds
+        ORDER BY s.name, a.attendanceDate
+        """)
+    List<RangeAttendanceView> findRangeWithStudentByStudentIds(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("studentIds") List<String> studentIds,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("excludeStatus") StudentStatus excludeStatus);
 }
