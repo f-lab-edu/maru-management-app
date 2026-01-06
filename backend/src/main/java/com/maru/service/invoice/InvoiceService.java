@@ -11,11 +11,10 @@ import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.invoice.InvoiceRepository;
-import com.maru.service.enrollment.EnrollmentService;
-import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
+import com.maru.service.enrollment.EnrollmentQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -36,10 +35,10 @@ import java.util.Set;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
-    private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
-    private final EnrollmentService enrollmentService;
+    private final EnrollmentQueryService enrollmentQueryService;
+    private final InvoiceQueryService invoiceQueryService;
 
     /**
      * 단일 청구서 생성
@@ -54,17 +53,17 @@ public class InvoiceService {
     public InvoiceDetailRes createInvoice(String dojangId, InvoiceCreateReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
-
-        Student student = findStudentAndValidate(request.studentId(), dojangId);
+        validateStudentInDojang(request.studentId(), dojangId);
 
         YearMonth billingYearMonth = resolveBillingYearMonth(request.billingYearMonth());
         BigDecimal amount = resolveAmount(request.amount());
-        Invoice invoice = createAndSaveInvoice(student, billingYearMonth, amount, request.dueDate(), request.note());
+        Invoice invoice = createAndSaveInvoice(tenantId, dojangId, request.studentId(),
+                billingYearMonth, amount, request.dueDate(), request.note());
 
         log.info("청구서 생성 완료: invoiceId={}, studentId={}, billingYearMonth={}",
                 invoice.getId(), request.studentId(), billingYearMonth);
 
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoice.getId());
     }
 
     /**
@@ -83,12 +82,12 @@ public class InvoiceService {
         YearMonth billingYearMonth = resolveBillingYearMonth(request.billingYearMonth());
         BigDecimal amount = resolveAmount(request.defaultAmount());
 
-        TargetStudentsResult targetResult = findAllTargetStudents(tenantId, dojangId, request);
-        List<Student> eligibleStudents = excludeAlreadyInvoiced(
-                targetResult.students, tenantId, dojangId, billingYearMonth);
+        TargetStudentIdsResult targetResult = findAllTargetStudentIds(tenantId, dojangId, request);
+        List<String> eligibleStudentIds = excludeAlreadyInvoiced(
+                targetResult.studentIds, tenantId, dojangId, billingYearMonth);
 
-        int createdCount = createInvoicesForStudents(
-                eligibleStudents, billingYearMonth, amount, request.dueDate(), request.note());
+        int createdCount = createInvoicesForStudents(tenantId, dojangId, eligibleStudentIds,
+                billingYearMonth, amount, request.dueDate(), request.note());
         int skippedCount = targetResult.totalCount - createdCount;
 
         log.info("일괄 청구서 생성 완료: dojangId={}, billingYearMonth={}, created={}, skipped={}",
@@ -115,19 +114,9 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<String> filteredStudentIds = enrollmentService.getFilteredStudentIds(dojangId, sectionId, divisionId);
+        List<String> filteredStudentIds = enrollmentQueryService.getStudentIdsByFilter(dojangId, sectionId, divisionId);
 
-        if (filteredStudentIds != null && filteredStudentIds.isEmpty()) {
-            return List.of();
-        }
-
-        List<Invoice> invoices = (filteredStudentIds != null)
-                ? invoiceRepository.findByDojangIdWithFiltersAndStudentIds(tenantId, dojangId, filteredStudentIds, status)
-                : invoiceRepository.findByDojangIdWithFilters(tenantId, dojangId, status);
-
-        return invoices.stream()
-                .map(InvoiceListRes::from)
-                .toList();
+        return invoiceQueryService.getInvoices(tenantId, dojangId, status, filteredStudentIds);
     }
 
     /**
@@ -143,9 +132,7 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
-
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoiceId);
     }
 
     /**
@@ -163,12 +150,12 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         invoice.update(request.amount(), request.dueDate(), request.note());
 
         log.info("청구서 수정 완료: invoiceId={}, userId={}", invoiceId, userId);
 
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoiceId);
     }
 
     /**
@@ -185,12 +172,12 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         invoice.issue(userId);
 
         log.info("청구서 발행 완료: invoiceId={}, userId={}", invoiceId, userId);
 
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoiceId);
     }
 
     /**
@@ -207,12 +194,12 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         invoice.markAsVoid();
 
         log.info("청구서 무효화 완료: invoiceId={}, userId={}", invoiceId, userId);
 
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoiceId);
     }
 
     /**
@@ -229,12 +216,12 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         invoice.restore();
 
         log.info("청구서 복구 완료: invoiceId={}, userId={}", invoiceId, userId);
 
-        return buildInvoiceDetailRes(invoice);
+        return invoiceQueryService.getInvoice(tenantId, dojangId, invoiceId);
     }
 
     /**
@@ -250,7 +237,7 @@ public class InvoiceService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Invoice invoice = findInvoiceWithStudent(invoiceId, tenantId, dojangId);
+        Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         if (invoice.getStatus() != InvoiceStatus.DRAFT) {
             throw new BusinessException(InvoiceErrorCode.CANNOT_DELETE_NON_DRAFT);
         }
@@ -325,15 +312,13 @@ public class InvoiceService {
         }
     }
 
-    private Student findStudentAndValidate(String studentId, String dojangId) {
+    private void validateStudentInDojang(String studentId, String dojangId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         if (!dojangId.equals(student.getDojangId())) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
-
-        return student;
     }
 
     private BigDecimal resolveAmount(BigDecimal amount) {
@@ -344,36 +329,41 @@ public class InvoiceService {
         return yearMonth != null ? yearMonth : YearMonth.now();
     }
 
-    private record TargetStudentsResult(List<Student> students, int totalCount) {}
+    private record TargetStudentIdsResult(List<String> studentIds, int totalCount) {}
 
-    private TargetStudentsResult findAllTargetStudents(String tenantId, String dojangId, InvoiceBulkCreateReq request) {
+    private TargetStudentIdsResult findAllTargetStudentIds(String tenantId, String dojangId, InvoiceBulkCreateReq request) {
         if (request.studentIds() != null && !request.studentIds().isEmpty()) {
             int totalCount = request.studentIds().size();
-            List<Student> students = studentRepository.findAllActiveByIds(
+            List<String> studentIds = studentRepository.findAllActiveByIds(
                     request.studentIds(), tenantId, StudentStatus.WITHDRAWN).stream()
                     .filter(s -> dojangId.equals(s.getDojangId()))
+                    .map(Student::getId)
                     .toList();
-            return new TargetStudentsResult(students, totalCount);
+            return new TargetStudentIdsResult(studentIds, totalCount);
         }
 
-        List<Student> students = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN);
-        return new TargetStudentsResult(students, students.size());
+        List<String> studentIds = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN)
+                .stream()
+                .map(Student::getId)
+                .toList();
+        return new TargetStudentIdsResult(studentIds, studentIds.size());
     }
 
-    private List<Student> excludeAlreadyInvoiced(List<Student> students, String tenantId, String dojangId,
-                                                  YearMonth billingYearMonth) {
+    private List<String> excludeAlreadyInvoiced(List<String> studentIds, String tenantId, String dojangId,
+                                                 YearMonth billingYearMonth) {
         List<String> existingStudentIds = invoiceRepository.findStudentIdsWithInvoiceByBillingYearMonth(
                 tenantId, dojangId, billingYearMonth);
         Set<String> excludeIds = new HashSet<>(existingStudentIds);
 
-        return students.stream()
-                .filter(student -> !excludeIds.contains(student.getId()))
+        return studentIds.stream()
+                .filter(id -> !excludeIds.contains(id))
                 .toList();
     }
 
-    private Invoice createAndSaveInvoice(Student student, YearMonth billingYearMonth,
-                                         BigDecimal amount, LocalDate dueDate, String note) {
-        Invoice invoice = Invoice.create(student, billingYearMonth, amount, dueDate, note);
+    private Invoice createAndSaveInvoice(String tenantId, String dojangId, String studentId,
+                                         YearMonth billingYearMonth, BigDecimal amount,
+                                         LocalDate dueDate, String note) {
+        Invoice invoice = Invoice.create(tenantId, dojangId, studentId, billingYearMonth, amount, dueDate, note);
         try {
             return invoiceRepository.save(invoice);
         } catch (DataIntegrityViolationException e) {
@@ -381,27 +371,19 @@ public class InvoiceService {
         }
     }
 
-    private int createInvoicesForStudents(List<Student> students, YearMonth billingYearMonth,
-                                          BigDecimal amount, LocalDate dueDate, String note) {
-        List<Invoice> invoices = students.stream()
-                .map(student -> Invoice.create(student, billingYearMonth, amount, dueDate, note))
+    private int createInvoicesForStudents(String tenantId, String dojangId, List<String> studentIds,
+                                          YearMonth billingYearMonth, BigDecimal amount,
+                                          LocalDate dueDate, String note) {
+        List<Invoice> invoices = studentIds.stream()
+                .map(studentId -> Invoice.create(tenantId, dojangId, studentId, billingYearMonth, amount, dueDate, note))
                 .toList();
         invoiceRepository.saveAll(invoices);
         return invoices.size();
     }
 
-    private Invoice findInvoiceWithStudent(String invoiceId, String tenantId, String dojangId) {
-        return invoiceRepository.findByIdAndDojangIdWithStudent(invoiceId, tenantId, dojangId)
+    private Invoice findInvoice(String invoiceId, String tenantId, String dojangId) {
+        return invoiceRepository.findByIdAndTenantIdAndDojangId(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
-    }
-
-    private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice) {
-        List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(invoice.getId())
-                .stream()
-                .map(PaymentRes::from)
-                .toList();
-
-        return InvoiceDetailRes.from(invoice, payments);
     }
 
     private int issueInvoicesAndCollectFailures(List<Invoice> invoices, String userId,
