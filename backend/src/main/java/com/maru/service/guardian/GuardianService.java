@@ -22,8 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,6 +31,7 @@ public class GuardianService {
     private final GuardianshipRepository guardianshipRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final GuardianQueryService guardianQueryService;
 
     /**
      * 보호자 추가
@@ -58,12 +57,12 @@ public class GuardianService {
 
         validateGuardianshipNotExists(studentId, guardian.getId());
 
-        Guardianship guardianship = guardianshipRepository.save(
+        guardianshipRepository.save(
                 Guardianship.create(guardian, student, req.relation(), req.isPrimary())
         );
 
         log.info("보호자 연결 - studentId: {}, guardianId: {}", studentId, guardian.getId());
-        return GuardianRes.from(guardianship);
+        return guardianQueryService.getGuardian(studentId, guardian.getId());
     }
 
     /**
@@ -96,7 +95,7 @@ public class GuardianService {
         guardianship.updateRelation(req.relation());
 
         log.info("보호자 정보 수정 - studentId: {}, guardianId: {}", studentId, guardianId);
-        return GuardianRes.from(guardianship);
+        return guardianQueryService.getGuardian(studentId, guardianId);
     }
 
     /**
@@ -125,29 +124,6 @@ public class GuardianService {
         target.updatePrimary(newPrimaryStatus);
 
         log.info("주 보호자 {} - studentId: {}, guardianId: {}", newPrimaryStatus ? "설정" : "해제", studentId, guardianId);
-    }
-
-    /**
-     * 보호자 목록 조회
-     *
-     * @param dojangId 도장 ID
-     * @param studentId 원생 ID
-     * @return 보호자 목록
-     * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
-     */
-    @Transactional(readOnly = true)
-    public List<GuardianRes> getGuardians(String dojangId, String studentId) {
-        String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
-        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
-
-        validateStudentBelongsToDojang(student, dojangId);
-
-        return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
-                .map(GuardianRes::from)
-                .toList();
     }
 
     /**

@@ -9,13 +9,13 @@ import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.student.view.StudentDetailView;
 import com.maru.repository.student.view.StudentSummaryView;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentQueryService;
+import com.maru.service.guardian.GuardianQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +29,8 @@ public class StudentQueryService {
 
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
-    private final GuardianshipRepository guardianshipRepository;
     private final EnrollmentQueryService enrollmentQueryService;
+    private final GuardianQueryService guardianQueryService;
 
     /**
      * 원생 목록 조회
@@ -97,9 +97,7 @@ public class StudentQueryService {
     }
 
     private List<GuardianRes> getGuardianResponses(String studentId) {
-        return guardianshipRepository.findByStudentIdAndDeletedAtIsNull(studentId).stream()
-                .map(GuardianRes::from)
-                .toList();
+        return guardianQueryService.getGuardiansByStudentId(studentId);
     }
 
     private StudentSummaryRes toStudentSummaryRes(StudentSummaryView view) {
