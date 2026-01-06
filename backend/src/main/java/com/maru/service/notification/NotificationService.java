@@ -5,11 +5,14 @@ import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.exception.AttendanceErrorCode;
 import com.maru.domain.guardian.Guardian;
 import com.maru.domain.message.MessageQueue;
+import com.maru.domain.student.Student;
+import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.message.MessageQueueRepository;
+import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,7 @@ import java.util.List;
 public class NotificationService {
 
     private final AttendanceRepository attendanceRepository;
+    private final StudentRepository studentRepository;
     private final GuardianshipRepository guardianshipRepository;
     private final MessageQueueRepository messageQueueRepository;
     private final DojangRepository dojangRepository;
@@ -37,14 +41,15 @@ public class NotificationService {
      */
     @Transactional
     public List<String> createCheckinNotification(String attendanceId) {
-        Attendance attendance = findAttendanceWithStudent(attendanceId);
+        Attendance attendance = findAttendance(attendanceId);
+        Student student = findStudent(attendance.getStudentId());
         String dojangName = findDojangName(attendance.getDojangId());
-        String studentName = attendance.getStudent().getName();
 
         return createNotification(
                 attendance,
+                student,
                 "출석 알림",
-                "[" + dojangName + "] " + studentName + " 수련생이 출석했습니다."
+                "[" + dojangName + "] " + student.getName() + " 수련생이 출석했습니다."
         );
     }
 
@@ -56,26 +61,27 @@ public class NotificationService {
      */
     @Transactional
     public List<String> createCheckoutNotification(String attendanceId) {
-        Attendance attendance = findAttendanceWithStudent(attendanceId);
+        Attendance attendance = findAttendance(attendanceId);
+        Student student = findStudent(attendance.getStudentId());
         String dojangName = findDojangName(attendance.getDojangId());
-        String studentName = attendance.getStudent().getName();
 
         return createNotification(
                 attendance,
+                student,
                 "하원 알림",
-                "[" + dojangName + "] " + studentName + " 수련생이 하원했습니다."
+                "[" + dojangName + "] " + student.getName() + " 수련생이 하원했습니다."
         );
     }
 
-    private List<String> createNotification(Attendance attendance, String title, String body) {
-        List<Guardian> guardians = findGuardians(attendance.getStudent().getId());
+    private List<String> createNotification(Attendance attendance, Student student, String title, String body) {
+        List<Guardian> guardians = findGuardians(student.getId());
 
         if (guardians.isEmpty()) {
             log.info("알림 대상 학부모 없음: attendanceId={}", attendance.getId());
             return List.of();
         }
 
-        List<MessageQueue> messages = createMessages(attendance, guardians, title, body);
+        List<MessageQueue> messages = createMessages(attendance, student, guardians, title, body);
         messageQueueRepository.saveAll(messages);
 
         List<String> messageIds = messages.stream().map(MessageQueue::getId).toList();
@@ -85,9 +91,14 @@ public class NotificationService {
         return messageIds;
     }
 
-    private Attendance findAttendanceWithStudent(String attendanceId) {
-        return attendanceRepository.findByIdWithStudent(attendanceId)
+    private Attendance findAttendance(String attendanceId) {
+        return attendanceRepository.findById(attendanceId)
                 .orElseThrow(() -> new BusinessException(AttendanceErrorCode.NOT_FOUND));
+    }
+
+    private Student findStudent(String studentId) {
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
     }
 
     private String findDojangName(String dojangId) {
@@ -104,15 +115,15 @@ public class NotificationService {
         return guardianshipRepository.findGuardiansByStudentId(studentId, primaryOnly);
     }
 
-    private List<MessageQueue> createMessages(Attendance attendance, List<Guardian> guardians,
-                                               String title, String body) {
+    private List<MessageQueue> createMessages(Attendance attendance, Student student,
+                                               List<Guardian> guardians, String title, String body) {
         List<MessageQueue> messages = new ArrayList<>();
         for (Guardian guardian : guardians) {
             MessageQueue message = MessageQueue.createAttendanceNotification(
                     attendance.getTenantId(),
                     attendance.getDojangId(),
                     guardian,
-                    attendance.getStudent(),
+                    student,
                     title,
                     body
             );
