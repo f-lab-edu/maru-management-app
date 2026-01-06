@@ -52,7 +52,7 @@ public interface SectionRepository extends JpaRepository<Section, String> {
 
     @Query("""
         SELECT s.id as id, s.name as name, s.displayOrder as displayOrder,
-               (SELECT COUNT(d) FROM Division d WHERE d.sectionId = s.id) as divisionCount
+               (SELECT COUNT(d) FROM Division d WHERE d.section.id = s.id) as divisionCount
         FROM Section s
         WHERE s.dojangId = :dojangId
         ORDER BY s.displayOrder
@@ -61,7 +61,7 @@ public interface SectionRepository extends JpaRepository<Section, String> {
 
     @Query("""
         SELECT s.id as id, s.name as name, s.displayOrder as displayOrder,
-               (SELECT COUNT(d) FROM Division d WHERE d.sectionId = s.id) as divisionCount
+               (SELECT COUNT(d) FROM Division d WHERE d.section.id = s.id) as divisionCount
         FROM Section s
         WHERE s.id = :sectionId
           AND s.dojangId = :dojangId

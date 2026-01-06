@@ -62,7 +62,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
           AND d.isActive = true
           AND NOT EXISTS (
               SELECT 1 FROM Attendance a
-              WHERE a.student.id = s.id AND a.attendanceDate = :date
+              WHERE a.studentId = s.id AND a.attendanceDate = :date
           )
         """)
     List<Student> findAllActiveStudentsWithoutAttendance(@Param("date") LocalDate date);

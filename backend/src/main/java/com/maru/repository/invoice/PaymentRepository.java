@@ -33,7 +33,7 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
         JOIN FETCH p.invoice i
         WHERE p.tenantId = :tenantId
           AND p.dojangId = :dojangId
-          AND i.student.id = :studentId
+          AND i.studentId = :studentId
         ORDER BY p.paidAt DESC
         """)
     List<Payment> findByStudentIdOrderByPaidAtDesc(
