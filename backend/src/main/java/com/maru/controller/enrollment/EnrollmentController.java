@@ -4,6 +4,7 @@ import com.maru.controller.enrollment.dto.BulkEnrollmentReq;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
 import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
 import com.maru.controller.enrollment.dto.EnrollStudentReq;
+import com.maru.service.enrollment.EnrollmentQueryService;
 import com.maru.service.enrollment.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
+    private final EnrollmentQueryService enrollmentQueryService;
 
     /**
      * 원생을 수련반에 등록
@@ -91,7 +93,7 @@ public class EnrollmentController {
             @RequestParam String dojangId,
             @RequestParam String divisionId
     ) {
-        EnrolledStudentListRes response = enrollmentService.getEnrollments(dojangId, divisionId);
+        EnrolledStudentListRes response = enrollmentQueryService.getEnrollments(dojangId, divisionId);
         return ResponseEntity.ok(response);
     }
 }

@@ -15,7 +15,7 @@ import com.maru.repository.student.view.StudentDetailView;
 import com.maru.repository.student.view.StudentSummaryView;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
-import com.maru.service.enrollment.EnrollmentService;
+import com.maru.service.enrollment.EnrollmentQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ public class StudentQueryService {
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
     private final GuardianshipRepository guardianshipRepository;
-    private final EnrollmentService enrollmentService;
+    private final EnrollmentQueryService enrollmentQueryService;
 
     /**
      * 원생 목록 조회
@@ -44,15 +44,18 @@ public class StudentQueryService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<String> filteredStudentIds = enrollmentService.getFilteredStudentIds(dojangId, sectionId, divisionId);
+        boolean hasFilter = sectionId != null || divisionId != null;
 
-        if (filteredStudentIds != null && filteredStudentIds.isEmpty()) {
-            return StudentListRes.empty();
+        List<StudentSummaryView> views;
+        if (hasFilter) {
+            List<String> filteredStudentIds = enrollmentQueryService.getStudentIdsByFilter(dojangId, sectionId, divisionId);
+            if (filteredStudentIds.isEmpty()) {
+                return StudentListRes.empty();
+            }
+            views = studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN);
+        } else {
+            views = studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
         }
-
-        List<StudentSummaryView> views = (filteredStudentIds != null)
-                ? studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN)
-                : studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
 
         List<StudentSummaryRes> summaries = views.stream()
                 .map(this::toStudentSummaryRes)

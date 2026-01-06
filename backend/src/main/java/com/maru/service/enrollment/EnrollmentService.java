@@ -2,17 +2,13 @@ package com.maru.service.enrollment;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
-import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
-import com.maru.controller.enrollment.dto.EnrolledStudentRes;
-import com.maru.domain.division.Division;
+import com.maru.common.exception.EnrollmentErrorCode;
 import com.maru.domain.division.exception.DivisionErrorCode;
 import com.maru.domain.enrollment.Enrollment;
-import com.maru.common.exception.EnrollmentErrorCode;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.repository.division.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
-import com.maru.repository.enrollment.view.EnrollmentStudentView;
 import com.maru.repository.student.StudentRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -101,43 +97,6 @@ public class EnrollmentService {
         return BulkEnrollmentRes.of(enrollments.size(), skippedStudentIds);
     }
 
-    /**
-     * 수련반에 등록된 원생 목록을 조회합니다.
-     *
-     * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID
-     * @return 등록된 원생 목록
-     */
-    public EnrolledStudentListRes getEnrollments(String dojangId, String divisionId) {
-        List<EnrollmentStudentView> enrollmentStudentView = enrollmentRepository
-                .findAllWithStudentByDivisionId(dojangId, divisionId);
-
-        List<EnrolledStudentRes> students = enrollmentStudentView.stream()
-                .map(this::createEnrolledStudentRes)
-                .toList();
-
-        return EnrolledStudentListRes.from(students);
-    }
-
-    private EnrolledStudentRes createEnrolledStudentRes(EnrollmentStudentView view) {
-        return EnrolledStudentRes.builder()
-                .studentId(view.getStudentId())
-                .studentName(view.getStudentName())
-                .enrolledAt(view.getCreatedAt())
-                .build();
-    }
-
-    /**
-     * 특정 수련반의 등록 원생 수를 조회합니다.
-     *
-     * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID
-     * @return 등록 원생 수
-     */
-    public int countByDivisionId(String dojangId, String divisionId) {
-        return enrollmentRepository.countByDivisionId(dojangId, divisionId);
-    }
-
     private void validateDivisionExists(String divisionId, String dojangId) {
         if (!divisionRepository.findByIdAndDojangIdWithSection(divisionId, dojangId).isPresent()) {
             throw new BusinessException(DivisionErrorCode.NOT_FOUND);
@@ -159,24 +118,5 @@ public class EnrollmentService {
 
     private Set<String> findAlreadyEnrolledStudentIds(String dojangId, String divisionId, List<String> studentIds) {
         return new HashSet<>(enrollmentRepository.findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds));
-    }
-
-
-    /**
-     * 수련부/수련반 필터 조건에 해당하는 원생 ID 목록 조회
-     *
-     * @param dojangId 도장 ID
-     * @param sectionId 수련부 ID (선택)
-     * @param divisionId 수련반 ID (선택)
-     * @return 필터된 원생 ID 목록, 필터 조건이 없으면 null
-     */
-    public List<String> getFilteredStudentIds(String dojangId, String sectionId, String divisionId) {
-        if (divisionId != null) {
-            return enrollmentRepository.findStudentIdsByDivisionId(dojangId, divisionId);
-        }
-        if (sectionId != null) {
-            return enrollmentRepository.findStudentIdsBySectionId(dojangId, sectionId);
-        }
-        return null;
     }
 }
