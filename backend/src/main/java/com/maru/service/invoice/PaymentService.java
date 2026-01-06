@@ -4,8 +4,6 @@ import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.InvoiceErrorCode;
 import com.maru.common.exception.PaymentErrorCode;
 import com.maru.controller.invoice.dto.*;
-import com.maru.domain.guardian.Guardian;
-import com.maru.domain.guardian.Guardianship;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.Payment;
 import com.maru.domain.invoice.PaymentMethod;
@@ -14,7 +12,6 @@ import com.maru.domain.student.Student;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
@@ -33,7 +30,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +46,8 @@ public class PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final DojangRepository dojangRepository;
     private final StudentRepository studentRepository;
-    private final GuardianshipRepository guardianshipRepository;
     private final InvoiceQueryService invoiceQueryService;
+    private final PaymentQueryService paymentQueryService;
 
     /**
      * 수납 기록
@@ -118,10 +114,7 @@ public class PaymentService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        List<Invoice> unpaidInvoices = invoiceRepository.findUnpaidInvoices(
-                tenantId, dojangId, sectionId, divisionId);
-
-        return buildUnpaidListResponses(unpaidInvoices);
+        return paymentQueryService.getUnpaidList(tenantId, dojangId, sectionId, divisionId);
     }
 
     /**
@@ -311,66 +304,6 @@ public class PaymentService {
 
     private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice) {
         return invoiceQueryService.getInvoice(invoice.getTenantId(), invoice.getDojangId(), invoice.getId());
-    }
-
-    private List<UnpaidListRes> buildUnpaidListResponses(List<Invoice> unpaidInvoices) {
-        if (unpaidInvoices.isEmpty()) {
-            return List.of();
-        }
-
-        List<String> studentIds = unpaidInvoices.stream()
-                .map(Invoice::getStudentId)
-                .toList();
-
-        LocalDate today = LocalDate.now();
-        Map<String, Student> studentMap = fetchStudentsAsMap(studentIds);
-        Map<String, Guardian> guardianMap = fetchPrimaryGuardiansAsMap(studentIds);
-
-        return unpaidInvoices.stream()
-                .map(invoice -> buildUnpaidListRes(invoice, today, studentMap, guardianMap))
-                .toList();
-    }
-
-    private Map<String, Student> fetchStudentsAsMap(List<String> studentIds) {
-        return studentRepository.findAllById(studentIds)
-                .stream()
-                .collect(Collectors.toMap(Student::getId, s -> s));
-    }
-
-    private Map<String, Guardian> fetchPrimaryGuardiansAsMap(List<String> studentIds) {
-        return guardianshipRepository.findPrimaryGuardianshipsByStudentIds(studentIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        g -> g.getStudent().getId(),
-                        Guardianship::getGuardian,
-                        (g1, g2) -> g1
-                ));
-    }
-
-    private UnpaidListRes buildUnpaidListRes(Invoice invoice, LocalDate today,
-                                              Map<String, Student> studentMap, Map<String, Guardian> guardianMap) {
-        Student student = studentMap.get(invoice.getStudentId());
-        Guardian primaryGuardian = guardianMap.get(invoice.getStudentId());
-
-        return UnpaidListRes.builder()
-                .invoiceId(invoice.getId())
-                .studentName(student != null ? student.getName() : null)
-                .guardianName(primaryGuardian != null ? primaryGuardian.getName() : null)
-                .guardianPhone(primaryGuardian != null ? primaryGuardian.getPhone() : null)
-                .amount(invoice.getAmount())
-                .paidAmount(invoice.getPaidAmount())
-                .remainingAmount(invoice.getRemainingAmount())
-                .dueDate(invoice.getDueDate())
-                .overdueDays(calculateOverdueDays(invoice.getDueDate(), today))
-                .billingYearMonth(invoice.getBillingYearMonth())
-                .build();
-    }
-
-    private int calculateOverdueDays(LocalDate dueDate, LocalDate today) {
-        if (dueDate.isBefore(today)) {
-            return (int) ChronoUnit.DAYS.between(dueDate, today);
-        }
-        return 0;
     }
 
     private void validateStudentInDojang(String studentId, String dojangId) {

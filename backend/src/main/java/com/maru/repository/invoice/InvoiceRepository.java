@@ -5,6 +5,7 @@ import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
 import com.maru.repository.invoice.view.InvoiceStudentView;
 import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
+import com.maru.repository.invoice.view.UnpaidInvoiceView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -58,9 +59,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("divisionId") String divisionId);
 
     @Query("""
-        SELECT i FROM Invoice i
-        LEFT JOIN Enrollment e ON e.studentId = i.studentId
-            AND e.dojangId = :dojangId
+        SELECT i.id as invoiceId, s.id as studentId, s.name as studentName,
+               i.amount as amount, i.paidAmount as paidAmount,
+               i.dueDate as dueDate, i.billingYearMonth as billingYearMonth
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
+        LEFT JOIN Enrollment e ON e.studentId = s.id AND e.dojangId = :dojangId
         LEFT JOIN Division d ON e.divisionId = d.id
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
@@ -69,7 +73,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
           AND (:divisionId IS NULL OR e.divisionId = :divisionId)
         ORDER BY i.dueDate ASC
         """)
-    List<Invoice> findUnpaidInvoices(
+    List<UnpaidInvoiceView> findUnpaidForPayment(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("sectionId") String sectionId,
