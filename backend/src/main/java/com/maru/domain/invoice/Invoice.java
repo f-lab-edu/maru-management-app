@@ -4,7 +4,6 @@ import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.DomainAssert;
 import com.maru.common.exception.InvoiceErrorCode;
 import com.maru.domain.common.BaseEntity;
-import com.maru.domain.student.Student;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,9 +26,8 @@ public class Invoice extends BaseEntity {
     @Column(nullable = false, length = 13)
     private String dojangId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    @Column(name = "student_id", nullable = false, length = 13)
+    private String studentId;
 
     @Column(name = "billing_ym", nullable = false)
     private YearMonth billingYearMonth;
@@ -55,16 +53,18 @@ public class Invoice extends BaseEntity {
     @Column(length = 500)
     private String note;
 
-    private Invoice(Student student, YearMonth billingYearMonth,
-                    BigDecimal amount, LocalDate dueDate, String note) {
-        DomainAssert.notNull(student, InvoiceErrorCode.STUDENT_REQUIRED);
+    private Invoice(String tenantId, String dojangId, String studentId,
+                    YearMonth billingYearMonth, BigDecimal amount, LocalDate dueDate, String note) {
+        DomainAssert.notNull(tenantId, InvoiceErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(dojangId, InvoiceErrorCode.DOJANG_REQUIRED);
+        DomainAssert.notNull(studentId, InvoiceErrorCode.STUDENT_REQUIRED);
         DomainAssert.notNull(billingYearMonth, InvoiceErrorCode.BILLING_YEAR_MONTH_REQUIRED);
         DomainAssert.notNull(dueDate, InvoiceErrorCode.DUE_DATE_REQUIRED);
         DomainAssert.notNull(amount, InvoiceErrorCode.AMOUNT_REQUIRED);
 
-        this.tenantId = student.getTenantId();
-        this.dojangId = student.getDojangId();
-        this.student = student;
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
+        this.studentId = studentId;
         this.billingYearMonth = billingYearMonth;
         this.issueDate = null;
         this.dueDate = dueDate;
@@ -74,9 +74,9 @@ public class Invoice extends BaseEntity {
         this.note = note;
     }
 
-    public static Invoice create(Student student, YearMonth billingYearMonth,
-                                 BigDecimal amount, LocalDate dueDate, String note) {
-        return new Invoice(student, billingYearMonth, amount, dueDate, note);
+    public static Invoice create(String tenantId, String dojangId, String studentId,
+                                 YearMonth billingYearMonth, BigDecimal amount, LocalDate dueDate, String note) {
+        return new Invoice(tenantId, dojangId, studentId, billingYearMonth, amount, dueDate, note);
     }
 
     public void issue(String issuedBy) {
