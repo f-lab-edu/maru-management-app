@@ -2,9 +2,8 @@ package com.maru.service.invoice;
 
 import com.maru.controller.guardian.dto.GuardianInfo;
 import com.maru.controller.invoice.dto.UnpaidListRes;
-import com.maru.domain.guardian.Guardian;
-import com.maru.domain.guardian.Guardianship;
 import com.maru.repository.guardian.GuardianshipRepository;
+import com.maru.repository.guardian.view.PrimaryGuardianView;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.view.UnpaidInvoiceView;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +47,7 @@ public class PaymentQueryService {
                 .distinct()
                 .toList();
 
-        Map<String, List<Guardian>> guardianMap = fetchPrimaryGuardiansMap(studentIds);
+        Map<String, List<GuardianInfo>> guardianMap = fetchPrimaryGuardiansMap(studentIds);
         LocalDate today = LocalDate.now();
 
         return views.stream()
@@ -56,27 +55,27 @@ public class PaymentQueryService {
                 .toList();
     }
 
-    private Map<String, List<Guardian>> fetchPrimaryGuardiansMap(List<String> studentIds) {
-        return guardianshipRepository.findPrimaryGuardianshipsByStudentIds(studentIds)
+    private Map<String, List<GuardianInfo>> fetchPrimaryGuardiansMap(List<String> studentIds) {
+        return guardianshipRepository.findPrimaryGuardianViewsByStudentIds(studentIds)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        Guardianship::getStudentId,
-                        Collectors.mapping(Guardianship::getGuardian, Collectors.toList())
+                        PrimaryGuardianView::getStudentId,
+                        Collectors.mapping(this::toGuardianInfo, Collectors.toList())
                 ));
     }
 
-    private UnpaidListRes toUnpaidListRes(UnpaidInvoiceView view, List<Guardian> guardians, LocalDate today) {
-        List<GuardianInfo> guardianInfos = guardians.stream()
-                .map(g -> GuardianInfo.builder()
-                        .name(g.getName())
-                        .phone(g.getPhone())
-                        .build())
-                .toList();
+    private GuardianInfo toGuardianInfo(PrimaryGuardianView view) {
+        return GuardianInfo.builder()
+                .name(view.getGuardianName())
+                .phone(view.getGuardianPhone())
+                .build();
+    }
 
+    private UnpaidListRes toUnpaidListRes(UnpaidInvoiceView view, List<GuardianInfo> guardians, LocalDate today) {
         return UnpaidListRes.builder()
                 .invoiceId(view.getInvoiceId())
                 .studentName(view.getStudentName())
-                .guardians(guardianInfos)
+                .guardians(guardians)
                 .amount(view.getAmount())
                 .paidAmount(view.getPaidAmount())
                 .remainingAmount(view.getAmount().subtract(view.getPaidAmount()))
