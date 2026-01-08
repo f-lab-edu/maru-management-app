@@ -3,7 +3,6 @@ package com.maru.domain.employment;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseTimeEntity;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
-import com.maru.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,14 +26,13 @@ public class EmploymentHistory extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private EmploymentStatus toStatus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User changedBy;
+    @Column(name = "user_id")
+    private String changedBy;
 
     @Column(length = 500)
     private String reason;
 
-    private EmploymentHistory(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, User changedBy, String reason) {
+    private EmploymentHistory(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, String changedBy, String reason) {
         validateNotNull(employment, toStatus);
         this.employment = employment;
         this.fromStatus = fromStatus;
@@ -43,7 +41,7 @@ public class EmploymentHistory extends BaseTimeEntity {
         this.reason = reason;
     }
 
-    public static EmploymentHistory record(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, User changedBy, String reason) {
+    public static EmploymentHistory record(Employment employment, EmploymentStatus fromStatus, EmploymentStatus toStatus, String changedBy, String reason) {
         return new EmploymentHistory(employment, fromStatus, toStatus, changedBy, reason);
     }
 
