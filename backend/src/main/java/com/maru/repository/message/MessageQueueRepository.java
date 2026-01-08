@@ -10,14 +10,12 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface MessageQueueRepository extends JpaRepository<MessageQueue, String> {
 
     @Query("""
             SELECT m
             FROM MessageQueue m
-            JOIN FETCH m.guardian
             WHERE m.status = :status
               AND m.scheduledAt <= :time
               AND m.failedCount < :maxRetry
@@ -29,14 +27,6 @@ public interface MessageQueueRepository extends JpaRepository<MessageQueue, Stri
             @Param("maxRetry") int maxRetry,
             Pageable pageable
     );
-
-    @Query("""
-            SELECT m
-            FROM MessageQueue m
-            JOIN FETCH m.guardian
-            WHERE m.id = :id
-            """)
-    Optional<MessageQueue> findByIdWithGuardian(@Param("id") String id);
 
     @Modifying
     @Query("""
