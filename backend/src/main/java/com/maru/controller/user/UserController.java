@@ -5,7 +5,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.domain.user.User;
 import com.maru.security.CurrentUserId;
-import com.maru.service.employment.EmploymentService;
+import com.maru.service.employment.EmploymentQueryService;
 import com.maru.service.tenant.TenantService;
 import com.maru.service.user.UserService;
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private final TenantService tenantService;
-    private final EmploymentService employmentService;
+    private final EmploymentQueryService employmentQueryService;
 
     /**
      * 현재 로그인한 사용자 정보 조회
@@ -122,10 +122,7 @@ public class UserController {
      */
     @GetMapping("/me/dojangs")
     public ResponseEntity<MyDojangsRes> getMyDojangs(@CurrentUserId String userId) {
-        List<MyDojangRes> dojangs = employmentService.getMyDojangs(userId).stream()
-                .map(employment -> MyDojangRes.from(employment, userId))
-                .toList();
-
+        List<MyDojangRes> dojangs = employmentQueryService.getMyDojangs(userId);
         return ResponseEntity.ok(MyDojangsRes.from(dojangs));
     }
 }

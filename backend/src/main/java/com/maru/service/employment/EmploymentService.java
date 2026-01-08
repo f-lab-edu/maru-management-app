@@ -1,26 +1,21 @@
 package com.maru.service.employment;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.Tenant;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.domain.user.OnboardingStep;
-import com.maru.domain.user.User;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
-import com.maru.repository.tenant.TenantRepository;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -29,8 +24,8 @@ public class EmploymentService {
 
     private final EmploymentRepository employmentRepository;
     private final DojangRepository dojangRepository;
-    private final TenantRepository tenantRepository;
     private final UserService userService;
+    private final EmploymentQueryService queryService;
 
     /**
      * 사범이 도장에 승인 요청 (거절/퇴사 후 재요청 시 기존 레코드 재활용)
@@ -40,13 +35,15 @@ public class EmploymentService {
      * @return 생성 또는 재활용된 Employment
      */
     @Transactional
-    public Employment requestApproval(String userId, String dojangId) {
+    public EmploymentRes requestApproval(String userId, String dojangId) {
         Dojang dojang = dojangRepository.findById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
-        return employmentRepository.findByUserIdAndDojangId(userId, dojangId)
+        Employment employment = employmentRepository.findByUserIdAndDojangId(userId, dojangId)
                 .map(existing -> handleExistingEmployment(existing, dojang.getName()))
                 .orElseGet(() -> createNewEmployment(userId, dojang));
+
+        return queryService.getEmployment(employment.getId());
     }
 
     private Employment handleExistingEmployment(Employment employment, String dojangName) {
@@ -55,7 +52,7 @@ public class EmploymentService {
         if (status == EmploymentStatus.REJECTED || status == EmploymentStatus.LEFT) {
             employment.rejoin();
             log.info("승인 재요청 (rejoin): employmentId={}, userId={}, dojangName={}",
-                    employment.getId(), employment.getUser().getId(), dojangName);
+                    employment.getId(), employment.getUserId(), dojangName);
             return employment;
         }
 
@@ -64,48 +61,12 @@ public class EmploymentService {
     }
 
     private Employment createNewEmployment(String userId, Dojang dojang) {
-        User user = userService.getUserById(userId);
-        Tenant tenant = tenantRepository.findById(dojang.getTenantId())
-                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
-        Employment employment = Employment.create(user, tenant, dojang);
+        Employment employment = Employment.create(userId, dojang.getTenantId(), dojang.getId());
         Employment saved = employmentRepository.save(employment);
 
         log.info("승인 요청 생성: employmentId={}, userId={}, dojangId={}, dojangName={}",
                 saved.getId(), userId, dojang.getId(), dojang.getName());
         return saved;
-    }
-
-    /**
-     * 도장의 대기 중인 승인 요청 목록 조회 (관장용)
-     *
-     * @param dojangId 도장 ID
-     * @return 대기 중인 Employment 목록
-     */
-    @Transactional(readOnly = true)
-    public List<Employment> getPendingRequests(String dojangId) {
-        return employmentRepository.findByDojangIdAndStatus(dojangId, EmploymentStatus.PENDING);
-    }
-
-    /**
-     * 사용자의 모든 승인 요청 조회 (사범용)
-     *
-     * @param userId 사용자 ID
-     * @return Employment 목록
-     */
-    @Transactional(readOnly = true)
-    public List<Employment> getMyRequests(String userId) {
-        return employmentRepository.findByUserId(userId);
-    }
-
-    /**
-     * 사용자가 속한 도장 목록 조회 (활성 고용만)
-     *
-     * @param userId 사용자 ID
-     * @return Employment 목록
-     */
-    @Transactional(readOnly = true)
-    public List<Employment> getMyDojangs(String userId) {
-        return employmentRepository.findActiveWithDojangAndTenant(userId, EmploymentStatus.ACTIVE);
     }
 
     /**
@@ -116,7 +77,7 @@ public class EmploymentService {
      * @return 승인된 Employment
      */
     @Transactional
-    public Employment approve(String employmentId, String ownerId) {
+    public EmploymentRes approve(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -124,11 +85,11 @@ public class EmploymentService {
         employment.approve();
         grantDefaultPermissions(employment);
 
-        employment.getUser().updateOnboardingStep(OnboardingStep.COMPLETED);
+        userService.updateOnboardingStep(employment.getUserId(), OnboardingStep.COMPLETED);
 
         log.info("승인 요청 승인: employmentId={}, ownerId={}, userId={}",
-                employmentId, ownerId, employment.getUser().getId());
-        return employment;
+                employmentId, ownerId, employment.getUserId());
+        return queryService.getEmployment(employmentId);
     }
 
     /**
@@ -139,7 +100,7 @@ public class EmploymentService {
      * @return 거절된 Employment
      */
     @Transactional
-    public Employment reject(String employmentId, String ownerId) {
+    public EmploymentRes reject(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateOwnerPermission(employment, ownerId);
         validatePendingStatus(employment);
@@ -147,8 +108,8 @@ public class EmploymentService {
         employment.reject();
 
         log.info("승인 요청 거절: employmentId={}, ownerId={}, userId={}",
-                employmentId, ownerId, employment.getUser().getId());
-        return employment;
+                employmentId, ownerId, employment.getUserId());
+        return queryService.getEmployment(employmentId);
     }
 
     /**
@@ -165,13 +126,13 @@ public class EmploymentService {
 
         employmentRepository.delete(employment);
         log.info("승인 요청 취소: employmentId={}, userId={}, dojangId={}",
-                employmentId, userId, employment.getDojang().getId());
+                employmentId, userId, employment.getDojangId());
     }
 
     private void validateRequesterPermission(Employment employment, String userId) {
-        if (!employment.getUser().getId().equals(userId)) {
+        if (!employment.getUserId().equals(userId)) {
             log.warn("본인이 아닌 사용자가 취소 시도: employmentId={}, requesterId={}, actualUserId={}",
-                    employment.getId(), userId, employment.getUser().getId());
+                    employment.getId(), userId, employment.getUserId());
             throw new BusinessException(EmploymentErrorCode.NOT_REQUESTER);
         }
     }
@@ -182,10 +143,12 @@ public class EmploymentService {
     }
 
     private void validateOwnerPermission(Employment employment, String ownerId) {
-        String dojangOwnerId = employment.getDojang().getOwnerId();
-        if (!dojangOwnerId.equals(ownerId)) {
+        Dojang dojang = dojangRepository.findById(employment.getDojangId())
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+
+        if (!dojang.getOwnerId().equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
-                    employment.getId(), ownerId, dojangOwnerId);
+                    employment.getId(), ownerId, dojang.getOwnerId());
             throw new BusinessException(EmploymentErrorCode.NOT_OWNER);
         }
     }
@@ -204,7 +167,7 @@ public class EmploymentService {
 
         log.info("기본 권한 부여 완료: employmentId={}, userId={}, permissions={}",
                 employment.getId(),
-                employment.getUser().getId(),
+                employment.getUserId(),
                 defaultPermissions);
     }
 }

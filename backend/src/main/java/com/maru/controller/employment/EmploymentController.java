@@ -2,8 +2,8 @@ package com.maru.controller.employment;
 
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
-import com.maru.domain.employment.Employment;
 import com.maru.security.CurrentUserId;
+import com.maru.service.employment.EmploymentQueryService;
 import com.maru.service.employment.EmploymentService;
 import com.maru.service.tenant.DojangQueryService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +20,7 @@ import java.util.List;
 public class EmploymentController {
 
     private final EmploymentService employmentService;
+    private final EmploymentQueryService employmentQueryService;
     private final DojangQueryService dojangQueryService;
 
     /**
@@ -34,8 +35,8 @@ public class EmploymentController {
             @CurrentUserId String userId,
             @RequestParam String dojangId) {
 
-        Employment employment = employmentService.requestApproval(userId, dojangId);
-        return ResponseEntity.ok(EmploymentRes.from(employment));
+        EmploymentRes result = employmentService.requestApproval(userId, dojangId);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -46,11 +47,7 @@ public class EmploymentController {
      */
     @GetMapping("/my-requests")
     public ResponseEntity<List<EmploymentRes>> getMyRequests(@CurrentUserId String userId) {
-        List<EmploymentRes> results = employmentService.getMyRequests(userId)
-                .stream()
-                .map(EmploymentRes::from)
-                .toList();
-
+        List<EmploymentRes> results = employmentQueryService.getMyRequests(userId);
         return ResponseEntity.ok(results);
     }
 
@@ -63,12 +60,7 @@ public class EmploymentController {
     @GetMapping("/pending")
     public ResponseEntity<List<PendingApprovalRes>> getPendingRequests(@CurrentUserId String userId) {
         String dojangId = dojangQueryService.getDojangIdByOwnerId(userId);
-
-        List<PendingApprovalRes> results = employmentService.getPendingRequests(dojangId)
-                .stream()
-                .map(PendingApprovalRes::from)
-                .toList();
-
+        List<PendingApprovalRes> results = employmentQueryService.getPendingRequests(dojangId);
         return ResponseEntity.ok(results);
     }
 
@@ -84,8 +76,8 @@ public class EmploymentController {
             @CurrentUserId String userId,
             @PathVariable String id) {
 
-        Employment employment = employmentService.approve(id, userId);
-        return ResponseEntity.ok(EmploymentRes.from(employment));
+        EmploymentRes result = employmentService.approve(id, userId);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -100,8 +92,8 @@ public class EmploymentController {
             @CurrentUserId String userId,
             @PathVariable String id) {
 
-        Employment employment = employmentService.reject(id, userId);
-        return ResponseEntity.ok(EmploymentRes.from(employment));
+        EmploymentRes result = employmentService.reject(id, userId);
+        return ResponseEntity.ok(result);
     }
 
     /**

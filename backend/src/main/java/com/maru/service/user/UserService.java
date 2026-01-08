@@ -200,6 +200,19 @@ public class UserService {
     }
 
     /**
+     * 온보딩 스텝 업데이트
+     *
+     * @param userId 사용자 ID
+     * @param step 변경할 온보딩 스텝
+     */
+    @Transactional
+    public void updateOnboardingStep(String userId, OnboardingStep step) {
+        User user = getUserById(userId);
+        user.updateOnboardingStep(step);
+        log.info("온보딩 스텝 업데이트: userId={}, step={}", userId, step);
+    }
+
+    /**
      * 온보딩 스텝 롤백 (이전 단계로 자동 이동)
      *
      * @param userId 사용자 ID
