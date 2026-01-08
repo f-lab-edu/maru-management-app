@@ -46,4 +46,7 @@ public interface DojangRepository extends JpaRepository<Dojang, String> {
 
     @Query("SELECT d.id FROM Dojang d WHERE d.ownerId = :ownerId AND d.deletedAt IS NULL")
     Optional<String> findIdByOwnerId(@Param("ownerId") String ownerId);
+
+    @Query("SELECT d.ownerId FROM Dojang d WHERE d.id = :id")
+    Optional<String> findOwnerIdById(@Param("id") String id);
 }

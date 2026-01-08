@@ -3,8 +3,8 @@ package com.maru.repository.employment;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.permission.PermissionType;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.user.User;
+import com.maru.repository.employment.view.EmploymentDetailView;
+import com.maru.repository.employment.view.MyDojangView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,45 +17,20 @@ import java.util.Set;
 @Repository
 public interface EmploymentRepository extends JpaRepository<Employment, String> {
 
-    Optional<Employment> findByUserAndDojang(User user, Dojang dojang);
-
     Optional<Employment> findByUserIdAndDojangId(String userId, String dojangId);
 
-    @Query("""
-        SELECT e
-        FROM Employment e
-        JOIN FETCH e.user
-        WHERE e.dojang.id = :dojangId
-          AND e.status = :status
-        """)
-    List<Employment> findByDojangIdAndStatus(@Param("dojangId") String dojangId,
-                                             @Param("status") EmploymentStatus status);
+    List<Employment> findByDojangIdAndStatus(String dojangId, EmploymentStatus status);
 
-    @Query("""
-        SELECT e
-        FROM Employment e
-        JOIN FETCH e.dojang
-        WHERE e.user.id = :userId
-        """)
-    List<Employment> findByUserId(@Param("userId") String userId);
+    List<Employment> findByUserId(String userId);
 
-    @Query("""
-        SELECT e
-        FROM Employment e
-        JOIN FETCH e.dojang d
-        JOIN FETCH e.tenant
-        WHERE e.user.id = :userId
-          AND e.status = :status
-        """)
-    List<Employment> findActiveWithDojangAndTenant(@Param("userId") String userId,
-                                                   @Param("status") EmploymentStatus status);
+    List<Employment> findByUserIdAndStatus(String userId, EmploymentStatus status);
 
     @Query("""
         SELECT e.permissions
         FROM Employment e
-        WHERE e.user.id = :userId
-          AND e.tenant.id = :tenantId
-          AND e.dojang.id = :dojangId
+        WHERE e.userId = :userId
+          AND e.tenantId = :tenantId
+          AND e.dojangId = :dojangId
           AND e.status = :status
         """)
     Set<PermissionType> findPermissions(@Param("userId") String userId,
@@ -63,16 +38,81 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
                                         @Param("dojangId") String dojangId,
                                         @Param("status") EmploymentStatus status);
 
+    Optional<Employment> findByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);
+
     @Query("""
-        SELECT e FROM Employment e
-        JOIN FETCH e.dojang d
-        JOIN FETCH e.tenant
-        WHERE e.user.id = :userId
-          AND e.dojang.id = :dojangId
+        SELECT e.id AS id,
+               e.userId AS userId,
+               u.name AS userName,
+               u.email AS userEmail,
+               u.phone AS userPhone,
+               e.dojangId AS dojangId,
+               d.name AS dojangName,
+               e.tenantId AS tenantId,
+               e.status AS status,
+               e.joinedAt AS joinedAt,
+               e.endedAt AS endedAt,
+               e.createdAt AS createdAt
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        JOIN Dojang d ON e.dojangId = d.id
+        WHERE e.dojangId = :dojangId
           AND e.status = :status
         """)
-    Optional<Employment> findByUserIdAndDojangIdAndStatus(
-        @Param("userId") String userId,
-        @Param("dojangId") String dojangId,
-        @Param("status") EmploymentStatus status);
+    List<EmploymentDetailView> findViewByDojangIdAndStatus(@Param("dojangId") String dojangId,
+                                                           @Param("status") EmploymentStatus status);
+
+    @Query("""
+        SELECT e.id AS id,
+               e.userId AS userId,
+               u.name AS userName,
+               u.email AS userEmail,
+               u.phone AS userPhone,
+               e.dojangId AS dojangId,
+               d.name AS dojangName,
+               e.tenantId AS tenantId,
+               e.status AS status,
+               e.joinedAt AS joinedAt,
+               e.endedAt AS endedAt,
+               e.createdAt AS createdAt
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        JOIN Dojang d ON e.dojangId = d.id
+        WHERE e.userId = :userId
+        """)
+    List<EmploymentDetailView> findViewByUserId(@Param("userId") String userId);
+
+    @Query("""
+        SELECT e.id AS id,
+               e.userId AS userId,
+               u.name AS userName,
+               u.email AS userEmail,
+               u.phone AS userPhone,
+               e.dojangId AS dojangId,
+               d.name AS dojangName,
+               e.tenantId AS tenantId,
+               e.status AS status,
+               e.joinedAt AS joinedAt,
+               e.endedAt AS endedAt,
+               e.createdAt AS createdAt
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        JOIN Dojang d ON e.dojangId = d.id
+        WHERE e.id = :id
+        """)
+    Optional<EmploymentDetailView> findViewById(@Param("id") String id);
+
+    @Query("""
+        SELECT e.dojangId AS dojangId,
+               d.name AS dojangName,
+               e.tenantId AS tenantId,
+               d.ownerId AS dojangOwnerId,
+               e.userId AS userId
+        FROM Employment e
+        JOIN Dojang d ON e.dojangId = d.id
+        WHERE e.userId = :userId
+          AND e.status = :status
+        """)
+    List<MyDojangView> findMyDojangViewByUserIdAndStatus(@Param("userId") String userId,
+                                                         @Param("status") EmploymentStatus status);
 }
