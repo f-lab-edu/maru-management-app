@@ -2,9 +2,7 @@ package com.maru.domain.message;
 
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
-import com.maru.domain.guardian.Guardian;
 import com.maru.domain.message.exception.MessageQueueErrorCode;
-import com.maru.domain.student.Student;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,13 +22,11 @@ public class MessageQueue extends BaseEntity {
     @Column(nullable = false, length = 13)
     private String dojangId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "guardian_id", nullable = false)
-    private Guardian guardian;
+    @Column(name = "guardian_id", nullable = false, length = 13)
+    private String guardianId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    private Student student;
+    @Column(name = "student_id", length = 13)
+    private String studentId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -82,39 +78,34 @@ public class MessageQueue extends BaseEntity {
         this.failedCount++;
     }
 
-    public String getRecipientPhone() {
-        return guardian.getPhone();
-    }
-
     /**
      * 출결 알림 메시지 생성
      *
-     * @param tenantId 테넌트 ID
-     * @param dojangId 도장 ID
-     * @param guardian 수신자 학부모
-     * @param student  수련생
-     * @param title    알림 제목
-     * @param body     알림 본문
+     * @param tenantId   테넌트 ID
+     * @param dojangId   도장 ID
+     * @param guardianId 수신자 학부모 ID
+     * @param studentId  수련생 ID
+     * @param title      알림 제목
+     * @param body       알림 본문
      * @return 생성된 MessageQueue
      */
     public static MessageQueue createAttendanceNotification(
             String tenantId,
             String dojangId,
-            Guardian guardian,
-            Student student,
+            String guardianId,
+            String studentId,
             String title,
             String body
     ) {
-        DomainAssert.notNull(guardian, MessageQueueErrorCode.GUARDIAN_REQUIRED);
-        DomainAssert.notNull(student, MessageQueueErrorCode.STUDENT_REQUIRED);
+        DomainAssert.hasText(guardianId, MessageQueueErrorCode.GUARDIAN_REQUIRED);
         DomainAssert.hasText(title, MessageQueueErrorCode.TITLE_REQUIRED);
         DomainAssert.hasText(body, MessageQueueErrorCode.BODY_REQUIRED);
 
         MessageQueue message = new MessageQueue();
         message.tenantId = tenantId;
         message.dojangId = dojangId;
-        message.guardian = guardian;
-        message.student = student;
+        message.guardianId = guardianId;
+        message.studentId = studentId;
         message.messageType = MessageType.ATTENDANCE;
         message.title = title;
         message.body = body;
