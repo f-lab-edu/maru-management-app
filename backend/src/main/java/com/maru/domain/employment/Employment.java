@@ -6,10 +6,6 @@ import com.maru.domain.common.BaseEntity;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.permission.converter.PermissionSetConverter;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.Tenant;
-import com.maru.domain.user.User;
-import com.maru.domain.user.UserRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -25,17 +21,14 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Employment extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dojang_id", nullable = false)
-    private Dojang dojang;
+    @Column(name = "dojang_id", nullable = false)
+    private String dojangId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -50,23 +43,22 @@ public class Employment extends BaseEntity {
     @Column(columnDefinition = "json")
     private Set<PermissionType> permissions = new HashSet<>();
 
-    private Employment(User user, Tenant tenant, Dojang dojang) {
-        validateNotNull(user, tenant, dojang);
-        validateTenantIntegrity(tenant, dojang);
+    private Employment(String userId, String tenantId, String dojangId) {
+        validateNotNull(userId, tenantId, dojangId);
 
-        this.user = user;
-        this.tenant = tenant;
-        this.dojang = dojang;
+        this.userId = userId;
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
         this.status = EmploymentStatus.PENDING;
         this.joinedAt = LocalDateTime.now();
     }
 
-    public static Employment create(User user, Tenant tenant, Dojang dojang) {
-        return new Employment(user, tenant, dojang);
+    public static Employment create(String userId, String tenantId, String dojangId) {
+        return new Employment(userId, tenantId, dojangId);
     }
 
-    public static Employment createForOwner(User owner, Tenant tenant, Dojang dojang) {
-        Employment employment = new Employment(owner, tenant, dojang);
+    public static Employment createForOwner(String ownerId, String tenantId, String dojangId) {
+        Employment employment = new Employment(ownerId, tenantId, dojangId);
         employment.status = EmploymentStatus.ACTIVE;
         return employment;
     }
@@ -129,20 +121,9 @@ public class Employment extends BaseEntity {
         return this.permissions.contains(permission);
     }
 
-    public UserRole resolveRole(String userId) {
-        boolean isOwner = this.dojang.getOwnerId().equals(userId);
-        return isOwner ? UserRole.OWNER : UserRole.INSTRUCTOR;
-    }
-
-    private void validateNotNull(User user, Tenant tenant, Dojang dojang) {
-        DomainAssert.notNull(user, EmploymentErrorCode.USER_REQUIRED);
-        DomainAssert.notNull(tenant, EmploymentErrorCode.TENANT_REQUIRED);
-        DomainAssert.notNull(dojang, EmploymentErrorCode.DOJANG_REQUIRED);
-    }
-
-    private void validateTenantIntegrity(Tenant tenant, Dojang dojang) {
-        if (!dojang.getTenantId().equals(tenant.getId())) {
-            throw new BusinessException(EmploymentErrorCode.TENANT_MISMATCH);
-        }
+    private void validateNotNull(String userId, String tenantId, String dojangId) {
+        DomainAssert.notNull(userId, EmploymentErrorCode.USER_REQUIRED);
+        DomainAssert.notNull(tenantId, EmploymentErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(dojangId, EmploymentErrorCode.DOJANG_REQUIRED);
     }
 }

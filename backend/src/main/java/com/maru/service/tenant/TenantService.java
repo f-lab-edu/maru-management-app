@@ -86,7 +86,7 @@ public class TenantService {
     }
 
     private Employment createOwnerEmployment(User owner, Tenant tenant, Dojang dojang) {
-        Employment employment = Employment.createForOwner(owner, tenant, dojang);
+        Employment employment = Employment.createForOwner(owner.getId(), tenant.getId(), dojang.getId());
         return employmentRepository.save(employment);
     }
 
