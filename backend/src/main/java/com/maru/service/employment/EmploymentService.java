@@ -143,12 +143,12 @@ public class EmploymentService {
     }
 
     private void validateOwnerPermission(Employment employment, String ownerId) {
-        Dojang dojang = dojangRepository.findById(employment.getDojangId())
+        String actualOwnerId = dojangRepository.findOwnerIdById(employment.getDojangId())
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
-        if (!dojang.getOwnerId().equals(ownerId)) {
+        if (!actualOwnerId.equals(ownerId)) {
             log.warn("권한 없는 승인/거절 시도: employmentId={}, requesterId={}, actualOwnerId={}",
-                    employment.getId(), ownerId, dojang.getOwnerId());
+                    employment.getId(), ownerId, actualOwnerId);
             throw new BusinessException(EmploymentErrorCode.NOT_OWNER);
         }
     }
