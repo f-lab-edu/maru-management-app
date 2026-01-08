@@ -60,7 +60,7 @@ public class PaymentQueryService {
         return guardianshipRepository.findPrimaryGuardianshipsByStudentIds(studentIds)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        g -> g.getStudent().getId(),
+                        Guardianship::getStudentId,
                         Collectors.mapping(Guardianship::getGuardian, Collectors.toList())
                 ));
     }

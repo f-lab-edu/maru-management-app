@@ -58,7 +58,7 @@ public class GuardianService {
         validateGuardianshipNotExists(studentId, guardian.getId());
 
         guardianshipRepository.save(
-                Guardianship.create(guardian, student, req.relation(), req.isPrimary())
+                Guardianship.create(guardian, studentId, req.relation(), req.isPrimary())
         );
 
         log.info("보호자 연결 - studentId: {}, guardianId: {}", studentId, guardian.getId());

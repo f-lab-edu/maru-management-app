@@ -3,7 +3,6 @@ package com.maru.domain.guardian;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
 import com.maru.domain.guardian.exception.GuardianErrorCode;
-import com.maru.domain.student.Student;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,9 +18,8 @@ public class Guardianship extends SoftDeletableEntity {
     @JoinColumn(name = "guardian_id", nullable = false)
     private Guardian guardian;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    @Column(name = "student_id", nullable = false)
+    private String studentId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -29,16 +27,16 @@ public class Guardianship extends SoftDeletableEntity {
 
     private Boolean isPrimary = false;
 
-    private Guardianship(Guardian guardian, Student student, GuardianRelation relation, boolean isPrimary) {
-        validateInput(guardian, student);
+    private Guardianship(Guardian guardian, String studentId, GuardianRelation relation, boolean isPrimary) {
+        validateInput(guardian, studentId);
         this.guardian = guardian;
-        this.student = student;
+        this.studentId = studentId;
         this.relation = relation;
         this.isPrimary = isPrimary;
     }
 
-    public static Guardianship create(Guardian guardian, Student student, GuardianRelation relation, boolean isPrimary) {
-        return new Guardianship(guardian, student, relation, isPrimary);
+    public static Guardianship create(Guardian guardian, String studentId, GuardianRelation relation, boolean isPrimary) {
+        return new Guardianship(guardian, studentId, relation, isPrimary);
     }
 
     public void updatePrimary(boolean isPrimary) {
@@ -49,8 +47,8 @@ public class Guardianship extends SoftDeletableEntity {
         this.relation = relation;
     }
 
-    private void validateInput(Guardian guardian, Student student) {
+    private void validateInput(Guardian guardian, String studentId) {
         DomainAssert.notNull(guardian, GuardianErrorCode.GUARDIAN_REQUIRED);
-        DomainAssert.notNull(student, GuardianErrorCode.STUDENT_REQUIRED);
+        DomainAssert.hasText(studentId, GuardianErrorCode.STUDENT_REQUIRED);
     }
 }

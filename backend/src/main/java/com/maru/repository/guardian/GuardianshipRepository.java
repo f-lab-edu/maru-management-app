@@ -21,7 +21,7 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
     @Query("""
             SELECT g.guardian
             FROM Guardianship g
-            WHERE g.student.id = :studentId
+            WHERE g.studentId = :studentId
               AND (:primaryOnly = false OR g.isPrimary = true)
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
@@ -34,7 +34,7 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
     @Query("""
             SELECT g FROM Guardianship g
             JOIN FETCH g.guardian
-            WHERE g.student.id IN :studentIds
+            WHERE g.studentId IN :studentIds
               AND g.isPrimary = true
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
@@ -49,7 +49,7 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
                    g.relation as relation,
                    g.isPrimary as isPrimary
             FROM Guardianship g
-            WHERE g.student.id = :studentId
+            WHERE g.studentId = :studentId
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
             ORDER BY g.isPrimary DESC, g.createdAt ASC
@@ -79,7 +79,7 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
                    g.relation as relation,
                    g.isPrimary as isPrimary
             FROM Guardianship g
-            WHERE g.student.id = :studentId
+            WHERE g.studentId = :studentId
               AND g.guardian.id = :guardianId
               AND g.deletedAt IS NULL
               AND g.guardian.deletedAt IS NULL
