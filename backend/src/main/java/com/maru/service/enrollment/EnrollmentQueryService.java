@@ -52,7 +52,7 @@ public class EnrollmentQueryService {
      * @param dojangId 도장 ID
      * @param sectionId 수련부 ID (선택)
      * @param divisionId 수련반 ID (선택)
-     * @return 필터된 원생 ID 목록 (조건 없으면 빈 리스트)
+     * @return 필터된 원생 ID 목록 (조건 없으면 null → 전체 조회 의도)
      */
     public List<String> getStudentIdsByFilter(String dojangId, String sectionId, String divisionId) {
         if (divisionId != null) {
@@ -61,7 +61,7 @@ public class EnrollmentQueryService {
         if (sectionId != null) {
             return enrollmentRepository.findStudentIdsBySectionId(dojangId, sectionId);
         }
-        return List.of();
+        return null;
     }
 
     private EnrolledStudentRes toEnrolledStudentRes(EnrollmentStudentView view) {
