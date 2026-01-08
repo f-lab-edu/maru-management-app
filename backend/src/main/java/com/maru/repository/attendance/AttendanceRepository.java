@@ -3,6 +3,7 @@ package com.maru.repository.attendance;
 import com.maru.domain.attendance.Attendance;
 import com.maru.domain.student.StudentStatus;
 import com.maru.repository.attendance.view.AttendanceStudentView;
+import com.maru.repository.attendance.view.NotificationTargetView;
 import com.maru.repository.attendance.view.RangeAttendanceView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -187,4 +188,14 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("excludeStatus") StudentStatus excludeStatus);
+
+    @Query("""
+        SELECT a.id as id, a.tenantId as tenantId, a.dojangId as dojangId,
+               a.studentId as studentId, s.name as studentName, d.name as dojangName
+        FROM Attendance a
+        JOIN Student s ON a.studentId = s.id
+        JOIN Dojang d ON a.dojangId = d.id
+        WHERE a.id = :id
+        """)
+    Optional<NotificationTargetView> findNotificationTarget(@Param("id") String id);
 }
