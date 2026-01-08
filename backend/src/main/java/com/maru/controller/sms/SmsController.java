@@ -6,7 +6,7 @@ import com.maru.controller.sms.dto.SmsVerifyReq;
 import com.maru.controller.sms.dto.SmsVerifyRes;
 import com.maru.security.CurrentUserId;
 import com.maru.service.sms.PhoneVerificationService;
-import com.maru.service.user.UserService;
+import com.maru.service.user.UserMergeService;
 import com.maru.service.user.dto.PhoneVerificationRes;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class SmsController {
 
     private final PhoneVerificationService phoneVerificationService;
-    private final UserService userService;
+    private final UserMergeService userMergeService;
 
     /**
      * SMS 인증번호 발송 요청
@@ -54,7 +54,7 @@ public class SmsController {
     public ResponseEntity<SmsVerifyRes> verifyCode(
             @CurrentUserId String userId,
             @Valid @RequestBody SmsVerifyReq request) {
-        PhoneVerificationRes result = userService.verifyPhoneAndMerge(
+        PhoneVerificationRes result = userMergeService.verifyPhoneAndMerge(
                 userId, request.phone(), request.code());
 
         return ResponseEntity.ok(SmsVerifyRes.builder()
