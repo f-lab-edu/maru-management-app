@@ -6,11 +6,11 @@ import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
-import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.repository.tenant.view.DojangMinimalView;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public class EmploymentService {
      */
     @Transactional
     public EmploymentRes requestApproval(String userId, String dojangId) {
-        Dojang dojang = dojangRepository.findById(dojangId)
+        DojangMinimalView dojang = dojangRepository.findMinimalById(dojangId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
         Employment employment = employmentRepository.findByUserIdAndDojangId(userId, dojangId)
@@ -60,7 +60,7 @@ public class EmploymentService {
         throw new BusinessException(EmploymentErrorCode.ALREADY_EXISTS);
     }
 
-    private Employment createNewEmployment(String userId, Dojang dojang) {
+    private Employment createNewEmployment(String userId, DojangMinimalView dojang) {
         Employment employment = Employment.create(userId, dojang.getTenantId(), dojang.getId());
         Employment saved = employmentRepository.save(employment);
 

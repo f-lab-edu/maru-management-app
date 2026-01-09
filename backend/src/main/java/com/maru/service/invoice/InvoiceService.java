@@ -5,7 +5,6 @@ import com.maru.common.exception.InvoiceErrorCode;
 import com.maru.controller.invoice.dto.*;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
-import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
@@ -313,10 +312,7 @@ public class InvoiceService {
     }
 
     private void validateStudentInDojang(String studentId, String dojangId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
-
-        if (!dojangId.equals(student.getDojangId())) {
+        if (!studentRepository.existsByIdAndDojangId(studentId, dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
     }
@@ -334,18 +330,12 @@ public class InvoiceService {
     private TargetStudentIdsResult findAllTargetStudentIds(String tenantId, String dojangId, InvoiceBulkCreateReq request) {
         if (request.studentIds() != null && !request.studentIds().isEmpty()) {
             int totalCount = request.studentIds().size();
-            List<String> studentIds = studentRepository.findAllActiveByIds(
-                    request.studentIds(), tenantId, StudentStatus.WITHDRAWN).stream()
-                    .filter(s -> dojangId.equals(s.getDojangId()))
-                    .map(Student::getId)
-                    .toList();
+            List<String> studentIds = studentRepository.findActiveStudentIdsByIdsAndDojang(
+                    request.studentIds(), tenantId, dojangId, StudentStatus.WITHDRAWN);
             return new TargetStudentIdsResult(studentIds, totalCount);
         }
 
-        List<String> studentIds = studentRepository.findActiveStudents(tenantId, dojangId, StudentStatus.WITHDRAWN)
-                .stream()
-                .map(Student::getId)
-                .toList();
+        List<String> studentIds = studentRepository.findActiveStudentIdsByDojang(tenantId, dojangId, StudentStatus.WITHDRAWN);
         return new TargetStudentIdsResult(studentIds, studentIds.size());
     }
 

@@ -8,10 +8,10 @@ import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.Payment;
 import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
-import com.maru.domain.student.Student;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
+import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
@@ -230,7 +230,7 @@ public class PaymentService {
         String tenantId = TenantContextHolder.getTenantId();
         validateDojangAccess(dojangId, tenantId);
 
-        Student student = findStudentAndValidate(studentId, dojangId);
+        StudentMinimalView student = findStudentAndValidate(dojangId, studentId);
         List<Payment> payments = paymentRepository.findByStudentIdOrderByPaidAtDesc(tenantId, dojangId, studentId);
 
         return buildStudentPaymentHistoryRes(student, payments);
@@ -307,26 +307,17 @@ public class PaymentService {
     }
 
     private void validateStudentInDojang(String studentId, String dojangId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
-
-        if (!student.getDojangId().equals(dojangId)) {
+        if (!studentRepository.existsByIdAndDojangId(studentId, dojangId)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
     }
 
-    private Student findStudentAndValidate(String studentId, String dojangId) {
-        Student student = studentRepository.findById(studentId)
+    private StudentMinimalView findStudentAndValidate(String dojangId, String studentId) {
+        return studentRepository.findMinimalByIdAndDojangId(studentId, dojangId)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
-
-        if (!student.getDojangId().equals(dojangId)) {
-            throw new BusinessException(StudentErrorCode.NOT_FOUND);
-        }
-
-        return student;
     }
 
-    private StudentPaymentHistoryRes buildStudentPaymentHistoryRes(Student student, List<Payment> payments) {
+    private StudentPaymentHistoryRes buildStudentPaymentHistoryRes(StudentMinimalView student, List<Payment> payments) {
         BigDecimal totalPaidAmount = calculateTotalPaidAmount(payments);
         List<StudentPaymentHistoryRes.PaymentHistoryItem> historyItems = buildPaymentHistoryItems(payments);
 

@@ -4,4 +4,5 @@ public interface StudentMinimalView {
     String getId();
     String getTenantId();
     String getDojangId();
+    String getName();
 }
