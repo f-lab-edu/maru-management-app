@@ -112,11 +112,6 @@ export function DivisionEnrollmentSheet({
                       <div className="flex items-center gap-3">
                         <div>
                           <p className="font-medium text-slate-900">{student.studentName}</p>
-                          {student.beltName && (
-                            <Badge variant="secondary" className="text-xs mt-1">
-                              {student.beltName}
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <Button

@@ -19,6 +19,7 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import { Checkbox } from '@/shared/components/ui/checkbox';
+import { Badge } from '@/shared/components/ui/badge';
 import { FileText, CheckCircle, AlertCircle, Send, Plus, Pencil } from 'lucide-react';
 import { useInvoices, useBulkIssueInvoices } from '../hooks';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
@@ -70,6 +71,7 @@ export function InvoiceTab() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [showBulkUpdateSheet, setShowBulkUpdateSheet] = useState(false);
+  const [hideDeletedStudents, setHideDeletedStudents] = useState(false);
 
   // 수련부/수련반 필터 상태
   const [sectionId, setSectionId] = useState<string | null>(null);
@@ -114,8 +116,12 @@ export function InvoiceTab() {
       result = result.filter((inv) => inv.studentName.toLowerCase().includes(query));
     }
 
+    if (hideDeletedStudents) {
+      result = result.filter((inv) => !inv.studentDeleted);
+    }
+
     return result;
-  }, [invoices, yearFilter, monthFilter, searchQuery]);
+  }, [invoices, yearFilter, monthFilter, searchQuery, hideDeletedStudents]);
 
   const statistics = useMemo(() => {
     const total = filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0);
@@ -309,6 +315,17 @@ export function InvoiceTab() {
               compact
             />
           )}
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="hideDeleted"
+              checked={hideDeletedStudents}
+              onCheckedChange={(checked) => setHideDeletedStudents(checked as boolean)}
+            />
+            <label htmlFor="hideDeleted" className="text-sm cursor-pointer select-none">
+              퇴원 원생 숨기기
+            </label>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -388,16 +405,17 @@ export function InvoiceTab() {
               filteredInvoices.map((invoice) => {
                 const isDraft = invoice.status === 'DRAFT';
                 const isSelected = selectedIds.includes(invoice.id);
+                const isDeleted = invoice.studentDeleted;
                 return (
                   <TableRow
                     key={invoice.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className={`cursor-pointer hover:bg-muted/50 ${isDeleted ? 'bg-gray-100/50 opacity-60' : ''}`}
                     onClick={() => handleRowClick(invoice)}
                     data-state={isSelected && 'selected'}
                     style={{ borderLeft: `3px solid ${getStatusBorderColor(invoice.status)}` }}
                   >
                     <TableCell
-                      className={`bg-muted/50 ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
+                      className={`${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isDraft) handleSelectOne(invoice.id, !isSelected);
@@ -413,7 +431,7 @@ export function InvoiceTab() {
                       )}
                     </TableCell>
                     <TableCell
-                      className={`font-medium bg-muted/50 ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
+                      className={`font-medium ${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
                       onClick={(e) => {
                         if (isDraft) {
                           e.stopPropagation();
@@ -421,7 +439,14 @@ export function InvoiceTab() {
                         }
                       }}
                     >
-                      {invoice.studentName}
+                      <div className="flex items-center gap-2">
+                        {invoice.studentName}
+                        {isDeleted && (
+                          <Badge variant="secondary" className="text-xs">
+                            퇴원
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {formatBillingYearMonth(invoice.billingYearMonth)}

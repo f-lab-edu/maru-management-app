@@ -10,6 +10,7 @@ import { calculateAge, formatDate } from '@/shared/utils/date';
 import { GUARDIAN_RELATION_LABEL, type Student, type Guardian, type GuardianRelation } from '@/types/student';
 import { studentService } from '@/services/studentService';
 import { useAuthStore } from '@/stores/authStore';
+import { studentKeys } from '../../hooks/useStudents';
 import { GuardianEditModal } from '../GuardianEditModal';
 import { GuardianDeleteDialog } from '../GuardianDeleteDialog';
 
@@ -53,7 +54,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
     mutationFn: (guardianId: string) =>
       studentService.setPrimaryGuardian(dojangId!, student.id, guardianId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.detail(dojangId!, student.id) });
       showSuccess('주 보호자 설정이 변경되었습니다');
     },
     onError: (error) => {
@@ -66,7 +67,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
     mutationFn: (data: { name: string; phone: string; relation: GuardianRelation }) =>
       studentService.updateGuardian(dojangId!, student.id, editingGuardian!.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.detail(dojangId!, student.id) });
       setEditingGuardian(null);
       showSuccess('보호자 정보가 수정되었습니다');
     },
@@ -80,7 +81,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
     mutationFn: (guardianId: string) =>
       studentService.deleteGuardian(dojangId!, student.id, guardianId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.detail(dojangId!, student.id) });
       setDeletingGuardian(null);
       showSuccess('보호자가 삭제되었습니다');
     },
@@ -94,7 +95,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
     mutationFn: (data: { name: string; phone: string; relation: GuardianRelation }) =>
       studentService.addGuardian(dojangId!, student.id, { ...data, isPrimary: false }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', dojangId, student.id] });
+      queryClient.invalidateQueries({ queryKey: studentKeys.detail(dojangId!, student.id) });
       setIsAddingGuardian(false);
       showSuccess('보호자가 추가되었습니다');
     },

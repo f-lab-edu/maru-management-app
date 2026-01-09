@@ -76,7 +76,7 @@ export function UnpaidTab() {
       result = result.filter(
         (item) =>
           item.studentName.toLowerCase().includes(query) ||
-          item.guardianName?.toLowerCase().includes(query)
+          item.guardians?.some((g) => g.name.toLowerCase().includes(query))
       );
     }
 
@@ -297,13 +297,19 @@ export function UnpaidTab() {
                     {formatBillingYearMonth(item.billingYearMonth)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {item.guardianName || '-'}
+                    {item.guardians?.length > 0
+                      ? item.guardians.map((g) => g.name).join(', ')
+                      : '-'}
                   </TableCell>
                   <TableCell>
-                    {item.guardianPhone ? (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Phone className="h-3 w-3" />
-                        <span className="text-sm">{item.guardianPhone}</span>
+                    {item.guardians?.length > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        {item.guardians.map((g, idx) => (
+                          <div key={idx} className="flex items-center gap-1 text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            <span className="text-sm">{g.phone}</span>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>

@@ -5,7 +5,6 @@ export interface DojangSearchResult {
   name: string;
   address: string;
   ownerName: string;
-  phone?: string;
 }
 
 export interface Employment {

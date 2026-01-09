@@ -72,3 +72,14 @@ export function useBulkDeleteStudents(dojangId: string) {
     },
   });
 }
+
+export function useRestoreStudent(dojangId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (studentId: string) => studentService.restoreStudent(dojangId, studentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all(dojangId) });
+    },
+  });
+}

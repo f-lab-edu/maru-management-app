@@ -12,6 +12,7 @@ export interface InvoiceListRes {
   dueDate: string;
   issueDate: string | null;
   billingYearMonth: string;
+  studentDeleted: boolean;
 }
 
 export interface PaymentRes {
@@ -35,6 +36,7 @@ export interface InvoiceDetailRes {
   issueDate: string | null;
   note: string | null;
   billingYearMonth: string;
+  studentDeleted: boolean;
   payments: PaymentRes[];
 }
 
@@ -98,11 +100,15 @@ export interface PaymentRecordReq {
   method: PaymentMethod;
 }
 
+export interface GuardianInfo {
+  name: string;
+  phone: string;
+}
+
 export interface UnpaidListRes {
   invoiceId: string;
   studentName: string;
-  guardianName: string | null;
-  guardianPhone: string | null;
+  guardians: GuardianInfo[];
   amount: number;
   paidAmount: number;
   remainingAmount: number;
@@ -124,17 +130,6 @@ export interface StudentPaymentHistoryRes {
   studentName: string;
   totalPaidAmount: number;
   payments: PaymentHistoryItem[];
-  invoices: StudentInvoiceSummary[];
-}
-
-export interface StudentInvoiceSummary {
-  id: string;
-  billingYearMonth: string;
-  amount: number;
-  paidAmount: number;
-  remainingAmount: number;
-  status: InvoiceStatus;
-  dueDate: string;
 }
 
 export interface PaymentHistoryItem {

@@ -26,11 +26,8 @@ export interface StudentSummary {
   name: string;
   birth: string;
   photoUrl?: string;
-  phone?: string;
   enrolledAt: string;
   status: StudentStatus;
-  primaryGuardianName?: string;
-  primaryGuardianPhone?: string;
   hasEnrollment: boolean;
 }
 

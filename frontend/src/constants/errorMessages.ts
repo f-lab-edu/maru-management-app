@@ -64,6 +64,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   STUDENT_001: '원생을 찾을 수 없습니다',
   // 비즈니스 규칙 (301~399)
   STUDENT_301: '이미 등록된 원생입니다',
+  STUDENT_302: '퇴원한 원생입니다',
 
   // 보호자 관련 (GUARDIAN_XXX)
   // 조회 실패 (001~099)

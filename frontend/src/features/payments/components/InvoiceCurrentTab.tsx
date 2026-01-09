@@ -5,7 +5,7 @@ import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Separator } from '@/shared/components/ui/separator';
 import { DatePicker } from '@/shared/components/ui/date-picker';
-import { Send, XCircle, RotateCcw, Trash2, CreditCard, Pencil, X } from 'lucide-react';
+import { Send, XCircle, RotateCcw, Trash2, CreditCard, Pencil, X, AlertTriangle } from 'lucide-react';
 import { PaymentRecordForm } from './PaymentRecordForm';
 import { PaymentList } from './PaymentList';
 import type { InvoiceDetailRes, InvoiceStatus } from '../types';
@@ -59,11 +59,13 @@ export function InvoiceCurrentTab({
   onCancelEditing,
   formatAmount,
 }: InvoiceCurrentTabProps) {
+  const isStudentDeleted = invoice.studentDeleted ?? false;
+
   const renderActionButtons = (status: InvoiceStatus) => {
     if (isEditing) return null;
 
     const editButton = canEdit && (
-      <Button variant="outline" onClick={onStartEditing} className="flex-1">
+      <Button variant="outline" onClick={onStartEditing} disabled={isStudentDeleted} className="flex-1">
         <Pencil className="mr-2 h-4 w-4" />
         수정
       </Button>
@@ -74,7 +76,7 @@ export function InvoiceCurrentTab({
         return (
           <>
             {editButton}
-            <Button onClick={onIssue} disabled={isIssuing} className="flex-1">
+            <Button onClick={onIssue} disabled={isStudentDeleted || isIssuing} className="flex-1">
               <Send className="mr-2 h-4 w-4" />
               {isIssuing ? '처리 중...' : '발행'}
             </Button>
@@ -88,11 +90,11 @@ export function InvoiceCurrentTab({
         return (
           <>
             {editButton}
-            <Button onClick={() => setShowPaymentForm(true)} className="flex-1">
+            <Button onClick={() => setShowPaymentForm(true)} disabled={isStudentDeleted} className="flex-1">
               <CreditCard className="mr-2 h-4 w-4" />
               수납 기록
             </Button>
-            <Button variant="outline" onClick={onVoid} disabled={isVoiding}>
+            <Button variant="outline" onClick={onVoid} disabled={isStudentDeleted || isVoiding}>
               <XCircle className="mr-2 h-4 w-4" />
               무효화
             </Button>
@@ -100,7 +102,7 @@ export function InvoiceCurrentTab({
         );
       case 'PARTIAL':
         return (
-          <Button onClick={() => setShowPaymentForm(true)} className="flex-1">
+          <Button onClick={() => setShowPaymentForm(true)} disabled={isStudentDeleted} className="flex-1">
             <CreditCard className="mr-2 h-4 w-4" />
             수납 기록
           </Button>
@@ -121,6 +123,13 @@ export function InvoiceCurrentTab({
 
   return (
     <div className="space-y-6">
+      {isStudentDeleted && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>퇴원한 원생의 청구서입니다. 수정 및 납부가 불가능합니다.</span>
+        </div>
+      )}
+
       {isEditing ? (
         <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4">
           <div className="space-y-2">
