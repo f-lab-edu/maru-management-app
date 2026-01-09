@@ -14,6 +14,7 @@ const BASE_PATH = '/students';
 export interface StudentFilterParams {
   sectionId?: string;
   divisionId?: string;
+  includeWithdrawn?: boolean;
 }
 
 export const studentService = {
@@ -112,5 +113,12 @@ export const studentService = {
     await apiClient.delete(`${BASE_PATH}/${studentId}/guardians/${guardianId}`, {
       params: { dojangId },
     });
+  },
+
+  restoreStudent: async (dojangId: string, studentId: string): Promise<Student> => {
+    const response = await apiClient.patch<Student>(`${BASE_PATH}/${studentId}/restore`, null, {
+      params: { dojangId },
+    });
+    return response.data;
   },
 };

@@ -5,9 +5,12 @@ import { cn } from '@/shared/utils';
 import { SectionDivisionFilter } from '@/features/divisions';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'PAUSED';
+type ActiveTab = 'active' | 'withdrawn';
 
 interface StudentTableToolbarProps {
   dojangId: string | null;
+  activeTab: ActiveTab;
+  onActiveTabChange: (tab: ActiveTab) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (filter: StatusFilter) => void;
   searchQuery: string;
@@ -18,6 +21,7 @@ interface StudentTableToolbarProps {
     total: number;
     activeCount: number;
     pausedCount: number;
+    withdrawnCount: number;
   };
   // TODO: 백엔드 Enrollment API 구현 후 활성화
   sectionId?: string | null;
@@ -25,6 +29,11 @@ interface StudentTableToolbarProps {
   onSectionChange?: (sectionId: string | null) => void;
   onDivisionChange?: (divisionId: string | null) => void;
 }
+
+const MAIN_TABS: { value: ActiveTab; label: string }[] = [
+  { value: 'active', label: '활성' },
+  { value: 'withdrawn', label: '퇴원' },
+];
 
 const FILTER_TABS: { value: StatusFilter; label: string }[] = [
   { value: 'ALL', label: '전체' },
@@ -34,6 +43,8 @@ const FILTER_TABS: { value: StatusFilter; label: string }[] = [
 
 export function StudentTableToolbar({
   dojangId,
+  activeTab,
+  onActiveTabChange,
   statusFilter,
   onStatusFilterChange,
   searchQuery,
@@ -46,6 +57,10 @@ export function StudentTableToolbar({
   onSectionChange,
   onDivisionChange,
 }: StudentTableToolbarProps) {
+  const getMainTabCount = (tab: ActiveTab) => {
+    return tab === 'active' ? stats.total : stats.withdrawnCount;
+  };
+
   const getTabCount = (filter: StatusFilter) => {
     switch (filter) {
       case 'ALL':
@@ -61,40 +76,63 @@ export function StudentTableToolbar({
 
   return (
     <div className="space-y-4">
-      {/* 탭 필터 + 수련부/반 필터 */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="inline-flex rounded-lg bg-muted p-1">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => onStatusFilterChange(tab.value)}
-              className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-all',
-                statusFilter === tab.value
-                  ? 'bg-white text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {tab.label}
-              <span className="ml-1.5 text-xs text-muted-foreground">
-                {getTabCount(tab.value)}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* 수련부/수련반 필터 - TODO: 백엔드 Enrollment API 구현 후 필터링 활성화 */}
-        {showDivisionFilter && (
-          <SectionDivisionFilter
-            dojangId={dojangId}
-            selectedSectionId={sectionId ?? null}
-            selectedDivisionId={divisionId ?? null}
-            onSectionChange={onSectionChange}
-            onDivisionChange={onDivisionChange}
-            compact
-          />
-        )}
+      {/* 메인 탭 (활성/퇴원) */}
+      <div className="inline-flex rounded-lg bg-muted p-1">
+        {MAIN_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => onActiveTabChange(tab.value)}
+            className={cn(
+              'rounded-md px-4 py-2 text-sm font-medium transition-all',
+              activeTab === tab.value
+                ? 'bg-white text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {tab.label}
+            <span className="ml-1.5 text-xs text-muted-foreground">
+              {getMainTabCount(tab.value)}
+            </span>
+          </button>
+        ))}
       </div>
+
+      {/* 탭 필터 + 수련부/반 필터 */}
+      {activeTab === 'active' && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="inline-flex rounded-lg bg-muted p-1">
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => onStatusFilterChange(tab.value)}
+                className={cn(
+                  'rounded-md px-4 py-2 text-sm font-medium transition-all',
+                  statusFilter === tab.value
+                    ? 'bg-white text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {tab.label}
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  {getTabCount(tab.value)}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* 수련부/수련반 필터 - TODO: 백엔드 Enrollment API 구현 후 필터링 활성화 */}
+          {showDivisionFilter && (
+            <SectionDivisionFilter
+              dojangId={dojangId}
+              selectedSectionId={sectionId ?? null}
+              selectedDivisionId={divisionId ?? null}
+              onSectionChange={onSectionChange}
+              onDivisionChange={onDivisionChange}
+              compact
+            />
+          )}
+        </div>
+      )}
 
       {/* 검색 + 단체 액션 */}
       <div className="flex items-center justify-between gap-4">

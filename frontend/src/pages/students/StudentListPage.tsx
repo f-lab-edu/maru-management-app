@@ -19,11 +19,13 @@ import {
   useUpdateStudent,
   useDeleteStudent,
   useBulkDeleteStudents,
+  useRestoreStudent,
 } from '@/features/students/hooks/useStudents';
 import { studentService } from '@/services/studentService';
 import type { Student, StudentSummary, StudentStatus } from '@/types/student';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'PAUSED';
+type ActiveTab = 'active' | 'withdrawn';
 
 type ModalState =
   | { type: 'closed' }
@@ -34,8 +36,11 @@ type ModalState =
 export default function StudentListPage() {
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
-  const { showError } = useAlert();
+  const { showError, showSuccess } = useAlert();
   const { confirmDelete } = useConfirm();
+
+  // 탭 필터 상태
+  const [activeTab, setActiveTab] = useState<ActiveTab>('active');
 
   // 필터 상태
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -48,6 +53,7 @@ export default function StudentListPage() {
   const { data: studentsData, isLoading } = useStudents(dojangId, {
     sectionId: sectionId ?? undefined,
     divisionId: divisionId ?? undefined,
+    includeWithdrawn: activeTab === 'withdrawn',
   });
 
   // 선택 상태
@@ -68,26 +74,35 @@ export default function StudentListPage() {
   const updateMutation = useUpdateStudent(dojangId ?? '');
   const deleteMutation = useDeleteStudent(dojangId ?? '');
   const bulkDeleteMutation = useBulkDeleteStudents(dojangId ?? '');
+  const restoreMutation = useRestoreStudent(dojangId ?? '');
 
   // 필터링된 데이터
   const filteredStudents = useMemo(() => {
     if (!studentsData?.students) return [];
 
     return studentsData.students.filter((student) => {
-      if (statusFilter !== 'ALL' && student.status !== statusFilter) {
-        return false;
+      if (activeTab === 'withdrawn') {
+        return student.status === 'WITHDRAWN';
+      } else {
+        if (student.status === 'WITHDRAWN') {
+          return false;
+        }
+        if (statusFilter !== 'ALL' && student.status !== statusFilter) {
+          return false;
+        }
+        return true;
       }
-      return true;
     });
-  }, [studentsData?.students, statusFilter]);
+  }, [studentsData?.students, activeTab, statusFilter]);
 
   // 통계
   const stats = useMemo(() => {
     const students = studentsData?.students ?? [];
     return {
-      total: students.length,
+      total: students.filter((s) => s.status !== 'WITHDRAWN').length,
       activeCount: students.filter((s) => s.status === 'ACTIVE').length,
       pausedCount: students.filter((s) => s.status === 'PAUSED').length,
+      withdrawnCount: students.filter((s) => s.status === 'WITHDRAWN').length,
     };
   }, [studentsData?.students]);
 
@@ -109,8 +124,10 @@ export default function StudentListPage() {
         onEdit: handleOpenEditModal,
         onDelete: handleDeleteStudent,
         onStatusChange: handleOpenStatusChangeDialog,
+        onRestore: handleRestoreStudent,
+        isWithdrawnTab: activeTab === 'withdrawn',
       }),
-    []
+    [activeTab]
   );
 
   // Drawer 핸들러
@@ -170,6 +187,24 @@ export default function StudentListPage() {
     try {
       await bulkDeleteMutation.mutateAsync(selectedStudentIds);
       setRowSelection({});
+    } catch (error) {
+      const axiosError = error as AxiosError<ErrorResponse>;
+      const errorCode = axiosError.response?.data?.code || 'COMMON_003';
+      showError(errorCode);
+    }
+  }
+
+  async function handleRestoreStudent(student: StudentSummary) {
+    const { isConfirmed } = await confirmDelete({
+      title: '수련생 복구',
+      text: `${student.name} 수련생을 복구하시겠습니까?`,
+      confirmText: '복구',
+      cancelText: '취소',
+    });
+    if (!isConfirmed) return;
+    try {
+      await restoreMutation.mutateAsync(student.id);
+      showSuccess('수련생이 복구되었습니다.');
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
       const errorCode = axiosError.response?.data?.code || 'COMMON_003';
@@ -270,6 +305,8 @@ export default function StudentListPage() {
       {/* 툴바 (탭 필터 + 수련부/반 필터 + 검색 + 단체 액션) */}
       <StudentTableToolbar
         dojangId={dojangId}
+        activeTab={activeTab}
+        onActiveTabChange={setActiveTab}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         searchQuery={searchQuery}

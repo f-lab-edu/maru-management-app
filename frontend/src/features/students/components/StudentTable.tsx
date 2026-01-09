@@ -67,11 +67,7 @@ export function StudentTable({
   onEdit,
   onDelete,
 }: StudentTableProps) {
-  const getContactInfo = (student: StudentSummary) => {
-    if (student.phone) return student.phone;
-    if (student.primaryGuardianPhone) {
-      return `${student.primaryGuardianName || '보호자'} ${student.primaryGuardianPhone}`;
-    }
+  const getContactInfo = (_student: StudentSummary) => {
     return '-';
   };
 

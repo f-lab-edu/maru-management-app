@@ -12,9 +12,11 @@ interface ColumnOptions {
   onEdit: (student: StudentSummary) => void;
   onDelete: (student: StudentSummary) => void;
   onStatusChange: (student: StudentSummary, newStatus: StudentStatus) => void;
+  onRestore?: (student: StudentSummary) => void;
+  isWithdrawnTab?: boolean;
 }
 
-export function createStudentColumns({ onEdit, onDelete, onStatusChange }: ColumnOptions): ColumnDef<StudentSummary>[] {
+export function createStudentColumns({ onEdit, onDelete, onStatusChange, onRestore, isWithdrawnTab = false }: ColumnOptions): ColumnDef<StudentSummary>[] {
   return [
     {
       id: 'select',
@@ -80,24 +82,21 @@ export function createStudentColumns({ onEdit, onDelete, onStatusChange }: Colum
     {
       id: 'contact',
       header: '연락처',
-      cell: ({ row }) => {
-        const student = row.original;
-        if (student.phone) return student.phone;
-        if (student.primaryGuardianPhone) {
-          return `${student.primaryGuardianName || '보호자'} ${student.primaryGuardianPhone}`;
-        }
-        return '-';
-      },
+      cell: () => '-',
     },
     {
       accessorKey: 'status',
       header: '상태',
       cell: ({ row }) => (
         <div onClick={(e) => e.stopPropagation()}>
-          <StudentStatusSelect
-            status={row.original.status}
-            onStatusChange={(newStatus) => onStatusChange(row.original, newStatus)}
-          />
+          {isWithdrawnTab ? (
+            <span className="text-sm text-muted-foreground">퇴원</span>
+          ) : (
+            <StudentStatusSelect
+              status={row.original.status}
+              onStatusChange={(newStatus) => onStatusChange(row.original, newStatus)}
+            />
+          )}
         </div>
       ),
     },
@@ -105,11 +104,21 @@ export function createStudentColumns({ onEdit, onDelete, onStatusChange }: Colum
       id: 'actions',
       cell: ({ row }) => (
         <div onClick={(e) => e.stopPropagation()}>
-          <StudentRowActions
-            student={row.original}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+          {isWithdrawnTab && onRestore ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRestore(row.original)}
+            >
+              복구
+            </Button>
+          ) : (
+            <StudentRowActions
+              student={row.original}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )}
         </div>
       ),
     },

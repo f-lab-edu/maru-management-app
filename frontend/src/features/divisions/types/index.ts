@@ -73,11 +73,10 @@ export interface DivisionReorderReq {
   divisionIds: string[];
 }
 
-// Enrollment (원생 등록) - 백엔드 미구현, Mock으로 처리
+// Enrollment (원생 등록)
 export interface EnrolledStudentRes {
   studentId: string;
   studentName: string;
-  beltName: string | null;
   enrolledAt: string;
 }
 
