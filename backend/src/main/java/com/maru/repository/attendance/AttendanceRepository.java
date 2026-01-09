@@ -22,11 +22,14 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
                a.note as note, a.createdAt as createdAt
         FROM Attendance a
         JOIN Student s ON a.studentId = s.id
-        WHERE a.id = :id AND a.dojangId = :dojangId
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.id = :id
         """)
     Optional<AttendanceStudentView> findDetailById(
-            @Param("id") String id,
-            @Param("dojangId") String dojangId);
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("id") String id);
 
     @Query("""
         SELECT a.id as id, a.studentId as studentId, s.name as studentName,
@@ -56,9 +59,12 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
                a.note as note, a.createdAt as createdAt
         FROM Attendance a
         JOIN Student s ON a.studentId = s.id
-        WHERE a.dojangId = :dojangId AND a.id IN :ids
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.id IN :ids
         """)
     List<AttendanceStudentView> findAllDetailByIds(
+            @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("ids") List<String> ids);
 

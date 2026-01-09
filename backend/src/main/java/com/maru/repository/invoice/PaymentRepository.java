@@ -12,7 +12,17 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, String> {
 
-    List<Payment> findByInvoiceIdOrderByPaidAtDesc(String invoiceId);
+    @Query("""
+        SELECT p FROM Payment p
+        WHERE p.tenantId = :tenantId
+          AND p.dojangId = :dojangId
+          AND p.invoice.id = :invoiceId
+        ORDER BY p.paidAt DESC
+        """)
+    List<Payment> findByInvoiceIdOrderByPaidAtDesc(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("invoiceId") String invoiceId);
 
     @Query("""
         SELECT COALESCE(SUM(p.amount), 0) FROM Payment p

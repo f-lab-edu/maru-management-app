@@ -14,6 +14,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
 import com.maru.repository.student.StudentRepository;
+import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.service.enrollment.EnrollmentQueryService;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
@@ -83,7 +84,7 @@ public class AttendanceService {
 
         log.info("출석 기록 생성 - attendanceId: {}, studentId: {}, status: {}, dojangId: {}",
                 attendance.getId(), studentId, targetStatus, dojangId);
-        return attendanceQueryService.getAttendance(dojangId, attendance.getId());
+        return attendanceQueryService.getAttendance(tenantId, dojangId, attendance.getId());
     }
 
     /**
@@ -109,7 +110,7 @@ public class AttendanceService {
         publishBulkCheckedEvents(attendances, tenantId, true);
 
         log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
-        return buildBulkCheckRes(dojangId, attendances, failures);
+        return buildBulkCheckRes(tenantId, dojangId, attendances, failures);
     }
 
     /**
@@ -133,7 +134,7 @@ public class AttendanceService {
         publishCheckedEvent(attendance, tenantId, attendance.getStudentId(), false);
 
         log.info("퇴관 처리 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
-        return attendanceQueryService.getAttendance(dojangId, attendanceId);
+        return attendanceQueryService.getAttendance(tenantId, dojangId, attendanceId);
     }
 
     /**
@@ -155,7 +156,7 @@ public class AttendanceService {
         attendance.cancelCheckout();
 
         log.info("퇴관 취소 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
-        return attendanceQueryService.getAttendance(dojangId, attendanceId);
+        return attendanceQueryService.getAttendance(tenantId, dojangId, attendanceId);
     }
 
     /**
@@ -179,7 +180,7 @@ public class AttendanceService {
         publishBulkCheckedEvents(attendances, tenantId, false);
 
         log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
-        return buildBulkCheckRes(dojangId, attendances, failures);
+        return buildBulkCheckRes(tenantId, dojangId, attendances, failures);
     }
 
     /**
@@ -203,7 +204,7 @@ public class AttendanceService {
         attendance.changeStatus(status, note);
 
         log.info("출석 상태 변경 - attendanceId: {}, status: {}, dojangId: {}", attendanceId, status, dojangId);
-        return attendanceQueryService.getAttendance(dojangId, attendanceId);
+        return attendanceQueryService.getAttendance(tenantId, dojangId, attendanceId);
     }
 
     /**
@@ -228,7 +229,7 @@ public class AttendanceService {
 
         log.info("출석 시간 변경 - attendanceId: {}, checkinAt: {}, checkoutAt: {}, dojangId: {}",
                 attendanceId, checkinAt, checkoutAt, dojangId);
-        return attendanceQueryService.getAttendance(dojangId, attendanceId);
+        return attendanceQueryService.getAttendance(tenantId, dojangId, attendanceId);
     }
 
     /**
@@ -254,7 +255,7 @@ public class AttendanceService {
 
         log.info("일괄 출석 상태 변경 - dojangId: {}, status: {}, success: {}, failure: {}",
                 dojangId, status, successAttendances.size(), failures.size());
-        return buildBulkCheckRes(dojangId, successAttendances, failures);
+        return buildBulkCheckRes(tenantId, dojangId, successAttendances, failures);
     }
 
     /**
@@ -313,7 +314,7 @@ public class AttendanceService {
      */
     @Transactional
     public int processAutoAbsence(LocalDate date) {
-        List<Student> students = studentRepository.findAllActiveStudentsWithoutAttendance(date);
+        List<StudentMinimalView> students = studentRepository.findAllActiveStudentsWithoutAttendanceMinimal(date);
 
         if (students.isEmpty()) {
             log.info("자동 결석 처리 대상 없음: date={}", date);
@@ -338,18 +339,10 @@ public class AttendanceService {
         return tenantId;
     }
 
-    private Student findStudentInDojang(String studentId, String dojangId, String tenantId) {
-        Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
-                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
-
-        if (!student.getDojangId().equals(dojangId)) {
+    private void validateStudentInDojang(String studentId, String dojangId, String tenantId) {
+        if (!studentRepository.existsActiveByIdAndDojangId(studentId, tenantId, dojangId, StudentStatus.WITHDRAWN)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
         }
-        return student;
-    }
-
-    private void validateStudentInDojang(String studentId, String dojangId, String tenantId) {
-        findStudentInDojang(studentId, dojangId, tenantId);
     }
 
     private Attendance findAttendanceInDojang(String tenantId, String attendanceId, String dojangId) {
@@ -455,12 +448,12 @@ public class AttendanceService {
         return attendances;
     }
 
-    private BulkCheckRes buildBulkCheckRes(String dojangId, List<Attendance> attendances,
+    private BulkCheckRes buildBulkCheckRes(String tenantId, String dojangId, List<Attendance> attendances,
                                             List<BulkCheckFailureRes> failures) {
         List<String> attendanceIds = attendances.stream()
                 .map(Attendance::getId)
                 .toList();
-        List<AttendanceRes> successList = attendanceQueryService.getAttendances(dojangId, attendanceIds);
+        List<AttendanceRes> successList = attendanceQueryService.getAttendances(tenantId, dojangId, attendanceIds);
 
         return BulkCheckRes.builder()
                 .successCount(successList.size())
@@ -509,7 +502,7 @@ public class AttendanceService {
         }
     }
 
-    private List<Attendance> createAbsenceRecords(List<Student> students, LocalDate date) {
+    private List<Attendance> createAbsenceRecords(List<StudentMinimalView> students, LocalDate date) {
         return students.stream()
                 .map(student -> Attendance.createAutoAbsent(
                         student.getTenantId(), student.getDojangId(), student.getId(), date))

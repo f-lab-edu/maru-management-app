@@ -36,7 +36,7 @@ public class InvoiceQueryService {
         InvoiceStudentView view = invoiceRepository.findDetailById(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
 
-        List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(invoiceId)
+        List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(tenantId, dojangId, invoiceId)
                 .stream()
                 .map(PaymentRes::from)
                 .toList();

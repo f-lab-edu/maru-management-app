@@ -30,13 +30,14 @@ public class AttendanceQueryService {
     /**
      * 출석 단건 조회
      *
+     * @param tenantId 테넌트 ID
      * @param dojangId 도장 ID
      * @param attendanceId 출석 기록 ID
      * @return 출석 정보
      * @throws BusinessException NOT_FOUND - 출석 기록을 찾을 수 없는 경우
      */
-    public AttendanceRes getAttendance(String dojangId, String attendanceId) {
-        AttendanceStudentView view = attendanceRepository.findDetailById(attendanceId, dojangId)
+    public AttendanceRes getAttendance(String tenantId, String dojangId, String attendanceId) {
+        AttendanceStudentView view = attendanceRepository.findDetailById(tenantId, dojangId, attendanceId)
                 .orElseThrow(() -> new BusinessException(AttendanceErrorCode.NOT_FOUND));
         return toAttendanceRes(view);
     }
@@ -62,15 +63,16 @@ public class AttendanceQueryService {
     /**
      * 출석 기록 복수 조회
      *
+     * @param tenantId 테넌트 ID
      * @param dojangId 도장 ID
      * @param attendanceIds 출석 기록 ID 목록
      * @return 출석 정보 목록
      */
-    public List<AttendanceRes> getAttendances(String dojangId, List<String> attendanceIds) {
+    public List<AttendanceRes> getAttendances(String tenantId, String dojangId, List<String> attendanceIds) {
         if (attendanceIds.isEmpty()) {
             return List.of();
         }
-        return attendanceRepository.findAllDetailByIds(dojangId, attendanceIds)
+        return attendanceRepository.findAllDetailByIds(tenantId, dojangId, attendanceIds)
                 .stream()
                 .map(this::toAttendanceRes)
                 .toList();
