@@ -93,7 +93,7 @@ public class StudentService {
         }
 
         log.info("원생 수정 - studentId: {}, dojangId: {}", studentId, dojangId);
-        return queryService.getStudent(studentId, dojangId);
+        return queryService.getStudent(dojangId, studentId);
     }
 
     /**
