@@ -1,6 +1,7 @@
 package com.maru.repository.tenant;
 
 import com.maru.domain.tenant.Dojang;
+import com.maru.repository.tenant.view.DojangMinimalView;
 import com.maru.repository.tenant.view.DojangSearchView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -49,4 +50,12 @@ public interface DojangRepository extends JpaRepository<Dojang, String> {
 
     @Query("SELECT d.ownerId FROM Dojang d WHERE d.id = :id")
     Optional<String> findOwnerIdById(@Param("id") String id);
+
+    @Query("""
+        SELECT d.id as id, d.tenantId as tenantId, d.name as name
+        FROM Dojang d
+        WHERE d.id = :id
+          AND d.deletedAt IS NULL
+        """)
+    Optional<DojangMinimalView> findMinimalById(@Param("id") String id);
 }
