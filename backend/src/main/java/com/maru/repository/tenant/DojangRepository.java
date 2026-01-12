@@ -58,6 +58,7 @@ public interface DojangRepository extends JpaRepository<Dojang, String> {
         FROM Dojang d
         WHERE d.id = :id
           AND d.deletedAt IS NULL
+          AND d.isActive = true
         """)
     Optional<DojangMinimalView> findMinimalById(@Param("id") String id);
 }

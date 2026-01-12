@@ -122,6 +122,19 @@ public class DojangSearchIndexer {
         log.debug("도장 인덱스 추가: {}", dojang.getName());
     }
 
+    /**
+     * @param dojangId 도장 ID
+     */
+    public void removeFromIndex(String dojangId) {
+        DojangSearchDto removed = dataCache.remove(dojangId);
+        if (removed == null) {
+            return;
+        }
+
+        invertedIndex.values().forEach(ids -> ids.remove(dojangId));
+        log.debug("도장 인덱스 제거: {}", removed.name());
+    }
+
     private void indexDojangDto(String id, DojangSearchDto dto) {
         dataCache.put(id, dto);
 
