@@ -1,5 +1,7 @@
 package com.maru.service.attendance;
 
+import com.maru.common.aop.SkipDojangValidation;
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.attendance.dto.*;
 import com.maru.domain.attendance.Attendance;
@@ -10,14 +12,12 @@ import com.maru.domain.attendance.exception.AttendanceErrorCode;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.student.view.StudentMinimalView;
-import com.maru.service.enrollment.EnrollmentQueryService;
-import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
+import com.maru.service.enrollment.EnrollmentQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ValidateDojangAccess
 public class AttendanceService {
 
     private static final int MAX_DATE_RANGE_DAYS = 31;
@@ -43,7 +44,6 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
-    private final DojangRepository dojangRepository;
     private final EnrollmentQueryService enrollmentQueryService;
     private final ApplicationEventPublisher eventPublisher;
     private final AttendanceQueryService attendanceQueryService;
@@ -68,7 +68,7 @@ public class AttendanceService {
     @Transactional
     public AttendanceRes checkIn(String dojangId, String studentId, CheckMethod method, AttendanceStatus status,
                                   LocalDate date, LocalDateTime checkinAt, String note) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         validateStudentInDojang(studentId, dojangId, tenantId);
         LocalDate targetDate = resolveTargetDate(date);
 
@@ -99,7 +99,7 @@ public class AttendanceService {
      */
     @Transactional
     public BulkCheckRes bulkCheckIn(String dojangId, List<String> studentIds, CheckMethod method) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
 
         List<Student> validStudents = new ArrayList<>();
         List<BulkCheckFailureRes> failures = new ArrayList<>();
@@ -126,7 +126,7 @@ public class AttendanceService {
      */
     @Transactional
     public AttendanceRes checkOut(String dojangId, String attendanceId) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
 
         attendance.checkOut(LocalDateTime.now());
@@ -150,7 +150,7 @@ public class AttendanceService {
      */
     @Transactional
     public AttendanceRes cancelCheckout(String dojangId, String attendanceId) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
 
         attendance.cancelCheckout();
@@ -170,7 +170,7 @@ public class AttendanceService {
      */
     @Transactional
     public BulkCheckRes bulkCheckOut(String dojangId, List<String> attendanceIds) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
 
         List<Attendance> attendances = findCheckableAttendances(tenantId, dojangId, attendanceIds);
         List<BulkCheckFailureRes> failures = buildNotFoundFailures(attendanceIds, attendances);
@@ -198,7 +198,7 @@ public class AttendanceService {
      */
     @Transactional
     public AttendanceRes changeStatus(String dojangId, String attendanceId, AttendanceStatus status, String note) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
 
         attendance.changeStatus(status, note);
@@ -222,7 +222,7 @@ public class AttendanceService {
      */
     @Transactional
     public AttendanceRes changeTime(String dojangId, String attendanceId, LocalDateTime checkinAt, LocalDateTime checkoutAt) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         Attendance attendance = findAttendanceInDojang(tenantId, attendanceId, dojangId);
 
         attendance.changeTime(checkinAt, checkoutAt);
@@ -245,7 +245,7 @@ public class AttendanceService {
      */
     @Transactional
     public BulkCheckRes bulkChangeStatus(String dojangId, List<String> attendanceIds, AttendanceStatus status, String note) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
 
         List<Attendance> attendances = attendanceRepository.findByTenantIdAndDojangIdAndIdIn(tenantId, dojangId, attendanceIds);
 
@@ -275,7 +275,7 @@ public class AttendanceService {
     @Transactional(readOnly = true)
     public RangeAttendanceRes getAttendanceRange(String dojangId, LocalDate startDate, LocalDate endDate,
                                                   String sectionId, String divisionId) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         validateDateRange(startDate, endDate);
 
         List<String> filteredStudentIds = enrollmentQueryService.getStudentIdsByFilter(dojangId, sectionId, divisionId);
@@ -299,7 +299,7 @@ public class AttendanceService {
      */
     @Transactional(readOnly = true)
     public List<AttendanceRes> getHistory(String dojangId, String studentId, LocalDate startDate, LocalDate endDate) {
-        String tenantId = validateDojangAndGetTenantId(dojangId);
+        String tenantId = TenantContextHolder.getTenantId();
         validateDateRange(startDate, endDate);
         validateStudentInDojang(studentId, dojangId, tenantId);
 
@@ -313,6 +313,7 @@ public class AttendanceService {
      * @return 처리된 결석 건수
      */
     @Transactional
+    @SkipDojangValidation
     public int processAutoAbsence(LocalDate date) {
         List<StudentMinimalView> students = studentRepository.findAllActiveStudentsWithoutAttendanceMinimal(date);
 
@@ -326,17 +327,6 @@ public class AttendanceService {
 
         log.info("자동 결석 처리 완료: date={}, count={}", date, absences.size());
         return absences.size();
-    }
-
-    private String validateDojangAndGetTenantId(String dojangId) {
-        String tenantId = TenantContextHolder.getTenantId();
-        Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
-        return tenantId;
     }
 
     private void validateStudentInDojang(String studentId, String dojangId, String tenantId) {

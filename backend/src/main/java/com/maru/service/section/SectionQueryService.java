@@ -1,5 +1,6 @@
 package com.maru.service.section;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.section.dto.SectionListRes;
 import com.maru.controller.section.dto.SectionRes;
@@ -15,6 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class SectionQueryService {
 
     private final SectionRepository sectionRepository;

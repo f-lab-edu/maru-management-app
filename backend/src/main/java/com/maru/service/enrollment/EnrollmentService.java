@@ -1,18 +1,16 @@
 package com.maru.service.enrollment;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
+import com.maru.domain.enrollment.Enrollment;
 import com.maru.domain.enrollment.exception.EnrollmentErrorCode;
 import com.maru.domain.section.exception.DivisionErrorCode;
-import com.maru.domain.enrollment.Enrollment;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
+import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.student.StudentRepository;
-import com.maru.repository.tenant.DojangRepository;
-import com.maru.repository.tenant.view.DojangMinimalView;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,12 +24,12 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepository;
     private final DivisionRepository divisionRepository;
     private final StudentRepository studentRepository;
-    private final DojangRepository dojangRepository;
 
     /**
      * 원생을 수련반에 등록합니다.
@@ -43,7 +41,6 @@ public class EnrollmentService {
      */
     @Transactional
     public void enrollStudent(String dojangId, String divisionId, String studentId) {
-        validateDojangAccess(dojangId);
         validateDivisionExists(divisionId, dojangId);
         validateStudentExists(studentId);
         validateNotAlreadyEnrolled(dojangId, divisionId, studentId);
@@ -62,7 +59,6 @@ public class EnrollmentService {
      */
     @Transactional
     public void unenrollStudent(String dojangId, String divisionId, String studentId) {
-        validateDojangAccess(dojangId);
         Enrollment enrollment = enrollmentRepository
                 .findByDojangIdAndDivisionIdAndStudentId(dojangId, divisionId, studentId)
                 .orElseThrow(() -> new BusinessException(EnrollmentErrorCode.NOT_ENROLLED));
@@ -80,7 +76,6 @@ public class EnrollmentService {
      */
     @Transactional
     public BulkEnrollmentRes bulkEnrollStudents(String dojangId, String divisionId, List<String> studentIds) {
-        validateDojangAccess(dojangId);
         validateDivisionExists(divisionId, dojangId);
 
         Set<String> alreadyEnrolledIds = findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds);
@@ -125,15 +120,5 @@ public class EnrollmentService {
 
     private Set<String> findAlreadyEnrolledStudentIds(String dojangId, String divisionId, List<String> studentIds) {
         return new HashSet<>(enrollmentRepository.findAlreadyEnrolledStudentIds(dojangId, divisionId, studentIds));
-    }
-
-    private void validateDojangAccess(String dojangId) {
-        String tenantId = TenantContextHolder.getTenantId();
-        DojangMinimalView dojang = dojangRepository.findMinimalById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.maru.service.attendance;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.attendance.dto.AttendanceInfo;
 import com.maru.controller.attendance.dto.AttendanceRes;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class AttendanceQueryService {
 
     private final AttendanceRepository attendanceRepository;

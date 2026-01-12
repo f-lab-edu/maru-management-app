@@ -1,5 +1,6 @@
 package com.maru.service.student;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.GuardianRes;
 import com.maru.controller.student.dto.StudentListRes;
@@ -7,12 +8,9 @@ import com.maru.controller.student.dto.StudentRes;
 import com.maru.controller.student.dto.StudentSummaryRes;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.student.view.StudentDetailView;
 import com.maru.repository.student.view.StudentSummaryView;
-import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentQueryService;
 import com.maru.service.guardian.GuardianQueryService;
@@ -25,10 +23,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class StudentQueryService {
 
     private final StudentRepository studentRepository;
-    private final DojangRepository dojangRepository;
     private final EnrollmentQueryService enrollmentQueryService;
     private final GuardianQueryService guardianQueryService;
 
@@ -42,7 +40,6 @@ public class StudentQueryService {
      */
     public StudentListRes getStudents(String dojangId, String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         boolean hasFilter = sectionId != null || divisionId != null;
 
@@ -79,21 +76,11 @@ public class StudentQueryService {
      */
     public StudentRes getStudent(String dojangId, String studentId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         StudentDetailView view = studentRepository.findDetailById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
 
         return toStudentRes(view, getGuardianResponses(studentId));
-    }
-
-    private void validateDojangAccess(String dojangId, String tenantId) {
-        Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
     }
 
     private List<GuardianRes> getGuardianResponses(String studentId) {

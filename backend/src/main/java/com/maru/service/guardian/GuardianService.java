@@ -1,5 +1,6 @@
 package com.maru.service.guardian;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.GuardianCreateReq;
 import com.maru.controller.student.dto.GuardianRes;
@@ -9,12 +10,9 @@ import com.maru.domain.guardian.Guardianship;
 import com.maru.domain.guardian.exception.GuardianErrorCode;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.guardian.GuardianRepository;
 import com.maru.repository.guardian.GuardianshipRepository;
 import com.maru.repository.student.StudentRepository;
-import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ValidateDojangAccess
 public class GuardianService {
 
     private final GuardianRepository guardianRepository;
     private final GuardianshipRepository guardianshipRepository;
     private final StudentRepository studentRepository;
-    private final DojangRepository dojangRepository;
     private final GuardianQueryService guardianQueryService;
 
     /**
@@ -45,7 +43,6 @@ public class GuardianService {
     @Transactional
     public GuardianRes addGuardian(String dojangId, String studentId, GuardianCreateReq req) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
         validateStudentInDojang(studentId, tenantId, dojangId);
 
         Guardian guardian = findOrCreateGuardian(req.phone(), req.name());
@@ -74,7 +71,6 @@ public class GuardianService {
     @Transactional
     public GuardianRes updateGuardian(String dojangId, String studentId, String guardianId, GuardianUpdateReq req) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
         validateStudentInDojang(studentId, tenantId, dojangId);
 
         Guardianship guardianship = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
@@ -101,7 +97,6 @@ public class GuardianService {
     @Transactional
     public void setPrimaryGuardian(String dojangId, String studentId, String guardianId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
         validateStudentInDojang(studentId, tenantId, dojangId);
 
         Guardianship target = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
@@ -125,7 +120,6 @@ public class GuardianService {
     @Transactional
     public void removeGuardian(String dojangId, String studentId, String guardianId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
         validateStudentInDojang(studentId, tenantId, dojangId);
 
         Guardianship guardianship = guardianshipRepository.findByStudentIdAndGuardianIdAndDeletedAtIsNull(studentId, guardianId)
@@ -139,15 +133,6 @@ public class GuardianService {
     private Guardian findOrCreateGuardian(String phone, String name) {
         return guardianRepository.findByPhoneAndDeletedAtIsNull(phone)
                 .orElseGet(() -> guardianRepository.save(Guardian.create(phone, name)));
-    }
-
-    private void validateDojangAccess(String dojangId, String tenantId) {
-        Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
     }
 
     private void validateStudentInDojang(String studentId, String tenantId, String dojangId) {

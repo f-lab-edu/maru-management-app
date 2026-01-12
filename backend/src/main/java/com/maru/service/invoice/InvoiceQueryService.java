@@ -1,11 +1,12 @@
 package com.maru.service.invoice;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
-import com.maru.domain.invoice.exception.InvoiceErrorCode;
 import com.maru.controller.invoice.dto.InvoiceDetailRes;
 import com.maru.controller.invoice.dto.InvoiceListRes;
 import com.maru.controller.invoice.dto.PaymentRes;
 import com.maru.domain.invoice.InvoiceStatus;
+import com.maru.domain.invoice.exception.InvoiceErrorCode;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.invoice.view.InvoiceStudentView;
@@ -18,6 +19,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class InvoiceQueryService {
 
     private final InvoiceRepository invoiceRepository;

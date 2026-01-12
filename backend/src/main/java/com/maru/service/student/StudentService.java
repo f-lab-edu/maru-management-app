@@ -1,5 +1,6 @@
 package com.maru.service.student;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.student.dto.StudentCreateReq;
 import com.maru.controller.student.dto.StudentRes;
@@ -7,10 +8,8 @@ import com.maru.controller.student.dto.StudentUpdateReq;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.student.StudentRepository;
-import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +22,10 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ValidateDojangAccess
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final DojangRepository dojangRepository;
     private final StudentQueryService queryService;
 
     /**
@@ -41,7 +40,6 @@ public class StudentService {
     @Transactional
     public StudentRes createStudent(String dojangId, StudentCreateReq req, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         Optional<Student> existing = studentRepository.findByDojangIdAndNameAndBirth(dojangId, req.name(), req.birth());
         if (existing.isPresent()) {
@@ -74,7 +72,6 @@ public class StudentService {
     @Transactional
     public StudentRes updateStudent(String dojangId, String studentId, StudentUpdateReq req, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
@@ -108,7 +105,6 @@ public class StudentService {
     @Transactional
     public void deleteStudent(String dojangId, String studentId, String reason, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         Student student = studentRepository.findActiveById(studentId, tenantId, StudentStatus.WITHDRAWN)
                 .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
@@ -128,7 +124,6 @@ public class StudentService {
     @Transactional
     public void bulkDeleteStudents(String dojangId, List<String> studentIds, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
 
         List<Student> students = studentRepository.findAllById(studentIds);
 
@@ -144,14 +139,5 @@ public class StudentService {
         }
 
         log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
-    }
-
-    private void validateDojangAccess(String dojangId, String tenantId) {
-        Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
     }
 }

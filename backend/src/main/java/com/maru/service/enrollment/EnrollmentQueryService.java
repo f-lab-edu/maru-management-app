@@ -1,5 +1,6 @@
 package com.maru.service.enrollment;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
 import com.maru.controller.enrollment.dto.EnrolledStudentRes;
 import com.maru.repository.enrollment.EnrollmentRepository;
@@ -13,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class EnrollmentQueryService {
 
     private final EnrollmentRepository enrollmentRepository;
