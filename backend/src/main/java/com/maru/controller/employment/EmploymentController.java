@@ -111,4 +111,71 @@ public class EmploymentController {
         employmentService.cancel(id, userId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * 사범 목록 조회 (관장 전용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
+     * @return 도장 소속 사범 목록
+     */
+    @GetMapping("/instructors")
+    public ResponseEntity<Void> getInstructors(@CurrentUserId String userId) {
+        throw new UnsupportedOperationException("구현 예정");
+    }
+
+    /**
+     * 사범 상세 조회 (관장 전용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
+     * @param id 조회할 Employment ID
+     * @return 사범 상세 정보 및 권한 목록
+     */
+    @GetMapping("/instructors/{id}")
+    public ResponseEntity<Void> getInstructorDetail(
+            @CurrentUserId String userId,
+            @PathVariable String id) {
+        throw new UnsupportedOperationException("구현 예정");
+    }
+
+    /**
+     * 사범 권한 수정 (관장 전용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
+     * @param id 수정할 Employment ID
+     * @return 수정된 사범 상세 정보
+     */
+    @PatchMapping("/instructors/{id}/permissions")
+    public ResponseEntity<Void> updatePermissions(
+            @CurrentUserId String userId,
+            @PathVariable String id) {
+        throw new UnsupportedOperationException("구현 예정");
+    }
+
+    /**
+     * 사범 권한 기본값 초기화 (관장 전용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
+     * @param id 초기화할 Employment ID
+     * @return 초기화된 사범 상세 정보
+     */
+    @PostMapping("/instructors/{id}/permissions/reset")
+    public ResponseEntity<Void> resetPermissions(
+            @CurrentUserId String userId,
+            @PathVariable String id) {
+        throw new UnsupportedOperationException("구현 예정");
+    }
+
+    /**
+     * 사범 상태 변경 (관장 전용)
+     *
+     * @param userId 현재 인증된 사용자 ID (관장)
+     * @param id 변경할 Employment ID
+     * @return 변경된 사범 상세 정보
+     */
+    @PatchMapping("/instructors/{id}/status")
+    public ResponseEntity<Void> updateInstructorStatus(
+            @CurrentUserId String userId,
+            @PathVariable String id) {
+        throw new UnsupportedOperationException("구현 예정");
+    }
 }
