@@ -4,6 +4,8 @@ import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.permission.PermissionType;
 import com.maru.repository.employment.view.EmploymentDetailView;
+import com.maru.repository.employment.view.InstructorView;
+import com.maru.repository.employment.view.InstructorWithPermissionsView;
 import com.maru.repository.employment.view.MyDojangView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -117,4 +119,44 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
         """)
     List<MyDojangView> findMyDojangViewByUserIdAndStatus(@Param("userId") String userId,
                                                          @Param("status") EmploymentStatus status);
+
+    @Query("""
+        SELECT e.id AS id,
+               e.userId AS userId,
+               u.name AS userName,
+               u.email AS userEmail,
+               u.phone AS userPhone,
+               CAST(e.status AS string) AS status,
+               e.joinedAt AS joinedAt,
+               CASE WHEN e.status = 'SUSPENDED' THEN e.endedAt ELSE NULL END AS suspendedAt
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        JOIN Dojang d ON e.dojangId = d.id
+        WHERE e.tenantId = :tenantId
+          AND e.dojangId = :dojangId
+          AND e.status IN ('ACTIVE', 'SUSPENDED')
+          AND e.userId != d.ownerId
+        ORDER BY e.joinedAt DESC
+        """)
+    List<InstructorView> findInstructorsByDojangId(@Param("tenantId") String tenantId,
+                                                    @Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT e.id AS id,
+               e.userId AS userId,
+               u.name AS userName,
+               u.email AS userEmail,
+               u.phone AS userPhone,
+               CAST(e.status AS string) AS status,
+               e.joinedAt AS joinedAt,
+               CASE WHEN e.status = 'SUSPENDED' THEN e.endedAt ELSE NULL END AS suspendedAt,
+               e.permissions AS permissions
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        WHERE e.tenantId = :tenantId
+          AND e.id = :employmentId
+        """)
+    Optional<InstructorWithPermissionsView> findInstructorWithPermissionsById(
+            @Param("tenantId") String tenantId,
+            @Param("employmentId") String employmentId);
 }
