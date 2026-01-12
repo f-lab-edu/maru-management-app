@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -162,6 +164,92 @@ public class EmploymentService {
             log.warn("PENDING 상태가 아닌 요청 처리 시도: employmentId={}, currentStatus={}",
                     employment.getId(), employment.getStatus());
             throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
+        }
+    }
+
+    /**
+     * 사범 권한 수정 (관장용)
+     *
+     * @param employmentId 고용 ID
+     * @param permissions 새로운 권한 목록
+     * @param ownerId 관장 ID
+     */
+    @Transactional
+    public void updatePermissions(String employmentId, Set<PermissionType> permissions, String ownerId) {
+        Employment employment = getEmploymentById(employmentId);
+        validateInstructorModification(employment, ownerId);
+
+        employment.replacePermissions(permissions);
+        evictCache(employment);
+
+        log.info("사범 권한 수정: employmentId={}, ownerId={}, permissions={}",
+                employmentId, ownerId, permissions);
+    }
+
+    /**
+     * 사범 권한 기본값 초기화 (관장용)
+     *
+     * @param employmentId 고용 ID
+     * @param ownerId 관장 ID
+     */
+    @Transactional
+    public void resetPermissions(String employmentId, String ownerId) {
+        Employment employment = getEmploymentById(employmentId);
+        validateInstructorModification(employment, ownerId);
+
+        employment.resetToDefaultPermissions();
+        evictCache(employment);
+
+        log.info("사범 권한 초기화: employmentId={}, ownerId={}", employmentId, ownerId);
+    }
+
+    /**
+     * 사범 상태 변경 (관장용)
+     *
+     * @param employmentId 고용 ID
+     * @param status 변경할 상태
+     * @param reason 변경 사유
+     * @param ownerId 관장 ID
+     */
+    @Transactional
+    public void updateInstructorStatus(String employmentId, EmploymentStatus status, String reason, String ownerId) {
+        Employment employment = getEmploymentById(employmentId);
+        validateInstructorModification(employment, ownerId);
+
+        applyStatusTransition(employment, status);
+        evictCache(employment);
+
+        log.info("사범 상태 변경: employmentId={}, status={}, reason={}, ownerId={}",
+                employmentId, status, reason, ownerId);
+    }
+
+    private void validateInstructorModification(Employment employment, String ownerId) {
+        validateOwnerPermission(employment, ownerId);
+        validateNotOwner(employment);
+    }
+
+    private void applyStatusTransition(Employment employment, EmploymentStatus status) {
+        if (status == EmploymentStatus.SUSPENDED) {
+            employment.suspend();
+        } else if (status == EmploymentStatus.ACTIVE) {
+            employment.reactivate();
+        } else {
+            throw new BusinessException(EmploymentErrorCode.INVALID_STATUS_TRANSITION);
+        }
+    }
+
+    private void evictCache(Employment employment) {
+        dojangAccessValidator.evictEmploymentCache(employment.getUserId(), employment.getDojangId());
+    }
+
+    private void validateNotOwner(Employment employment) {
+        String actualOwnerId = dojangRepository.findOwnerIdById(employment.getDojangId())
+                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
+
+        if (actualOwnerId.equals(employment.getUserId())) {
+            log.warn("관장 자기수정 시도: employmentId={}, userId={}",
+                    employment.getId(), employment.getUserId());
+            throw new BusinessException(EmploymentErrorCode.CANNOT_MODIFY_OWNER);
         }
     }
 
