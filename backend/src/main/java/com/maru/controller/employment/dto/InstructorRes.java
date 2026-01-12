@@ -13,14 +13,6 @@ public record InstructorRes(
         String phone,
         String status,
         LocalDateTime joinedAt,
-        LocalDateTime suspendedAt,
-        PermissionSummary permissionSummary
+        LocalDateTime suspendedAt
 ) {
-
-    @Builder
-    public record PermissionSummary(
-            int total,
-            int granted
-    ) {
-    }
 }

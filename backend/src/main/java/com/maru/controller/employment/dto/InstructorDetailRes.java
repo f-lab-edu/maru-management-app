@@ -15,7 +15,6 @@ public record InstructorDetailRes(
         String status,
         LocalDateTime joinedAt,
         LocalDateTime suspendedAt,
-        InstructorRes.PermissionSummary permissionSummary,
         Set<String> permissions
 ) {
 }
