@@ -8,19 +8,18 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
  * 도장 접근 검증 AOP
  *
- * @Transactional보다 먼저 실행되어 권한 없는 요청이 DB 커넥션을 점유하지 않도록 함
+ * @see AopOrder
  */
 @Slf4j
 @Aspect
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(AopOrder.SECURITY_VALIDATION)
 @RequiredArgsConstructor
 public class DojangAccessAspect {
 
