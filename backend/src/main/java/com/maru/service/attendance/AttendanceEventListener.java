@@ -31,7 +31,7 @@ public class AttendanceEventListener {
     public void onAttendanceChecked(AttendanceCheckedEvent event) {
         try {
             List<String> messageIds = createNotificationMessages(event);
-            messageDispatcher.sendBatchAsync(messageIds, event.tenantId());
+            messageDispatcher.sendBatchAsync(messageIds);
             log.info("출석 알림 생성 완료: attendanceId={}, isCheckin={}, messageCount={}", event.attendanceId(), event.isCheckin(), messageIds.size());
         } catch (Exception e) {
             log.error("알림 생성 실패 (출석 기록 보존됨): attendanceId={}", event.attendanceId(), e);
