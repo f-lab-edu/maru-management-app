@@ -78,7 +78,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtUtil.parseClaims(token);
             JwtClaims jwtClaims = JwtClaims.fromJwt(claims);
 
-            try (AutoCloseable ignored = TenantContextHolder.withTenant(jwtClaims.tenantId());
+            try (AutoCloseable ignored = TenantContextHolder.withContext(
+                        jwtClaims.tenantId(), jwtClaims.userId(), jwtClaims.dojangId());
                  MDC.MDCCloseable mdcUserId = MDC.putCloseable("userId", String.valueOf(jwtClaims.userId()))) {
 
                 List<SimpleGrantedAuthority> authorities = List.of(
