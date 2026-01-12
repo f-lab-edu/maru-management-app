@@ -3,6 +3,7 @@ package com.maru.config;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import com.maru.security.TenantContextHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -11,8 +12,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class AsyncConfig {
 
-    // TODO: application.yml의 spring.threads.virtual.enabled=true 방식으로 전환할지 고려해보기. 웹 요청 전체가 가상 스레드로 바뀌므로 테스트 필요.
-
     /**
      * 가상 스레드 기반 Executor
      *
@@ -20,6 +19,22 @@ public class AsyncConfig {
      */
     @Bean
     public Executor taskExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+        Executor virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+        return runnable -> {
+            TenantContextHolder.ContextInfo context = TenantContextHolder.getContextInfo();
+
+            virtualExecutor.execute(() -> {
+                if (context != null) {
+                    try (AutoCloseable ignored = TenantContextHolder.withContext(context)) {
+                        runnable.run();
+                    } catch (Exception e) {
+                        throw new RuntimeException("비동기 작업 실행 중 오류 발생", e);
+                    }
+                } else {
+                    runnable.run();
+                }
+            });
+        };
     }
 }
