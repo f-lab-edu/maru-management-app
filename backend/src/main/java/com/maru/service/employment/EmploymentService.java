@@ -11,6 +11,7 @@ import com.maru.domain.user.OnboardingStep;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.view.DojangMinimalView;
+import com.maru.security.DojangAccessValidator;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class EmploymentService {
     private final DojangRepository dojangRepository;
     private final UserService userService;
     private final EmploymentQueryService queryService;
+    private final DojangAccessValidator dojangAccessValidator;
 
     /**
      * 사범이 도장에 승인 요청 (거절/퇴사 후 재요청 시 기존 레코드 재활용)
@@ -86,6 +88,8 @@ public class EmploymentService {
         grantDefaultPermissions(employment);
 
         userService.updateOnboardingStep(employment.getUserId(), OnboardingStep.COMPLETED);
+
+        dojangAccessValidator.evictEmploymentCache(employment.getUserId(), employment.getDojangId());
 
         log.info("승인 요청 승인: employmentId={}, ownerId={}, userId={}",
                 employmentId, ownerId, employment.getUserId());
