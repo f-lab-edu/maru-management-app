@@ -121,6 +121,17 @@ public class Employment extends BaseEntity {
         return this.permissions.contains(permission);
     }
 
+
+    public void replacePermissions(Set<PermissionType> newPermissions) {
+        this.permissions.clear();
+        this.permissions.addAll(newPermissions);
+    }
+
+    public void resetToDefaultPermissions() {
+        this.permissions.clear();
+        this.permissions.addAll(PermissionType.getDefaultPermissions());
+    }
+
     private void validateNotNull(String userId, String tenantId, String dojangId) {
         DomainAssert.notNull(userId, EmploymentErrorCode.USER_REQUIRED);
         DomainAssert.notNull(tenantId, EmploymentErrorCode.TENANT_REQUIRED);
