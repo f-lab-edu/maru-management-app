@@ -81,7 +81,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
     // ============== Caching ==============
-    // Caffeine Cache (Spring Boot BOM manages version)
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // ============== External Services ==============
