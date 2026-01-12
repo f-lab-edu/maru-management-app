@@ -35,7 +35,6 @@ public enum PermissionType {
     // 도장 관리
     DOJANG_UPDATE_INFO("dojang", "updateInfo", "도장 정보 수정", false),
     DOJANG_MANAGE_CLASS("dojang", "manageClass", "수련반 관리", true),
-    DOJANG_MANAGE_PROMOTION("dojang", "managePromotion", "승급 관리", true),
 
     // 통계
     STATS_VIEW_DASHBOARD("stats", "viewDashboard", "대시보드 조회", true);
