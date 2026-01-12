@@ -43,6 +43,8 @@ public interface DojangRepository extends JpaRepository<Dojang, String> {
         """, nativeQuery = true)
     List<DojangSearchView> findByKeywordFullText(@Param("keyword") String keyword);
 
+    boolean existsByIdAndIsActiveTrue(String id);
+
     Optional<Dojang> findByOwnerId(String ownerId);
 
     @Query("SELECT d.id FROM Dojang d WHERE d.ownerId = :ownerId AND d.deletedAt IS NULL")

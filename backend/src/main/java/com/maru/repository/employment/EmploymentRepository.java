@@ -40,6 +40,8 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
 
     Optional<Employment> findByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);
 
+    boolean existsByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);
+
     @Query("""
         SELECT e.id AS id,
                e.userId AS userId,
