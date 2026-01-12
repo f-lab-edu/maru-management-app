@@ -1,4 +1,4 @@
-package com.maru.domain.division.exception;
+package com.maru.domain.section.exception;
 
 import com.maru.common.exception.BaseErrorCode;
 import lombok.Getter;

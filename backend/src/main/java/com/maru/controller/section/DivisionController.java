@@ -1,13 +1,13 @@
-package com.maru.controller.division;
+package com.maru.controller.section;
 
-import com.maru.controller.division.dto.DivisionCreateReq;
-import com.maru.controller.division.dto.DivisionDetailRes;
-import com.maru.controller.division.dto.DivisionListRes;
-import com.maru.controller.division.dto.DivisionReorderReq;
-import com.maru.controller.division.dto.DivisionRes;
-import com.maru.controller.division.dto.DivisionUpdateReq;
-import com.maru.service.division.DivisionQueryService;
-import com.maru.service.division.DivisionService;
+import com.maru.controller.section.dto.DivisionCreateReq;
+import com.maru.controller.section.dto.DivisionDetailRes;
+import com.maru.controller.section.dto.DivisionListRes;
+import com.maru.controller.section.dto.DivisionReorderReq;
+import com.maru.controller.section.dto.DivisionRes;
+import com.maru.controller.section.dto.DivisionUpdateReq;
+import com.maru.service.section.DivisionQueryService;
+import com.maru.service.section.DivisionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.maru.service.invoice;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.InvoiceErrorCode;
+import com.maru.domain.invoice.exception.InvoiceErrorCode;
 import com.maru.controller.invoice.dto.InvoiceDetailRes;
 import com.maru.controller.invoice.dto.InvoiceListRes;
 import com.maru.controller.invoice.dto.PaymentRes;

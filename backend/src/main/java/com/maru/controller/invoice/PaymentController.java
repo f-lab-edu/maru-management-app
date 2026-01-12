@@ -1,4 +1,4 @@
-package com.maru.controller.payment;
+package com.maru.controller.invoice;
 
 import com.maru.controller.invoice.dto.PaymentStatisticsRes;
 import com.maru.controller.invoice.dto.StudentPaymentHistoryRes;

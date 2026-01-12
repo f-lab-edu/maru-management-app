@@ -2,7 +2,7 @@ package com.maru.domain.invoice;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.DomainAssert;
-import com.maru.common.exception.PaymentErrorCode;
+import com.maru.domain.invoice.exception.PaymentErrorCode;
 import com.maru.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

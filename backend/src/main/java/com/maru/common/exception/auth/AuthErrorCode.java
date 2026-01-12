@@ -1,5 +1,6 @@
-package com.maru.common.exception;
+package com.maru.common.exception.auth;
 
+import com.maru.common.exception.BaseErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

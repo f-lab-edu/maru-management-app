@@ -1,8 +1,8 @@
-package com.maru.repository.division;
+package com.maru.repository.section;
 
-import com.maru.domain.division.Division;
-import com.maru.repository.division.view.DivisionCountBySectionView;
-import com.maru.repository.division.view.DivisionView;
+import com.maru.domain.section.Division;
+import com.maru.repository.section.view.DivisionCountBySectionView;
+import com.maru.repository.section.view.DivisionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

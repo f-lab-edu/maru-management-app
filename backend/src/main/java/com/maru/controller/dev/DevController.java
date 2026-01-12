@@ -2,13 +2,12 @@ package com.maru.controller.dev;
 
 // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
 
-import com.maru.common.exception.AuthErrorCode;
+import com.maru.common.exception.auth.AuthErrorCode;
 import com.maru.common.exception.BusinessException;
 import com.maru.common.util.CookieUtil;
 import com.maru.common.util.JwtUtil;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.controller.dev.dto.CreateTestUserReq;
-import com.maru.domain.tenant.Dojang;
 import com.maru.domain.user.User;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.user.UserRepository;

@@ -1,7 +1,7 @@
 package com.maru.service.user;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.OnboardingErrorCode;
+import com.maru.domain.user.exception.OnboardingErrorCode;
 import com.maru.domain.user.*;
 import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.user.OAuthAccountRepository;

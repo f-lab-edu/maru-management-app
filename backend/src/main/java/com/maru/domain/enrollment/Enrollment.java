@@ -1,7 +1,7 @@
 package com.maru.domain.enrollment;
 
 import com.maru.common.exception.DomainAssert;
-import com.maru.common.exception.EnrollmentErrorCode;
+import com.maru.domain.enrollment.exception.EnrollmentErrorCode;
 import com.maru.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

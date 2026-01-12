@@ -1,15 +1,15 @@
-package com.maru.service.division;
+package com.maru.service.section;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.controller.division.dto.DivisionCreateReq;
-import com.maru.controller.division.dto.DivisionReorderReq;
-import com.maru.controller.division.dto.DivisionRes;
-import com.maru.controller.division.dto.DivisionUpdateReq;
-import com.maru.domain.division.Division;
-import com.maru.domain.division.exception.DivisionErrorCode;
+import com.maru.controller.section.dto.DivisionCreateReq;
+import com.maru.controller.section.dto.DivisionReorderReq;
+import com.maru.controller.section.dto.DivisionRes;
+import com.maru.controller.section.dto.DivisionUpdateReq;
+import com.maru.domain.section.Division;
+import com.maru.domain.section.exception.DivisionErrorCode;
 import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
-import com.maru.repository.division.DivisionRepository;
+import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.section.SectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

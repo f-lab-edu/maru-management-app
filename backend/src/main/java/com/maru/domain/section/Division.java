@@ -1,9 +1,8 @@
-package com.maru.domain.division;
+package com.maru.domain.section;
 
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
-import com.maru.domain.division.exception.DivisionErrorCode;
-import com.maru.domain.section.Section;
+import com.maru.domain.section.exception.DivisionErrorCode;
 import com.maru.common.converter.ScheduleDaysConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;

@@ -1,5 +1,8 @@
 package com.maru.common.exception;
 
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
+import com.maru.common.exception.sms.SmsVerificationException;
 import com.maru.controller.common.ErrorRes;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

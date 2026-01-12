@@ -1,8 +1,8 @@
 package com.maru.service.sms;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.SmsErrorCode;
-import com.maru.common.exception.SmsVerificationException;
+import com.maru.common.exception.sms.SmsErrorCode;
+import com.maru.common.exception.sms.SmsVerificationException;
 import com.maru.common.util.MaskingUtil;
 import com.maru.config.properties.SmsVerificationProperties;
 import lombok.RequiredArgsConstructor;

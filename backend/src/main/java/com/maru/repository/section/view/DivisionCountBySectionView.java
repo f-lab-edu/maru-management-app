@@ -1,4 +1,4 @@
-package com.maru.repository.division.view;
+package com.maru.repository.section.view;
 
 public interface DivisionCountBySectionView {
     String getSectionId();

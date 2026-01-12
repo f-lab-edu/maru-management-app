@@ -1,7 +1,7 @@
 package com.maru.security;
 
-import com.maru.common.exception.AuthErrorCode;
-import com.maru.common.exception.AuthException;
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
 import com.maru.common.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;

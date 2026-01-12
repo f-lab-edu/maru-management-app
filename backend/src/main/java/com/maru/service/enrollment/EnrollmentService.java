@@ -2,13 +2,13 @@ package com.maru.service.enrollment;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
-import com.maru.common.exception.EnrollmentErrorCode;
-import com.maru.domain.division.exception.DivisionErrorCode;
+import com.maru.domain.enrollment.exception.EnrollmentErrorCode;
+import com.maru.domain.section.exception.DivisionErrorCode;
 import com.maru.domain.enrollment.Enrollment;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.repository.division.DivisionRepository;
+import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.enrollment.EnrollmentRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;

@@ -1,7 +1,7 @@
 package com.maru.service.sms.provider;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.SmsErrorCode;
+import com.maru.common.exception.sms.SmsErrorCode;
 import com.maru.config.properties.SmsProperties;
 import com.maru.service.sms.SmsService;
 import com.solapi.sdk.SolapiClient;

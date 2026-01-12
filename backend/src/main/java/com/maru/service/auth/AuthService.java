@@ -1,7 +1,7 @@
 package com.maru.service.auth;
 
-import com.maru.common.exception.AuthErrorCode;
-import com.maru.common.exception.AuthException;
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.domain.employment.Employment;

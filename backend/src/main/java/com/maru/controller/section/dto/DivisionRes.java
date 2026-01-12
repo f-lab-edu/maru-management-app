@@ -1,7 +1,7 @@
-package com.maru.controller.division.dto;
+package com.maru.controller.section.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.maru.domain.division.Division;
+import com.maru.domain.section.Division;
 import lombok.Builder;
 
 import java.time.DayOfWeek;

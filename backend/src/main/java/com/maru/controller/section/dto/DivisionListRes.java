@@ -1,4 +1,4 @@
-package com.maru.controller.division.dto;
+package com.maru.controller.section.dto;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.maru.repository.division.view;
+package com.maru.repository.section.view;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;

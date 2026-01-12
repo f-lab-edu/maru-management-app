@@ -1,7 +1,7 @@
 package com.maru.service.tenant;
 
 import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.OnboardingErrorCode;
+import com.maru.domain.user.exception.OnboardingErrorCode;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
