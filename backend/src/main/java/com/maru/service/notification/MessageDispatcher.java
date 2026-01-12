@@ -2,7 +2,6 @@ package com.maru.service.notification;
 
 import com.maru.domain.message.MessageQueue;
 import com.maru.repository.message.MessageQueueRepository;
-import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -25,23 +24,14 @@ public class MessageDispatcher {
     /**
      * 비동기 메시지 배치 발송
      *
-     * @Async는 새 스레드에서 실행되므로 ThreadLocal(TenantContext) 전파가 안 됨.
-     * tenantId를 파라미터로 받아 명시적으로 설정.
-     *
      * @param messageIds 발송할 메시지 ID 목록
-     * @param tenantId   테넌트 ID
      */
     @Async
-    public void sendBatchAsync(List<String> messageIds, String tenantId) {
+    public void sendBatchAsync(List<String> messageIds) {
         if (messageIds == null || messageIds.isEmpty()) {
             return;
         }
-
-        try (AutoCloseable ignored = TenantContextHolder.withTenant(tenantId)) {
-            trySendBatch(messageIds);
-        } catch (Exception e) {
-            log.error("배치 발송 중 예외 발생: messageCount={}", messageIds.size(), e);
-        }
+        trySendBatch(messageIds);
     }
 
     private void trySendBatch(List<String> messageIds) {
