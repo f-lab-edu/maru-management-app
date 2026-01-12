@@ -1,11 +1,16 @@
 package com.maru.controller.employment;
 
 import com.maru.controller.employment.dto.EmploymentRes;
+import com.maru.controller.employment.dto.InstructorDetailRes;
+import com.maru.controller.employment.dto.InstructorRes;
 import com.maru.controller.employment.dto.PendingApprovalRes;
+import com.maru.controller.employment.dto.PermissionUpdateReq;
+import com.maru.controller.employment.dto.StatusUpdateReq;
 import com.maru.security.CurrentUserId;
 import com.maru.service.employment.EmploymentQueryService;
 import com.maru.service.employment.EmploymentService;
 import com.maru.service.tenant.DojangQueryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -119,8 +124,10 @@ public class EmploymentController {
      * @return 도장 소속 사범 목록
      */
     @GetMapping("/instructors")
-    public ResponseEntity<Void> getInstructors(@CurrentUserId String userId) {
-        throw new UnsupportedOperationException("구현 예정");
+    public ResponseEntity<List<InstructorRes>> getInstructors(@CurrentUserId String userId) {
+        String dojangId = dojangQueryService.getDojangIdByOwnerId(userId);
+        List<InstructorRes> results = employmentQueryService.getInstructors(dojangId);
+        return ResponseEntity.ok(results);
     }
 
     /**
@@ -131,10 +138,11 @@ public class EmploymentController {
      * @return 사범 상세 정보 및 권한 목록
      */
     @GetMapping("/instructors/{id}")
-    public ResponseEntity<Void> getInstructorDetail(
+    public ResponseEntity<InstructorDetailRes> getInstructorDetail(
             @CurrentUserId String userId,
             @PathVariable String id) {
-        throw new UnsupportedOperationException("구현 예정");
+        InstructorDetailRes result = employmentQueryService.getInstructorDetail(id);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -142,13 +150,16 @@ public class EmploymentController {
      *
      * @param userId 현재 인증된 사용자 ID (관장)
      * @param id 수정할 Employment ID
+     * @param req 권한 수정 요청
      * @return 수정된 사범 상세 정보
      */
     @PatchMapping("/instructors/{id}/permissions")
-    public ResponseEntity<Void> updatePermissions(
+    public ResponseEntity<InstructorDetailRes> updatePermissions(
             @CurrentUserId String userId,
-            @PathVariable String id) {
-        throw new UnsupportedOperationException("구현 예정");
+            @PathVariable String id,
+            @Valid @RequestBody PermissionUpdateReq req) {
+        InstructorDetailRes result = employmentService.updatePermissions(id, req.permissions(), userId);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -159,10 +170,11 @@ public class EmploymentController {
      * @return 초기화된 사범 상세 정보
      */
     @PostMapping("/instructors/{id}/permissions/reset")
-    public ResponseEntity<Void> resetPermissions(
+    public ResponseEntity<InstructorDetailRes> resetPermissions(
             @CurrentUserId String userId,
             @PathVariable String id) {
-        throw new UnsupportedOperationException("구현 예정");
+        InstructorDetailRes result = employmentService.resetPermissions(id, userId);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -170,12 +182,15 @@ public class EmploymentController {
      *
      * @param userId 현재 인증된 사용자 ID (관장)
      * @param id 변경할 Employment ID
+     * @param req 상태 변경 요청
      * @return 변경된 사범 상세 정보
      */
     @PatchMapping("/instructors/{id}/status")
-    public ResponseEntity<Void> updateInstructorStatus(
+    public ResponseEntity<InstructorDetailRes> updateInstructorStatus(
             @CurrentUserId String userId,
-            @PathVariable String id) {
-        throw new UnsupportedOperationException("구현 예정");
+            @PathVariable String id,
+            @Valid @RequestBody StatusUpdateReq req) {
+        InstructorDetailRes result = employmentService.updateInstructorStatus(id, req.status(), req.reason(), userId);
+        return ResponseEntity.ok(result);
     }
 }

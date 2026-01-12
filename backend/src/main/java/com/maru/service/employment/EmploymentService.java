@@ -2,6 +2,7 @@ package com.maru.service.employment;
 
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.employment.dto.EmploymentRes;
+import com.maru.controller.employment.dto.InstructorDetailRes;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.employment.exception.EmploymentErrorCode;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -171,19 +173,22 @@ public class EmploymentService {
      * 사범 권한 수정 (관장용)
      *
      * @param employmentId 고용 ID
-     * @param permissions 새로운 권한 목록
+     * @param permissionNames 새로운 권한 이름 목록
      * @param ownerId 관장 ID
+     * @return 수정된 사범 상세 정보
      */
     @Transactional
-    public void updatePermissions(String employmentId, Set<PermissionType> permissions, String ownerId) {
+    public InstructorDetailRes updatePermissions(String employmentId, Set<String> permissionNames, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateInstructorModification(employment, ownerId);
 
+        Set<PermissionType> permissions = toPermissionTypes(permissionNames);
         employment.replacePermissions(permissions);
         evictCache(employment);
 
         log.info("사범 권한 수정: employmentId={}, ownerId={}, permissions={}",
                 employmentId, ownerId, permissions);
+        return queryService.getInstructorDetail(employmentId);
     }
 
     /**
@@ -191,9 +196,10 @@ public class EmploymentService {
      *
      * @param employmentId 고용 ID
      * @param ownerId 관장 ID
+     * @return 초기화된 사범 상세 정보
      */
     @Transactional
-    public void resetPermissions(String employmentId, String ownerId) {
+    public InstructorDetailRes resetPermissions(String employmentId, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateInstructorModification(employment, ownerId);
 
@@ -201,26 +207,30 @@ public class EmploymentService {
         evictCache(employment);
 
         log.info("사범 권한 초기화: employmentId={}, ownerId={}", employmentId, ownerId);
+        return queryService.getInstructorDetail(employmentId);
     }
 
     /**
      * 사범 상태 변경 (관장용)
      *
      * @param employmentId 고용 ID
-     * @param status 변경할 상태
+     * @param statusName 변경할 상태 이름
      * @param reason 변경 사유
      * @param ownerId 관장 ID
+     * @return 변경된 사범 상세 정보
      */
     @Transactional
-    public void updateInstructorStatus(String employmentId, EmploymentStatus status, String reason, String ownerId) {
+    public InstructorDetailRes updateInstructorStatus(String employmentId, String statusName, String reason, String ownerId) {
         Employment employment = getEmploymentById(employmentId);
         validateInstructorModification(employment, ownerId);
 
+        EmploymentStatus status = EmploymentStatus.valueOf(statusName);
         applyStatusTransition(employment, status);
         evictCache(employment);
 
         log.info("사범 상태 변경: employmentId={}, status={}, reason={}, ownerId={}",
                 employmentId, status, reason, ownerId);
+        return queryService.getInstructorDetail(employmentId);
     }
 
     private void validateInstructorModification(Employment employment, String ownerId) {
@@ -240,6 +250,12 @@ public class EmploymentService {
 
     private void evictCache(Employment employment) {
         dojangAccessValidator.evictEmploymentCache(employment.getUserId(), employment.getDojangId());
+    }
+
+    private Set<PermissionType> toPermissionTypes(Set<String> permissionNames) {
+        return permissionNames.stream()
+                .map(PermissionType::valueOf)
+                .collect(Collectors.toSet());
     }
 
     private void validateNotOwner(Employment employment) {
