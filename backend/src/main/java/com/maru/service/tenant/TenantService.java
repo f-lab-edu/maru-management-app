@@ -12,7 +12,9 @@ import com.maru.domain.user.UserRole;
 import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.repository.tenant.TenantRepository;
+import com.maru.security.DojangAccessValidator;
 import com.maru.service.search.dojang.DojangSearchService;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class TenantService {
     private final DojangRepository dojangRepository;
     private final EmploymentRepository employmentRepository;
     private final DojangSearchService dojangSearchService;
+    private final DojangAccessValidator dojangAccessValidator;
 
     /**
      * 테넌트와 도장을 생성하고 관장 권한을 부여
@@ -92,5 +95,37 @@ public class TenantService {
 
     private void grantOwnerPermissions(Employment employment) {
         PermissionType.getAllPermissions().forEach(employment::grantPermission);
+    }
+
+    /**
+     * 테넌트 비활성화
+     *
+     * @param tenantId 테넌트 ID
+     */
+    @Transactional
+    public void deactivate(String tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
+
+        tenant.deactivate();
+        dojangAccessValidator.evictTenantActiveCache(tenantId);
+
+        log.info("테넌트 비활성화: tenantId={}", tenantId);
+    }
+
+    /**
+     * 테넌트 활성화
+     *
+     * @param tenantId 테넌트 ID
+     */
+    @Transactional
+    public void activate(String tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
+
+        tenant.activate();
+        dojangAccessValidator.evictTenantActiveCache(tenantId);
+
+        log.info("테넌트 활성화: tenantId={}", tenantId);
     }
 }
