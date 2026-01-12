@@ -80,6 +80,10 @@ dependencies {
     // SpringDoc OpenAPI (Swagger UI)
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
+    // ============== Caching ==============
+    // Caffeine Cache (Spring Boot BOM manages version)
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // ============== External Services ==============
     // Solapi SMS SDK
     implementation 'com.solapi:sdk:1.0.3'
