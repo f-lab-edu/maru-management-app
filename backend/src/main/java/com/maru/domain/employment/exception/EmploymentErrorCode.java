@@ -28,7 +28,9 @@ public enum EmploymentErrorCode implements BaseErrorCode {
     NOT_SUSPENDED(HttpStatus.BAD_REQUEST, "EMPLOYMENT_304", "정지 상태의 고용만 재활성화할 수 있습니다"),
     NOT_ACTIVE_OR_SUSPENDED(HttpStatus.BAD_REQUEST, "EMPLOYMENT_305", "활성 또는 정지 상태의 고용만 퇴사 처리할 수 있습니다"),
     NOT_LEFT_OR_REJECTED(HttpStatus.BAD_REQUEST, "EMPLOYMENT_306", "퇴사 또는 거절 상태의 고용만 재입사 처리할 수 있습니다"),
-    TENANT_MISMATCH(HttpStatus.BAD_REQUEST, "EMPLOYMENT_307", "도장의 Tenant와 입력된 Tenant가 일치하지 않습니다");
+    TENANT_MISMATCH(HttpStatus.BAD_REQUEST, "EMPLOYMENT_307", "도장의 Tenant와 입력된 Tenant가 일치하지 않습니다"),
+    CANNOT_MODIFY_OWNER(HttpStatus.FORBIDDEN, "EMPLOYMENT_308", "관장은 자신의 상태/권한을 수정할 수 없습니다"),
+    INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "EMPLOYMENT_309", "유효하지 않은 상태 변경입니다");
 
     private final HttpStatus status;
     private final String code;
