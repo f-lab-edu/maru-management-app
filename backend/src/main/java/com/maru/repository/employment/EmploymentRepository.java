@@ -27,20 +27,10 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
 
     List<Employment> findByUserIdAndStatus(String userId, EmploymentStatus status);
 
-    @Query("""
-        SELECT e.permissions
-        FROM Employment e
-        WHERE e.userId = :userId
-          AND e.tenantId = :tenantId
-          AND e.dojangId = :dojangId
-          AND e.status = :status
-        """)
-    Set<PermissionType> findPermissions(@Param("userId") String userId,
-                                        @Param("tenantId") String tenantId,
-                                        @Param("dojangId") String dojangId,
-                                        @Param("status") EmploymentStatus status);
-
     Optional<Employment> findByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);
+
+    Optional<Employment> findByUserIdAndTenantIdAndDojangIdAndStatus(
+            String userId, String tenantId, String dojangId, EmploymentStatus status);
 
     boolean existsByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);
 
