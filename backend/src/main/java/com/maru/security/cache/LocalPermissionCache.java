@@ -13,15 +13,22 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * 로컬 메모리 기반 권한 캐시 구현체
+ * Caffeine 캐시를 사용하여 DB 조회 결과를 로컬 메모리에 캐싱
+ *
+ * @see PermissionCache
+ * @see CacheConfig#DOJANG_PERMISSIONS_CACHE
+ */
 @Slf4j
 @Component
-public class DatabasePermissionCache implements PermissionCache {
+public class LocalPermissionCache implements PermissionCache {
 
     private final EmploymentRepository employmentRepository;
     private final Cache cache;
 
-    public DatabasePermissionCache(EmploymentRepository employmentRepository,
-                                   CacheManager cacheManager) {
+    public LocalPermissionCache(EmploymentRepository employmentRepository,
+                                CacheManager cacheManager) {
         this.employmentRepository = employmentRepository;
         Cache resolved = cacheManager.getCache(CacheConfig.DOJANG_PERMISSIONS_CACHE);
         if (resolved == null) {
