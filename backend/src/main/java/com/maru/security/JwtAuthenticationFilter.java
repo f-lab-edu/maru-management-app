@@ -70,7 +70,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
             if (validationResult != JwtUtil.TokenValidationResult.VALID) {
-                log.warn("유효하지 않은 JWT 토큰: {}, 상태: {}", request.getRequestURI(), validationResult);
+                log.warn("유효하지 않은 JWT 토큰: uri={}, 상태={}, IP={}",
+                        request.getRequestURI(), validationResult, request.getRemoteAddr());
+                SecurityContextHolder.clearContext();
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -79,7 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             JwtClaims jwtClaims = JwtClaims.fromJwt(claims);
 
             try (AutoCloseable ignored = TenantContextHolder.withContext(
-                        jwtClaims.tenantId(), jwtClaims.userId(), jwtClaims.dojangId());
+                        jwtClaims.tenantId(), jwtClaims.userId(), jwtClaims.dojangId(), jwtClaims.role());
                  MDC.MDCCloseable mdcUserId = MDC.putCloseable("userId", String.valueOf(jwtClaims.userId()))) {
 
                 List<SimpleGrantedAuthority> authorities = List.of(
