@@ -1,5 +1,6 @@
 package com.maru.scheduler;
 
+import com.maru.security.TenantContextHolder;
 import com.maru.service.attendance.AttendanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ public class AutoAbsenceScheduler {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         log.info("자동 결석 처리 시작: date={}", yesterday);
 
-        try {
+        try (AutoCloseable ignored = TenantContextHolder.withSystemContext()) {
             int count = attendanceService.processAutoAbsence(yesterday);
             log.info("자동 결석 처리 완료: date={}, count={}", yesterday, count);
         } catch (Exception e) {
