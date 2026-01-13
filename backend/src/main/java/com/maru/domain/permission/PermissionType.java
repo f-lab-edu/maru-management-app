@@ -22,15 +22,12 @@ public enum PermissionType {
     STUDENT_DELETE("student", "delete", "원생 삭제", false),
 
     // 출석 관리
-    ATTENDANCE_CHECK("attendance", "check", "출석 체크", true),
-    ATTENDANCE_VIEW("attendance", "view", "출석 현황 조회", true),
-    ATTENDANCE_VIEW_STATS("attendance", "viewStats", "출석 통계 조회", true),
+    ATTENDANCE_VIEW("attendance", "view", "출석 조회", true),
+    ATTENDANCE_UPDATE("attendance", "update", "출석 체크/수정", true),
 
     // 수납 관리
-    PAYMENT_CREATE("payment", "create", "청구서 생성", true),
-    PAYMENT_RECORD("payment", "record", "수납 기록", true),
-    PAYMENT_VIEW("payment", "view", "수납 현황 조회", true),
-    PAYMENT_VIEW_STATS("payment", "viewStats", "수납 통계 조회", false),
+    PAYMENT_VIEW("payment", "view", "수납 조회", true),
+    PAYMENT_UPDATE("payment", "update", "청구서/수납 관리", true),
 
     // 도장 관리
     DOJANG_UPDATE_INFO("dojang", "updateInfo", "도장 정보 수정", false),
