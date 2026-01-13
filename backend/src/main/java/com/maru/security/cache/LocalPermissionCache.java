@@ -1,6 +1,7 @@
 package com.maru.security.cache;
 
 import com.maru.config.CacheConfig;
+import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.domain.permission.PermissionType;
 import com.maru.repository.employment.EmploymentRepository;
@@ -58,15 +59,15 @@ public class LocalPermissionCache implements PermissionCache {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Set<PermissionType> getPermissionsFromCache(String userId, String tenantId, String dojangId) {
         String key = buildKey(tenantId, userId, dojangId);
 
         Set<PermissionType> result = cache.get(key, () -> {
             log.debug("캐시 미스, DB 조회: {}", key);
-            Set<PermissionType> permissions = employmentRepository.findPermissions(
-                    userId, tenantId, dojangId, EmploymentStatus.ACTIVE);
-            return permissions != null ? permissions : Set.of();
+            return employmentRepository.findByUserIdAndTenantIdAndDojangIdAndStatus(
+                            userId, tenantId, dojangId, EmploymentStatus.ACTIVE)
+                    .map(Employment::getPermissions)
+                    .orElse(Set.of());
         });
 
         return Optional.ofNullable(result).orElse(Set.of());
