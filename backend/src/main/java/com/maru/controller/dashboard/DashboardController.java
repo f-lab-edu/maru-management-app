@@ -1,11 +1,12 @@
 package com.maru.controller.dashboard;
 
-import com.maru.common.exception.BusinessException;
-import com.maru.common.exception.CommonErrorCode;
 import com.maru.controller.dashboard.dto.DashboardNotificationRes;
 import com.maru.controller.dashboard.dto.DashboardSummaryRes;
 import com.maru.controller.dashboard.dto.RecentStudentRes;
+import com.maru.domain.permission.PermissionType;
 import com.maru.security.CurrentUserId;
+import com.maru.security.RequirePermission;
+import com.maru.service.dashboard.DashboardQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class DashboardController {
 
+    private final DashboardQueryService dashboardQueryService;
+
     /**
      * 대시보드 요약 통계 조회
      *
@@ -30,10 +33,12 @@ public class DashboardController {
      * @return 대시보드 요약 통계
      */
     @GetMapping("/summary")
+    @RequirePermission(PermissionType.STATS_VIEW_DASHBOARD)
     public ResponseEntity<DashboardSummaryRes> getSummary(
             @RequestParam String dojangId,
             @CurrentUserId String userId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        DashboardSummaryRes response = dashboardQueryService.getSummary(dojangId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -48,7 +53,8 @@ public class DashboardController {
     public ResponseEntity<DashboardNotificationRes> getNotifications(
             @RequestParam String dojangId,
             @CurrentUserId String userId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        DashboardNotificationRes response = dashboardQueryService.getNotifications(dojangId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -63,6 +69,7 @@ public class DashboardController {
     public ResponseEntity<RecentStudentRes> getRecentStudents(
             @RequestParam String dojangId,
             @CurrentUserId String userId) {
-        throw new BusinessException(CommonErrorCode.NOT_IMPLEMENTED);
+        RecentStudentRes response = dashboardQueryService.getRecentStudents(dojangId);
+        return ResponseEntity.ok(response);
     }
 }
