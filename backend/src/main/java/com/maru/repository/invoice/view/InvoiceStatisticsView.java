@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 
 public interface InvoiceStatisticsView {
     int getPaidCount();
-    BigDecimal getTotalUnpaidAmount();
     int getUnpaidCount();
     int getPartialCount();
+    BigDecimal getTotalAmount();
+    BigDecimal getTotalPaidAmount();
+    BigDecimal getTotalUnpaidAmount();
 }
