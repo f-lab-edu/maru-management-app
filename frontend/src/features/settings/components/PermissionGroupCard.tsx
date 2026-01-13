@@ -1,13 +1,14 @@
 import { Checkbox } from '../../../shared/components/ui/checkbox';
 import { Label } from '../../../shared/components/ui/label';
 import { Badge } from '../../../shared/components/ui/badge';
-import { PermissionGroup } from '../constants/permissions';
+import { PermissionGroup, REQUIRED_PERMISSIONS } from '../constants/permissions';
 
 interface PermissionGroupCardProps {
   group: PermissionGroup;
   selectedPermissions: Set<string>;
   onPermissionChange: (permissionKey: string, checked: boolean) => void;
   onGroupToggle: (groupKey: string, checked: boolean) => void;
+  disabled?: boolean;
 }
 
 export function PermissionGroupCard({
@@ -15,6 +16,7 @@ export function PermissionGroupCard({
   selectedPermissions,
   onPermissionChange,
   onGroupToggle,
+  disabled = false,
 }: PermissionGroupCardProps) {
   const allSelected = group.permissions.every((p) => selectedPermissions.has(p.key));
   const someSelected = group.permissions.some((p) => selectedPermissions.has(p.key));
@@ -27,6 +29,7 @@ export function PermissionGroupCard({
           <Checkbox
             id={`group-${group.key}`}
             checked={allSelected}
+            disabled={disabled}
             ref={(el) => {
               if (el) {
                 (el as unknown as HTMLInputElement).indeterminate = indeterminate;
@@ -43,29 +46,39 @@ export function PermissionGroupCard({
         </Badge>
       </div>
       <div className="p-4 space-y-3">
-        {group.permissions.map((permission) => (
-          <div key={permission.key} className="flex items-start gap-3">
-            <Checkbox
-              id={permission.key}
-              checked={selectedPermissions.has(permission.key)}
-              onCheckedChange={(checked) => onPermissionChange(permission.key, checked === true)}
-              className="mt-0.5"
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <Label htmlFor={permission.key} className="text-sm text-slate-700 cursor-pointer">
-                  {permission.label}
-                </Label>
-                {permission.defaultGranted && (
-                  <Badge variant="outline" className="text-xs text-slate-400 border-slate-200">
-                    기본
-                  </Badge>
-                )}
+        {group.permissions.map((permission) => {
+          const isRequired = REQUIRED_PERMISSIONS.includes(permission.key as typeof REQUIRED_PERMISSIONS[number]);
+          const isChecked = isRequired || selectedPermissions.has(permission.key);
+
+          return (
+            <div key={permission.key} className="flex items-start gap-3">
+              <Checkbox
+                id={permission.key}
+                checked={isChecked}
+                disabled={disabled || isRequired}
+                onCheckedChange={(checked) => onPermissionChange(permission.key, checked === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={permission.key} className="text-sm text-slate-700 cursor-pointer">
+                    {permission.label}
+                  </Label>
+                  {isRequired ? (
+                    <Badge variant="default" className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-100">
+                      필수
+                    </Badge>
+                  ) : permission.defaultGranted ? (
+                    <Badge variant="outline" className="text-xs text-slate-400 border-slate-200">
+                      기본
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">{permission.description}</p>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">{permission.description}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

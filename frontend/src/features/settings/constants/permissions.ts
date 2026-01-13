@@ -57,6 +57,8 @@ export const DEFAULT_PERMISSIONS = ALL_PERMISSIONS
   .filter((p) => p.defaultGranted)
   .map((p) => p.key);
 
+export const REQUIRED_PERMISSIONS = ['STUDENT_VIEW'] as const;
+
 export const getPermissionLabel = (key: string): string => {
   const permission = ALL_PERMISSIONS.find((p) => p.key === key);
   return permission?.label ?? key;

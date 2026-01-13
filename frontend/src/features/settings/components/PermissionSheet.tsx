@@ -10,29 +10,23 @@ import {
 } from '../../../shared/components/ui/sheet';
 import { Button } from '../../../shared/components/ui/button';
 import { Badge } from '../../../shared/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../../../shared/components/ui/alert-dialog';
 import { PermissionGroupCard } from './PermissionGroupCard';
-import { PERMISSION_GROUPS, DEFAULT_PERMISSIONS, TOTAL_PERMISSION_COUNT } from '../constants/permissions';
+import { PERMISSION_GROUPS, DEFAULT_PERMISSIONS, TOTAL_PERMISSION_COUNT, REQUIRED_PERMISSIONS } from '../constants/permissions';
 import {
   useInstructorDetail,
   useUpdatePermissions,
   useResetPermissions,
 } from '../../employment/hooks/useEmployment';
+import { useConfirm } from '../../../hooks/useSweetAlert/useConfirm';
+import { useAlert } from '../../../hooks/useSweetAlert/useAlert';
+import { getApiErrorMessage } from '../../../constants/errorMessages';
 
 interface PermissionSheetProps {
   instructorId: string | null;
   instructorName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  readOnly?: boolean;
 }
 
 export function PermissionSheet({
@@ -40,13 +34,15 @@ export function PermissionSheet({
   instructorName,
   open,
   onOpenChange,
+  readOnly = false,
 }: PermissionSheetProps) {
   const { data: detail, isLoading } = useInstructorDetail(instructorId ?? '', open && !!instructorId);
   const updatePermissions = useUpdatePermissions();
   const resetPermissions = useResetPermissions();
+  const { confirmWarning } = useConfirm();
+  const { showError, showSuccess } = useAlert();
 
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
-  const [showResetDialog, setShowResetDialog] = useState(false);
 
   useEffect(() => {
     if (detail?.permissions) {
@@ -86,23 +82,54 @@ export function PermissionSheet({
   const handleSave = async () => {
     if (!instructorId) return;
     try {
+      const permissionsToSave = new Set(selectedPermissions);
+      REQUIRED_PERMISSIONS.forEach((p) => permissionsToSave.add(p));
+
       await updatePermissions.mutateAsync({
         id: instructorId,
-        permissions: Array.from(selectedPermissions),
+        permissions: Array.from(permissionsToSave),
       });
+      showSuccess('권한이 저장되었습니다');
       onOpenChange(false);
     } catch (error) {
-      console.error('권한 저장 실패:', error);
+      showError(getApiErrorMessage(error, '권한 저장에 실패했습니다'));
     }
   };
 
-  const handleReset = async () => {
+  const handleResetClick = async () => {
     if (!instructorId) return;
+
+    const { isConfirmed } = await confirmWarning({
+      title: '권한 초기화',
+      text: `${instructorName}의 권한을 기본값으로 초기화하시겠습니까? 기본 권한 ${DEFAULT_PERMISSIONS.length}개가 부여됩니다.`,
+      confirmText: '초기화',
+    });
+
+    if (!isConfirmed) return;
+
     try {
       await resetPermissions.mutateAsync(instructorId);
-      setShowResetDialog(false);
+      showSuccess('권한이 기본값으로 초기화되었습니다');
     } catch (error) {
-      console.error('권한 초기화 실패:', error);
+      showError(getApiErrorMessage(error, '권한 초기화에 실패했습니다'));
+    }
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      const swalContainer = document.querySelector('.swal2-container');
+      if (swalContainer) return;
+    }
+    onOpenChange(isOpen);
+  };
+
+  const handleInteractOutside = (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('[role="dialog"]') ||
+      target.closest('.swal2-container')
+    ) {
+      e.preventDefault();
     }
   };
 
@@ -111,58 +138,68 @@ export function PermissionSheet({
     : false;
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader className="space-y-1">
-            <SheetTitle className="text-lg">{instructorName} 권한 설정</SheetTitle>
-            <SheetDescription>
-              사범에게 부여할 권한을 선택하세요.
-            </SheetDescription>
-          </SheetHeader>
+    <Sheet open={open} onOpenChange={handleOpenChange} modal={false}>
+      <SheetContent
+        className="w-full sm:max-w-lg overflow-y-auto"
+        hideOverlay
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handleInteractOutside}
+      >
+        <SheetHeader className="space-y-1">
+          <SheetTitle className="text-lg">{instructorName} 권한 설정</SheetTitle>
+          <SheetDescription>
+            {readOnly
+              ? '권한 수정 권한이 없어 조회만 가능합니다.'
+              : '사범에게 부여할 권한을 선택하세요.'}
+          </SheetDescription>
+        </SheetHeader>
 
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary">
-                  {selectedPermissions.size} / {TOTAL_PERMISSION_COUNT} 권한 선택됨
-                </Badge>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="secondary">
+                {selectedPermissions.size} / {TOTAL_PERMISSION_COUNT} 권한 선택됨
+              </Badge>
+              {!readOnly && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowResetDialog(true)}
+                  onClick={handleResetClick}
                   disabled={resetPermissions.isPending}
                   className="text-slate-500 hover:text-slate-700"
                 >
                   <RotateCcw className="h-4 w-4 mr-1" />
                   기본값으로 초기화
                 </Button>
-              </div>
-
-              {PERMISSION_GROUPS.map((group) => (
-                <PermissionGroupCard
-                  key={group.key}
-                  group={group}
-                  selectedPermissions={selectedPermissions}
-                  onPermissionChange={handlePermissionChange}
-                  onGroupToggle={handleGroupToggle}
-                />
-              ))}
+              )}
             </div>
-          )}
 
-          <SheetFooter className="mt-6 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              취소
-            </Button>
+            {PERMISSION_GROUPS.map((group) => (
+              <PermissionGroupCard
+                key={group.key}
+                group={group}
+                selectedPermissions={selectedPermissions}
+                onPermissionChange={handlePermissionChange}
+                onGroupToggle={handleGroupToggle}
+                disabled={readOnly}
+              />
+            ))}
+          </div>
+        )}
+
+        <SheetFooter className="mt-6 flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+          >
+            {readOnly ? '닫기' : '취소'}
+          </Button>
+          {!readOnly && (
             <Button
               onClick={handleSave}
               disabled={!hasChanges || updatePermissions.isPending}
@@ -177,31 +214,9 @@ export function PermissionSheet({
                 '저장'
               )}
             </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>권한 초기화</AlertDialogTitle>
-            <AlertDialogDescription>
-              {instructorName}의 권한을 기본값으로 초기화하시겠습니까?
-              <br />
-              기본 권한 {DEFAULT_PERMISSIONS.length}개가 부여됩니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleReset}
-              disabled={resetPermissions.isPending}
-            >
-              {resetPermissions.isPending ? '초기화 중...' : '초기화'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          )}
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

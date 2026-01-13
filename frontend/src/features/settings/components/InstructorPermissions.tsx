@@ -4,57 +4,48 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Button } from '../../../shared/components/ui/button';
 import { Avatar, AvatarFallback } from '../../../shared/components/ui/avatar';
 import { Badge } from '../../../shared/components/ui/badge';
-import { Label } from '../../../shared/components/ui/label';
-import { Textarea } from '../../../shared/components/ui/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../../../shared/components/ui/alert-dialog';
 import { PermissionSheet } from './PermissionSheet';
 import { useInstructors, useUpdateInstructorStatus } from '../../employment/hooks/useEmployment';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { useConfirm } from '../../../hooks/useSweetAlert/useConfirm';
+import { useAlert } from '../../../hooks/useSweetAlert/useAlert';
+import { getApiErrorMessage } from '../../../constants/errorMessages';
 import { Instructor } from '../../../types/employment';
 
 export function InstructorPermissions() {
   const { data: instructors, isLoading } = useInstructors();
   const updateStatus = useUpdateInstructorStatus();
+  const { isOwner } = usePermissions();
+  const { confirmWarning, confirmDelete } = useConfirm();
+  const { showError, showSuccess } = useAlert();
 
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [statusDialogInstructor, setStatusDialogInstructor] = useState<Instructor | null>(null);
-  const [statusReason, setStatusReason] = useState('');
 
   const handleOpenSheet = (instructor: Instructor) => {
     setSelectedInstructor(instructor);
     setSheetOpen(true);
   };
 
-  const handleOpenStatusDialog = (instructor: Instructor) => {
-    setStatusDialogInstructor(instructor);
-    setStatusReason('');
-    setStatusDialogOpen(true);
-  };
+  const handleStatusChange = async (instructor: Instructor) => {
+    const isSuspending = instructor.status === 'ACTIVE';
 
-  const handleStatusChange = async () => {
-    if (!statusDialogInstructor) return;
+    const { isConfirmed } = await (isSuspending ? confirmDelete : confirmWarning)({
+      title: isSuspending ? '사범 정지' : '사범 활성화',
+      text: `${instructor.name} 사범을 ${isSuspending ? '정지' : '활성화'}하시겠습니까?`,
+      confirmText: isSuspending ? '정지' : '활성화',
+    });
 
-    const newStatus = statusDialogInstructor.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    if (!isConfirmed) return;
 
     try {
       await updateStatus.mutateAsync({
-        id: statusDialogInstructor.id,
-        status: newStatus,
-        reason: statusReason || undefined,
+        id: instructor.id,
+        status: isSuspending ? 'SUSPENDED' : 'ACTIVE',
       });
-      setStatusDialogOpen(false);
+      showSuccess(`${instructor.name} 사범이 ${isSuspending ? '정지' : '활성화'}되었습니다`);
     } catch (error) {
-      console.error('상태 변경 실패:', error);
+      showError(getApiErrorMessage(error, '상태 변경에 실패했습니다'));
     }
   };
 
@@ -76,7 +67,9 @@ export function InstructorPermissions() {
             사범 권한 관리
           </CardTitle>
           <CardDescription>
-            소속 사범의 권한을 개별적으로 설정할 수 있습니다.
+            {isOwner
+              ? '소속 사범의 권한을 개별적으로 설정할 수 있습니다.'
+              : '소속 사범의 권한을 조회할 수 있습니다. (수정 권한 없음)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,8 +113,8 @@ export function InstructorPermissions() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleOpenStatusDialog(instructor)}
-                    disabled={updateStatus.isPending}
+                    onClick={() => handleStatusChange(instructor)}
+                    disabled={!isOwner || updateStatus.isPending}
                     className={
                       instructor.status === 'ACTIVE'
                         ? 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100'
@@ -165,52 +158,8 @@ export function InstructorPermissions() {
         instructorName={selectedInstructor?.name ?? ''}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
+        readOnly={!isOwner}
       />
-
-      <AlertDialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {statusDialogInstructor?.status === 'ACTIVE' ? '사범 정지' : '사범 활성화'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {statusDialogInstructor?.name} 사범을{' '}
-              {statusDialogInstructor?.status === 'ACTIVE' ? '정지' : '활성화'}하시겠습니까?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Label htmlFor="reason" className="text-sm text-slate-700">
-              사유 (선택사항)
-            </Label>
-            <Textarea
-              id="reason"
-              placeholder="사유를 입력하세요..."
-              value={statusReason}
-              onChange={(e) => setStatusReason(e.target.value)}
-              className="mt-2"
-              rows={3}
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleStatusChange}
-              disabled={updateStatus.isPending}
-              className={
-                statusDialogInstructor?.status === 'ACTIVE'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-green-600 hover:bg-green-700'
-              }
-            >
-              {updateStatus.isPending
-                ? '처리 중...'
-                : statusDialogInstructor?.status === 'ACTIVE'
-                  ? '정지'
-                  : '활성화'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
