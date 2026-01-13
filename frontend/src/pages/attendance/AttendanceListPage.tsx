@@ -49,12 +49,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
-import { useAlert, useConfirm } from '@/hooks';
+import { useAlert, useConfirm, usePermissions } from '@/hooks';
 import { ATTENDANCE_STATUS_LABELS } from '@/features/attendance/constants';
 
 export default function AttendanceListPage() {
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('ATTENDANCE_UPDATE');
 
   // 뷰 모드 및 날짜 범위
   const [viewMode, setViewMode] = useState<ViewMode>('weekly');
@@ -563,14 +565,14 @@ export default function AttendanceListPage() {
         <div className="flex items-center gap-3">
           {selectedStudents.length > 0 && (
             <>
-              <Button onClick={handleBulkCheckIn} disabled={isBulkCheckingIn}>
+              <Button onClick={handleBulkCheckIn} disabled={!canUpdate || isBulkCheckingIn}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 {isBulkCheckingIn ? '처리 중...' : `${selectedStudents.length}명 단체 출석`}
               </Button>
 
               {/* 단체 하원 버튼 */}
               {selectedCheckoutableIds.length > 0 && (
-                <Button variant="outline" onClick={handleBulkCheckout} disabled={isBulkCheckingOut}>
+                <Button variant="outline" onClick={handleBulkCheckout} disabled={!canUpdate || isBulkCheckingOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   {isBulkCheckingOut ? '처리 중...' : `${selectedCheckoutableIds.length}명 단체 하원`}
                 </Button>
@@ -580,7 +582,7 @@ export default function AttendanceListPage() {
               {selectedTodayAttendanceIds.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" disabled={isBulkStatusChanging}>
+                    <Button variant="outline" disabled={!canUpdate || isBulkStatusChanging}>
                       <UserX className="mr-2 h-4 w-4" />
                       {isBulkStatusChanging ? '처리 중...' : '상태 변경'}
                       <ChevronDown className="ml-2 h-4 w-4" />
@@ -652,6 +654,7 @@ export default function AttendanceListPage() {
         onCancelCheckout={handleCancelCheckout}
         onCreateRecord={handleCreateRecord}
         onTimeChange={handleTimeChange}
+        canUpdate={canUpdate}
       />
     </div>
   );

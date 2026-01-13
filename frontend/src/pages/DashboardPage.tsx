@@ -8,6 +8,7 @@ import { useDashboardCalendar } from '../features/dashboard/hooks/useDashboardCa
 import { EVENTS, NOTIFICATIONS, APPLICANTS, MOCK_DASHBOARD_STATS } from '../features/dashboard/constants';
 import { DashboardStats } from '../features/dashboard/types';
 import { Loader2 } from 'lucide-react';
+import { usePermissions } from '@/hooks';
 
 const fetchDashboardStats = async (): Promise<DashboardStats> => {
   // TODO: 실제 API 연동 시 아래 코드로 교체
@@ -19,13 +20,16 @@ const fetchDashboardStats = async (): Promise<DashboardStats> => {
 
 export default function DashboardPage() {
   const { date, selectedDateDetails, handleDateSelect, resetSelection } = useDashboardCalendar();
+  const { hasPermission } = usePermissions();
+  const canViewStats = hasPermission('STATS_VIEW_DASHBOARD');
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: fetchDashboardStats,
+    enabled: canViewStats,
   });
 
-  if (isLoading) {
+  if (canViewStats && isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -33,14 +37,16 @@ export default function DashboardPage() {
     );
   }
 
-  if (!stats) return null;
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full p-4 lg:p-8">
       {/* Left Column (2/3) */}
       <div className="lg:col-span-2 flex flex-col gap-6 h-full min-h-0">
-        <DashboardBanner activeStudents={stats.activeStudents} />
-        <StatsGrid stats={stats} />
+        {canViewStats && stats && (
+          <>
+            <DashboardBanner activeStudents={stats.activeStudents} />
+            <StatsGrid stats={stats} />
+          </>
+        )}
         <NotificationList notifications={NOTIFICATIONS} />
       </div>
 

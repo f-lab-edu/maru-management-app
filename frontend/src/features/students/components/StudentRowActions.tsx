@@ -12,9 +12,11 @@ interface StudentRowActionsProps {
   student: StudentSummary;
   onEdit: (student: StudentSummary) => void;
   onDelete: (student: StudentSummary) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-export function StudentRowActions({ student, onEdit, onDelete }: StudentRowActionsProps) {
+export function StudentRowActions({ student, onEdit, onDelete, canUpdate = true, canDelete = true }: StudentRowActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -24,13 +26,14 @@ export function StudentRowActions({ student, onEdit, onDelete }: StudentRowActio
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(student)}>
+        <DropdownMenuItem onClick={() => onEdit(student)} disabled={!canUpdate}>
           <Pencil className="mr-2 h-4 w-4" />
           수정
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(student)}
           className="text-destructive focus:text-destructive"
+          disabled={!canDelete}
         >
           <Trash2 className="mr-2 h-4 w-4" />
           삭제

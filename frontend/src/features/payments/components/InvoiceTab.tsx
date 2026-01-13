@@ -27,7 +27,7 @@ import { InvoiceDetailSheet } from './InvoiceDetailSheet';
 import { InvoiceCreateSheet } from './InvoiceCreateSheet';
 import { InvoiceBulkUpdateSheet } from './InvoiceBulkUpdateSheet';
 import { PAYMENT_COLORS } from '../constants/chartColors';
-import { useAlert } from '@/hooks';
+import { useAlert, usePermissions } from '@/hooks';
 import type { InvoiceStatus, InvoiceListRes } from '../types';
 import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
 import { SectionDivisionFilter } from '@/features/divisions';
@@ -78,6 +78,8 @@ export function InvoiceTab() {
   const [divisionId, setDivisionId] = useState<string | null>(null);
 
   const { showSuccess, showError } = useAlert();
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('PAYMENT_UPDATE');
 
   const { data: invoices = [], isLoading } = useInvoices(dojangId, {
     status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -334,17 +336,18 @@ export function InvoiceTab() {
               <Button
                 variant="outline"
                 onClick={() => setShowBulkUpdateSheet(true)}
+                disabled={!canUpdate}
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 {selectedIds.length}건 일괄 수정
               </Button>
-              <Button onClick={handleBulkIssue} disabled={isIssuing}>
+              <Button onClick={handleBulkIssue} disabled={!canUpdate || isIssuing}>
                 <Send className="mr-2 h-4 w-4" />
                 {isIssuing ? '발행 중...' : `${selectedIds.length}건 일괄 발행`}
               </Button>
             </>
           )}
-          <Button onClick={() => setShowCreateSheet(true)}>
+          <Button onClick={() => setShowCreateSheet(true)} disabled={!canUpdate}>
             <Plus className="mr-2 h-4 w-4" />
             청구서 생성
           </Button>
@@ -394,6 +397,7 @@ export function InvoiceTab() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowCreateSheet(true)}
+                      disabled={!canUpdate}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       청구서 생성

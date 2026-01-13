@@ -4,9 +4,12 @@ import { InstructorApproval } from '../features/settings/components/InstructorAp
 import { InstructorPermissions } from '../features/settings/components/InstructorPermissions';
 import { DivisionSettings } from '../features/divisions';
 import { SettingsTab } from '../features/settings/types';
+import { usePermissions } from '@/hooks';
 
 export default function SettingsPage() {
-  const tabs: SettingsTab[] = [
+  const { isOwner } = usePermissions();
+
+  const allTabs: SettingsTab[] = [
     {
       id: 'approval',
       label: '사범 승인 관리',
@@ -43,6 +46,14 @@ export default function SettingsPage() {
       component: <div className="p-4 text-slate-500">준비 중인 기능입니다.</div>
     },
   ];
+
+  // OWNER가 아니면 사범승인관리, 권한설정 탭 제외
+  const tabs = allTabs.filter((tab) => {
+    if (!isOwner && (tab.id === 'approval' || tab.id === 'permissions')) {
+      return false;
+    }
+    return true;
+  });
 
   return <SettingsLayout tabs={tabs} />;
 }

@@ -8,9 +8,10 @@ interface PaymentListProps {
   payments: PaymentRes[];
   onCancelPayment: (paymentId: string) => void;
   canCancel: boolean;
+  canUpdate?: boolean;
 }
 
-export function PaymentList({ payments, onCancelPayment, canCancel }: PaymentListProps) {
+export function PaymentList({ payments, onCancelPayment, canCancel, canUpdate = true }: PaymentListProps) {
   if (payments.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-4">
@@ -66,6 +67,7 @@ export function PaymentList({ payments, onCancelPayment, canCancel }: PaymentLis
               size="sm"
               onClick={() => onCancelPayment(payment.id)}
               className="text-muted-foreground hover:text-destructive"
+              disabled={!canUpdate}
             >
               <RotateCcw className="h-4 w-4" />
             </Button>

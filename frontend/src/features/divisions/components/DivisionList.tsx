@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/shared/utils';
-import { useConfirm } from '@/hooks';
+import { useConfirm, usePermissions } from '@/hooks';
 import { useDivisions, useDeleteDivision, useReorderDivisions } from '../hooks';
 import { DivisionCreateDialog } from './DivisionCreateDialog';
 import { DivisionEditDialog } from './DivisionEditDialog';
@@ -42,6 +42,7 @@ interface SortableDivisionItemProps {
   onDelete: () => void;
   onManageStudents: () => void;
   isDeleting: boolean;
+  canManage?: boolean;
 }
 
 function SortableDivisionItem({
@@ -50,6 +51,7 @@ function SortableDivisionItem({
   onDelete,
   onManageStudents,
   isDeleting,
+  canManage = true,
 }: SortableDivisionItemProps) {
   const {
     attributes,
@@ -122,6 +124,7 @@ function SortableDivisionItem({
             variant="ghost"
             className="h-8 w-8"
             onClick={onEdit}
+            disabled={!canManage}
           >
             <Edit2 className="h-4 w-4" />
           </Button>
@@ -130,7 +133,7 @@ function SortableDivisionItem({
             variant="ghost"
             className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
             onClick={onDelete}
-            disabled={isDeleting}
+            disabled={!canManage || isDeleting}
           >
             {isDeleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -153,6 +156,8 @@ export function DivisionList({ dojangId, sectionId, sectionName }: DivisionListP
   const deleteDivision = useDeleteDivision(dojangId);
   const reorderDivisions = useReorderDivisions(dojangId);
   const { confirmDelete } = useConfirm();
+  const { hasPermission } = usePermissions();
+  const canManage = hasPermission('DOJANG_MANAGE_CLASS');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -213,7 +218,7 @@ export function DivisionList({ dojangId, sectionId, sectionName }: DivisionListP
             <CardTitle className="text-base">
               수련반 ({sectionName})
             </CardTitle>
-            <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+            <Button size="sm" onClick={() => setIsCreateOpen(true)} disabled={!canManage}>
               <Plus className="h-4 w-4 mr-1" />
               수련반 추가
             </Button>
@@ -238,6 +243,7 @@ export function DivisionList({ dojangId, sectionId, sectionName }: DivisionListP
                     onDelete={() => handleDelete(division)}
                     onManageStudents={() => setEnrollmentDivision(division)}
                     isDeleting={deleteDivision.isPending}
+                    canManage={canManage}
                   />
                 ))}
                 {divisions.length === 0 && (

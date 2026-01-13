@@ -30,6 +30,7 @@ interface AttendanceDetailSheetProps {
   onCancelCheckout?: (attendanceId: string) => Promise<void>;
   onCreateRecord?: (studentId: string, date: string, status: AttendanceStatus) => Promise<void>;
   onTimeChange?: (attendanceId: string, checkinAt?: string, checkoutAt?: string) => Promise<void>;
+  canUpdate?: boolean;
 }
 
 interface AttendanceHistoryItem {
@@ -106,6 +107,7 @@ export function AttendanceDetailSheet({
   onCancelCheckout,
   onCreateRecord,
   onTimeChange,
+  canUpdate = true,
 }: AttendanceDetailSheetProps) {
   const thisMonth = useMemo(() => getThisMonthRange(), []);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -425,7 +427,7 @@ export function AttendanceDetailSheet({
                                             'h-8 text-xs flex-1',
                                             isCurrentStatus && colorClass
                                           )}
-                                          disabled={isCurrentStatus || isStatusLoading}
+                                          disabled={!canUpdate || isCurrentStatus || isStatusLoading}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleStatusChange(item.attendanceId, option.value);
@@ -453,7 +455,7 @@ export function AttendanceDetailSheet({
                                           variant="outline"
                                           size="sm"
                                           className={cn('h-8 text-xs flex-1', colorClass)}
-                                          disabled={isCreateLoading}
+                                          disabled={!canUpdate || isCreateLoading}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleCreateRecord(item.date, option.value);
@@ -478,6 +480,7 @@ export function AttendanceDetailSheet({
                                         variant="ghost"
                                         size="sm"
                                         className="h-6 text-xs"
+                                        disabled={!canUpdate}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           startEditingTime(item.attendanceId!, item.checkinAt, item.checkoutAt);
@@ -531,7 +534,7 @@ export function AttendanceDetailSheet({
                                         <Button
                                           size="sm"
                                           className="h-7 text-xs flex-1"
-                                          disabled={isTimeLoading}
+                                          disabled={!canUpdate || isTimeLoading}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onTimeChange(
@@ -560,7 +563,7 @@ export function AttendanceDetailSheet({
                                       e.stopPropagation();
                                       handleCheckout(item.attendanceId);
                                     }}
-                                    disabled={isCheckoutLoading}
+                                    disabled={!canUpdate || isCheckoutLoading}
                                   >
                                     <LogOut className="h-4 w-4 mr-2" />
                                     {isCheckoutLoading ? '처리 중...' : '퇴관 처리'}
@@ -579,7 +582,7 @@ export function AttendanceDetailSheet({
                                       e.stopPropagation();
                                       handleCancelCheckout(item.attendanceId);
                                     }}
-                                    disabled={isCancelCheckoutLoading}
+                                    disabled={!canUpdate || isCancelCheckoutLoading}
                                   >
                                     <Undo2 className="h-4 w-4 mr-2" />
                                     {isCancelCheckoutLoading ? '처리 중...' : '퇴관 취소'}

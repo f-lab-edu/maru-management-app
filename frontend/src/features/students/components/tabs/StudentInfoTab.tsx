@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Calendar, Phone, Plus, User, Users } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAlert } from '@/hooks';
+import { useAlert, usePermissions } from '@/hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -41,6 +41,8 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
   const { showSuccess, showError } = useAlert();
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('STUDENT_UPDATE');
 
   const [editingGuardian, setEditingGuardian] = useState<Guardian | null>(null);
   const [deletingGuardian, setDeletingGuardian] = useState<Guardian | null>(null);
@@ -152,6 +154,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
             variant="outline"
             size="sm"
             onClick={() => setIsAddingGuardian(true)}
+            disabled={!canUpdate}
           >
             <Plus className="mr-1 h-4 w-4" />
             추가
@@ -191,7 +194,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setPrimaryMutation.mutate(guardian.id)}
-                      disabled={setPrimaryMutation.isPending}
+                      disabled={!canUpdate || setPrimaryMutation.isPending}
                     >
                       주 보호자 해제
                     </Button>
@@ -199,6 +202,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setEditingGuardian(guardian)}
+                      disabled={!canUpdate}
                     >
                       수정
                     </Button>
@@ -206,6 +210,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setDeletingGuardian(guardian)}
+                      disabled={!canUpdate}
                     >
                       삭제
                     </Button>
@@ -231,7 +236,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setPrimaryMutation.mutate(guardian.id)}
-                      disabled={setPrimaryMutation.isPending}
+                      disabled={!canUpdate || setPrimaryMutation.isPending}
                     >
                       주 보호자로 설정
                     </Button>
@@ -239,6 +244,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setEditingGuardian(guardian)}
+                      disabled={!canUpdate}
                     >
                       수정
                     </Button>
@@ -246,6 +252,7 @@ export function StudentInfoTab({ student }: StudentInfoTabProps) {
                       size="sm"
                       variant="outline"
                       onClick={() => setDeletingGuardian(guardian)}
+                      disabled={!canUpdate}
                     >
                       삭제
                     </Button>

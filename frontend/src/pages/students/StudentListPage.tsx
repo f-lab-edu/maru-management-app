@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { Button } from '@/shared/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
-import { useAlert, useConfirm } from '@/hooks';
+import { useAlert, useConfirm, usePermissions } from '@/hooks';
 import { ErrorResponse } from '@/services/api';
 import { StudentDataTable } from '@/features/students/components/StudentDataTable';
 import { StudentTableToolbar } from '@/features/students/components/StudentTableToolbar';
@@ -38,6 +38,11 @@ export default function StudentListPage() {
   const dojangId = selectedDojang?.dojangId ?? null;
   const { showError, showSuccess } = useAlert();
   const { confirmDelete } = useConfirm();
+  const { hasPermission } = usePermissions();
+
+  const canCreate = hasPermission('STUDENT_CREATE');
+  const canUpdate = hasPermission('STUDENT_UPDATE');
+  const canDelete = hasPermission('STUDENT_DELETE');
 
   // 탭 필터 상태
   const [activeTab, setActiveTab] = useState<ActiveTab>('active');
@@ -126,8 +131,10 @@ export default function StudentListPage() {
         onStatusChange: handleOpenStatusChangeDialog,
         onRestore: handleRestoreStudent,
         isWithdrawnTab: activeTab === 'withdrawn',
+        canUpdate,
+        canDelete,
       }),
-    [activeTab]
+    [activeTab, canUpdate, canDelete]
   );
 
   // Drawer 핸들러
@@ -295,7 +302,7 @@ export default function StudentListPage() {
             {selectedDojang?.dojangName}의 수련생 목록
           </p>
         </div>
-        <Button onClick={handleOpenCreateModal}>
+        <Button onClick={handleOpenCreateModal} disabled={!canCreate}>
           <Plus className="mr-2 h-4 w-4" />
           수련생 등록
         </Button>
@@ -317,6 +324,7 @@ export default function StudentListPage() {
         divisionId={divisionId}
         onSectionChange={setSectionId}
         onDivisionChange={setDivisionId}
+        canDelete={canDelete}
       />
 
       {/* 테이블 */}

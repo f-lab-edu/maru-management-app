@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/shared/utils';
-import { useConfirm } from '@/hooks';
+import { useConfirm, usePermissions } from '@/hooks';
 import { useDeleteSection, useReorderSections } from '../hooks';
 import { SectionCreateDialog } from './SectionCreateDialog';
 import { SectionEditDialog } from './SectionEditDialog';
@@ -41,6 +41,7 @@ interface SortableSectionItemProps {
   onEdit: () => void;
   onDelete: () => void;
   isDeleting: boolean;
+  canManage?: boolean;
 }
 
 function SortableSectionItem({
@@ -50,6 +51,7 @@ function SortableSectionItem({
   onEdit,
   onDelete,
   isDeleting,
+  canManage = true,
 }: SortableSectionItemProps) {
   const {
     attributes,
@@ -100,6 +102,7 @@ function SortableSectionItem({
             e.stopPropagation();
             onEdit();
           }}
+          disabled={!canManage}
         >
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
@@ -111,7 +114,7 @@ function SortableSectionItem({
             e.stopPropagation();
             onDelete();
           }}
-          disabled={isDeleting}
+          disabled={!canManage || isDeleting}
         >
           {isDeleting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -135,6 +138,8 @@ export function SectionList({
   const deleteSection = useDeleteSection(dojangId);
   const reorderSections = useReorderSections(dojangId);
   const { confirmDelete } = useConfirm();
+  const { hasPermission } = usePermissions();
+  const canManage = hasPermission('DOJANG_MANAGE_CLASS');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -186,7 +191,7 @@ export function SectionList({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">수련부</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setIsCreateOpen(true)}>
+            <Button size="sm" variant="outline" onClick={() => setIsCreateOpen(true)} disabled={!canManage}>
               <Plus className="h-4 w-4 mr-1" />
               추가
             </Button>
@@ -212,6 +217,7 @@ export function SectionList({
                     onEdit={() => setEditingSection(section)}
                     onDelete={() => handleDelete(section)}
                     isDeleting={deleteSection.isPending}
+                    canManage={canManage}
                   />
                 ))}
                 {sections.length === 0 && (

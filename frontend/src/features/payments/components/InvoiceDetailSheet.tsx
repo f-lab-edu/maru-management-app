@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { usePermissions } from '@/hooks';
 import {
   Sheet,
   SheetContent,
@@ -25,6 +26,8 @@ interface InvoiceDetailSheetProps {
 export function InvoiceDetailSheet({ invoiceId, isOpen, onClose }: InvoiceDetailSheetProps) {
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
+  const { hasPermission } = usePermissions();
+  const canUpdate = hasPermission('PAYMENT_UPDATE');
 
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showPrepaidSheet, setShowPrepaidSheet] = useState(false);
@@ -158,6 +161,7 @@ export function InvoiceDetailSheet({ invoiceId, isOpen, onClose }: InvoiceDetail
                   setShowPaymentForm={setShowPaymentForm}
                   editForm={editForm}
                   canEdit={!!canEdit}
+                  canUpdate={canUpdate}
                   isIssuing={isIssuing}
                   isVoiding={isVoiding}
                   isRestoring={isRestoring}

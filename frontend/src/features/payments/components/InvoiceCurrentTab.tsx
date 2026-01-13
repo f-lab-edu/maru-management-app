@@ -20,6 +20,7 @@ interface InvoiceCurrentTabProps {
   setShowPaymentForm: (v: boolean) => void;
   editForm: UseFormReturn<UpdateData>;
   canEdit: boolean;
+  canUpdate?: boolean;
   isIssuing: boolean;
   isVoiding: boolean;
   isRestoring: boolean;
@@ -44,6 +45,7 @@ export function InvoiceCurrentTab({
   setShowPaymentForm,
   editForm,
   canEdit,
+  canUpdate = true,
   isIssuing,
   isVoiding,
   isRestoring,
@@ -65,7 +67,7 @@ export function InvoiceCurrentTab({
     if (isEditing) return null;
 
     const editButton = canEdit && (
-      <Button variant="outline" onClick={onStartEditing} disabled={isStudentDeleted} className="flex-1">
+      <Button variant="outline" onClick={onStartEditing} disabled={!canUpdate || isStudentDeleted} className="flex-1">
         <Pencil className="mr-2 h-4 w-4" />
         수정
       </Button>
@@ -76,11 +78,11 @@ export function InvoiceCurrentTab({
         return (
           <>
             {editButton}
-            <Button onClick={onIssue} disabled={isStudentDeleted || isIssuing} className="flex-1">
+            <Button onClick={onIssue} disabled={!canUpdate || isStudentDeleted || isIssuing} className="flex-1">
               <Send className="mr-2 h-4 w-4" />
               {isIssuing ? '처리 중...' : '발행'}
             </Button>
-            <Button variant="destructive" onClick={onDelete} disabled={isDeleting}>
+            <Button variant="destructive" onClick={onDelete} disabled={!canUpdate || isDeleting}>
               <Trash2 className="mr-2 h-4 w-4" />
               삭제
             </Button>
@@ -90,11 +92,11 @@ export function InvoiceCurrentTab({
         return (
           <>
             {editButton}
-            <Button onClick={() => setShowPaymentForm(true)} disabled={isStudentDeleted} className="flex-1">
+            <Button onClick={() => setShowPaymentForm(true)} disabled={!canUpdate || isStudentDeleted} className="flex-1">
               <CreditCard className="mr-2 h-4 w-4" />
               수납 기록
             </Button>
-            <Button variant="outline" onClick={onVoid} disabled={isStudentDeleted || isVoiding}>
+            <Button variant="outline" onClick={onVoid} disabled={!canUpdate || isStudentDeleted || isVoiding}>
               <XCircle className="mr-2 h-4 w-4" />
               무효화
             </Button>
@@ -102,14 +104,14 @@ export function InvoiceCurrentTab({
         );
       case 'PARTIAL':
         return (
-          <Button onClick={() => setShowPaymentForm(true)} disabled={isStudentDeleted} className="flex-1">
+          <Button onClick={() => setShowPaymentForm(true)} disabled={!canUpdate || isStudentDeleted} className="flex-1">
             <CreditCard className="mr-2 h-4 w-4" />
             수납 기록
           </Button>
         );
       case 'VOID':
         return (
-          <Button onClick={onRestore} disabled={isRestoring} className="flex-1">
+          <Button onClick={onRestore} disabled={!canUpdate || isRestoring} className="flex-1">
             <RotateCcw className="mr-2 h-4 w-4" />
             {isRestoring ? '처리 중...' : '복구'}
           </Button>
@@ -234,6 +236,7 @@ export function InvoiceCurrentTab({
               payments={invoice.payments}
               onCancelPayment={onCancelPayment}
               canCancel={invoice.status !== 'VOID'}
+              canUpdate={canUpdate}
             />
           </div>
 

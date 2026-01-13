@@ -28,6 +28,7 @@ interface StudentTableToolbarProps {
   divisionId?: string | null;
   onSectionChange?: (sectionId: string | null) => void;
   onDivisionChange?: (divisionId: string | null) => void;
+  canDelete?: boolean;
 }
 
 const MAIN_TABS: { value: ActiveTab; label: string }[] = [
@@ -56,6 +57,7 @@ export function StudentTableToolbar({
   divisionId,
   onSectionChange,
   onDivisionChange,
+  canDelete = true,
 }: StudentTableToolbarProps) {
   const getMainTabCount = (tab: ActiveTab) => {
     return tab === 'active' ? stats.total : stats.withdrawnCount;
@@ -163,6 +165,7 @@ export function StudentTableToolbar({
               variant="destructive"
               size="sm"
               onClick={onBulkDelete}
+              disabled={!canDelete}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               선택 삭제

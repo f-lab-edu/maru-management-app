@@ -14,9 +14,11 @@ interface ColumnOptions {
   onStatusChange: (student: StudentSummary, newStatus: StudentStatus) => void;
   onRestore?: (student: StudentSummary) => void;
   isWithdrawnTab?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-export function createStudentColumns({ onEdit, onDelete, onStatusChange, onRestore, isWithdrawnTab = false }: ColumnOptions): ColumnDef<StudentSummary>[] {
+export function createStudentColumns({ onEdit, onDelete, onStatusChange, onRestore, isWithdrawnTab = false, canUpdate = true, canDelete = true }: ColumnOptions): ColumnDef<StudentSummary>[] {
   return [
     {
       id: 'select',
@@ -95,6 +97,7 @@ export function createStudentColumns({ onEdit, onDelete, onStatusChange, onResto
             <StudentStatusSelect
               status={row.original.status}
               onStatusChange={(newStatus) => onStatusChange(row.original, newStatus)}
+              disabled={!canUpdate}
             />
           )}
         </div>
@@ -117,6 +120,8 @@ export function createStudentColumns({ onEdit, onDelete, onStatusChange, onResto
               student={row.original}
               onEdit={onEdit}
               onDelete={onDelete}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
             />
           )}
         </div>
