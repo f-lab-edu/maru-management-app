@@ -6,4 +6,5 @@ public interface MyDojangView {
     String getTenantId();
     String getDojangOwnerId();
     String getUserId();
+    String getPermissions();
 }

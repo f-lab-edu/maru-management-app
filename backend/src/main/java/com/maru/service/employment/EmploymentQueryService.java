@@ -148,12 +148,25 @@ public class EmploymentQueryService {
     }
 
     private MyDojangRes toMyDojangRes(MyDojangView view) {
+        UserRole role = resolveRole(view.getUserId(), view.getDojangOwnerId());
+        Set<String> permissions = resolvePermissions(role, view.getPermissions());
+
         return MyDojangRes.builder()
                 .dojangId(view.getDojangId())
                 .dojangName(view.getDojangName())
                 .tenantId(view.getTenantId())
-                .role(resolveRole(view.getUserId(), view.getDojangOwnerId()))
+                .role(role)
+                .permissions(permissions)
                 .build();
+    }
+
+    private Set<String> resolvePermissions(UserRole role, String permissionsJson) {
+        if (role == UserRole.OWNER) {
+            return PermissionType.getAllPermissions().stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toSet());
+        }
+        return parsePermissions(permissionsJson);
     }
 
     private InstructorRes toInstructorRes(InstructorView view) {

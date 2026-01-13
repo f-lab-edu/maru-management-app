@@ -101,7 +101,8 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
                d.name AS dojangName,
                e.tenantId AS tenantId,
                d.ownerId AS dojangOwnerId,
-               e.userId AS userId
+               e.userId AS userId,
+               e.permissions AS permissions
         FROM Employment e
         JOIN Dojang d ON e.dojangId = d.id
         WHERE e.userId = :userId
