@@ -185,6 +185,7 @@ public class EmploymentService {
         validateInstructorModification(employment, ownerId);
 
         Set<PermissionType> permissions = toPermissionTypes(permissionNames);
+        permissions.addAll(PermissionType.getRequiredPermissions());
         employment.replacePermissions(permissions);
         evictCache(employment);
 

@@ -81,4 +81,11 @@ public enum PermissionType {
         return Arrays.stream(values())
                 .collect(Collectors.toSet());
     }
+
+    /**
+     * 필수 권한 목록 반환 (해제 불가능한 권한)
+     */
+    public static Set<PermissionType> getRequiredPermissions() {
+        return Set.of(STUDENT_VIEW);
+    }
 }
