@@ -2,16 +2,27 @@ import { ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
 import { Button } from '../../../shared/components/ui/button';
 import { Avatar, AvatarFallback } from '../../../shared/components/ui/avatar';
-import { Applicant } from '../types';
+import { RecentStudent } from '../types';
 
 interface DetailPanelProps {
   selectedDate: Date | undefined;
   isDetailsView: boolean;
   onBack: () => void;
-  applicants: Applicant[];
+  students: RecentStudent[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoading?: boolean;
 }
 
-export function DetailPanel({ selectedDate, isDetailsView, onBack, applicants }: DetailPanelProps) {
+export function DetailPanel({
+  selectedDate,
+  isDetailsView,
+  onBack,
+  students,
+  hasMore = false,
+  onLoadMore,
+  isLoading = false
+}: DetailPanelProps) {
   return (
     <Card className="border-none shadow-sm bg-white flex-1 flex flex-col min-h-0">
       <CardHeader className="pb-2 shrink-0">
@@ -21,7 +32,7 @@ export function DetailPanel({ selectedDate, isDetailsView, onBack, applicants }:
               {selectedDate?.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} 일정
             </span>
           ) : (
-            '신규 입관 문의'
+            '신규 입관'
           )}
         </CardTitle>
       </CardHeader>
@@ -45,24 +56,36 @@ export function DetailPanel({ selectedDate, isDetailsView, onBack, applicants }:
             </Button>
           </div>
         ) : (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {applicants.map((applicant, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-primary/20 hover:bg-slate-50 transition-all group">
+          <div className="space-y-4">
+            {students.map((student) => (
+              <div key={student.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-primary/20 hover:bg-slate-50 transition-all group">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8 bg-slate-100">
-                    <AvatarFallback className="text-xs text-slate-500">{applicant.name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-xs text-slate-500">{student.name[0]}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{applicant.name} <span className="text-xs text-slate-400 font-normal">({applicant.age})</span></p>
-                    <p className="text-xs text-slate-500">{applicant.phone}</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      {student.name}
+                      {student.age !== null && (
+                        <span className="text-xs text-slate-400 font-normal ml-1">({student.age}세)</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500">{student.enrolledAt} 입관</p>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors" />
               </div>
             ))}
-            <Button variant="ghost" className="w-full text-xs text-slate-500 hover:text-primary">
-              전체 보기
-            </Button>
+            {hasMore && onLoadMore && (
+              <Button
+                variant="ghost"
+                className="w-full text-xs text-slate-500 hover:text-primary"
+                onClick={onLoadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? '불러오는 중...' : '더보기'}
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

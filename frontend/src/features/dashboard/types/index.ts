@@ -1,9 +1,12 @@
 export interface DashboardStats {
   totalStudents: number;
+  studentsDiff: number;
   attendanceRate: number;
+  attendanceRateDiff: number;
   monthlyRevenue: number;
   revenueTarget: number;
   activeStudents: number;
+  pausedStudents: number;
 }
 
 export type EventType = 'payment' | 'alert' | 'info';
@@ -20,9 +23,10 @@ export interface NotificationItem {
   type: EventType;
 }
 
-export interface Applicant {
+export interface RecentStudent {
+  id: string;
   name: string;
-  age: string;
-  phone: string;
-  status: string;
+  age: number | null;
+  enrolledAt: string;
+  photoUrl: string | null;
 }
