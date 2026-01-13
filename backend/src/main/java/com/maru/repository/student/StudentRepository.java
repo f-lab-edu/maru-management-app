@@ -267,7 +267,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("""
         SELECT s.id as id, s.name as name, s.enrolledAt as enrolledAt,
-               s.status as status, s.photoUrl as photoUrl
+               s.status as status, s.photoUrl as photoUrl, s.birth as birth
         FROM Student s
         WHERE s.tenantId = :tenantId
           AND s.dojangId = :dojangId

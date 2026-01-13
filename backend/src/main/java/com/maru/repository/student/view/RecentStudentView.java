@@ -8,4 +8,5 @@ public interface RecentStudentView {
     LocalDate getEnrolledAt();
     String getStatus();
     String getPhotoUrl();
+    LocalDate getBirth();
 }

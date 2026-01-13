@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
@@ -55,23 +56,35 @@ public class DashboardQueryService {
         return buildSummaryResponse(currentlyAttending, studentStats, attendanceStats, revenueStats);
     }
 
-    public DashboardNotificationRes getNotifications(String dojangId) {
+    public DashboardNotificationRes getNotifications(String dojangId, int limit, int offset) {
         String tenantId = TenantContextHolder.getTenantId();
 
-        List<NotificationItem> items = collectNotificationItems(tenantId, dojangId);
+        List<NotificationItem> allItems = collectNotificationItems(tenantId, dojangId);
+        List<NotificationItem> pagedItems = allItems.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+        boolean hasMore = allItems.size() > offset + limit;
 
         return DashboardNotificationRes.builder()
-                .items(items)
+                .items(pagedItems)
+                .hasMore(hasMore)
                 .build();
     }
 
-    public RecentStudentRes getRecentStudents(String dojangId) {
+    public RecentStudentRes getRecentStudents(String dojangId, int limit, int offset) {
         String tenantId = TenantContextHolder.getTenantId();
 
-        List<StudentItem> students = findRecentStudents(tenantId, dojangId);
+        List<StudentItem> allStudents = findRecentStudents(tenantId, dojangId);
+        List<StudentItem> pagedStudents = allStudents.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+        boolean hasMore = allStudents.size() > offset + limit;
 
         return RecentStudentRes.builder()
-                .students(students)
+                .students(pagedStudents)
+                .hasMore(hasMore)
                 .build();
     }
 
@@ -209,7 +222,15 @@ public class DashboardQueryService {
                 .enrolledAt(view.getEnrolledAt())
                 .status(view.getStatus())
                 .photoUrl(view.getPhotoUrl())
+                .age(calculateAge(view.getBirth()))
                 .build();
+    }
+
+    private Integer calculateAge(LocalDate birth) {
+        if (birth == null) {
+            return null;
+        }
+        return Period.between(birth, LocalDate.now()).getYears();
     }
 
     // ==================== 유틸리티 ====================

@@ -7,7 +7,8 @@ import lombok.Builder;
 
 @Builder
 public record RecentStudentRes(
-        List<StudentItem> students
+        List<StudentItem> students,
+        boolean hasMore
 ) {
     @Builder
     public record StudentItem(
@@ -15,6 +16,7 @@ public record RecentStudentRes(
             String name,
             LocalDate enrolledAt,
             String status,
-            String photoUrl
+            String photoUrl,
+            Integer age
     ) {}
 }

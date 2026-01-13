@@ -7,7 +7,8 @@ import lombok.Builder;
 
 @Builder
 public record DashboardNotificationRes(
-        List<NotificationItem> items
+        List<NotificationItem> items,
+        boolean hasMore
 ) {
     @Builder
     public record NotificationItem(
