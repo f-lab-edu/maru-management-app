@@ -145,8 +145,7 @@ export function InvoiceCreateSheet({
     const lowerQuery = bulkSearchQuery.toLowerCase();
     return students.filter(
       (student) =>
-        student.name.toLowerCase().includes(lowerQuery) ||
-        student.phone?.toLowerCase().includes(lowerQuery)
+        student.name.toLowerCase().includes(lowerQuery)
     );
   }, [students, bulkSearchQuery]);
 
@@ -155,8 +154,7 @@ export function InvoiceCreateSheet({
     const lowerQuery = singleSearchQuery.toLowerCase();
     return students.filter(
       (student) =>
-        student.name.toLowerCase().includes(lowerQuery) ||
-        student.phone?.toLowerCase().includes(lowerQuery)
+        student.name.toLowerCase().includes(lowerQuery)
     );
   }, [students, singleSearchQuery]);
 
@@ -369,11 +367,6 @@ export function InvoiceCreateSheet({
                                   />
                                   <div className="flex flex-col">
                                     <span>{student.name}</span>
-                                    {student.phone && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {student.phone}
-                                      </span>
-                                    )}
                                   </div>
                                 </CommandItem>
                               ))}
@@ -563,11 +556,6 @@ export function InvoiceCreateSheet({
                                     />
                                     <div className="flex flex-col">
                                       <span>{student.name}</span>
-                                      {student.phone && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {student.phone}
-                                        </span>
-                                      )}
                                     </div>
                                   </CommandItem>
                                 );

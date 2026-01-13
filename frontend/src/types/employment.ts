@@ -27,3 +27,18 @@ export interface PendingApprovalRequest {
   requestedAt: string;
   status: EmploymentStatus;
 }
+
+export interface Instructor {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: EmploymentStatus;
+  joinedAt: string;
+  suspendedAt?: string;
+}
+
+export interface InstructorDetail extends Instructor {
+  permissions: string[];
+}

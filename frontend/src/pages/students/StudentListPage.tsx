@@ -272,7 +272,6 @@ export default function StudentListPage() {
           data: {
             name: modalState.student.name,
             birth: modalState.student.birth,
-            phone: modalState.student.phone,
             status: modalState.newStatus,
             statusChangeReason: reason,
           },

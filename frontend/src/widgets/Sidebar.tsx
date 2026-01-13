@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CalendarCheck, CreditCard, Settings, MessageSquare } from 'lucide-react';
 import { cn } from '../shared/utils';
 import { Button } from '../shared/components/ui/button';
+import { usePermissions } from '../hooks/usePermissions';
+import { getMenuRequiredPermissions } from '../constants/menuPermissions';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const { hasAnyPermission } = usePermissions();
 
   const menuItems = [
     { icon: LayoutDashboard, label: '대시보드', path: '/dashboard' },
@@ -18,6 +21,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: CreditCard, label: '수납 관리', path: '/billing' },
     { icon: Settings, label: '설정', path: '/settings' },
   ];
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    const requiredPermissions = getMenuRequiredPermissions(item.path);
+    return hasAnyPermission(requiredPermissions);
+  });
 
   return (
     <aside
@@ -31,39 +39,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          const isEnabled = item.label === '설정' || item.label === '대시보드' || item.label === '원생 관리' || item.label === '출석 관리' || item.label === '수납 관리';
-
-          if (isEnabled) {
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                  location.pathname === item.path
-                    ? "bg-primary text-primary-foreground"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
-                )}
-                onClick={onClose}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          }
-
-          return (
-            <div
-              key={item.path}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 opacity-40 cursor-not-allowed"
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-              <span className="ml-auto text-xs bg-slate-700 px-2 py-0.5 rounded text-secondary">준비중</span>
-            </div>
-          );
-        })}
+        {visibleMenuItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+              location.pathname === item.path
+                ? "bg-primary text-primary-foreground"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            )}
+            onClick={onClose}
+          >
+            <item.icon className="h-5 w-5" />
+            <span>{item.label}</span>
+          </Link>
+        ))}
       </div>
 
       <div className="p-4 border-t border-slate-800">

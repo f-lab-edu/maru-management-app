@@ -8,7 +8,6 @@ import {
   SheetDescription,
 } from '../../../shared/components/ui/sheet';
 import { Button } from '../../../shared/components/ui/button';
-import { Badge } from '../../../shared/components/ui/badge';
 import { ScrollArea } from '../../../shared/components/ui/scroll-area';
 import { useConfirm } from '../../../hooks/useSweetAlert/useConfirm';
 import { useStudentsByDivision, useUnenrollStudent } from '../hooks';

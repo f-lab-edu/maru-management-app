@@ -14,6 +14,7 @@ export interface DojangSummary {
   dojangName: string;
   tenantId: string;
   role: UserRole;
+  permissions?: string[];
 }
 
 export interface MyDojangsRes {

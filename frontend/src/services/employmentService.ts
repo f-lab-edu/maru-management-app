@@ -1,5 +1,11 @@
 import apiClient from './api';
-import { DojangSearchResult, Employment, PendingApprovalRequest } from '../types/employment';
+import {
+  DojangSearchResult,
+  Employment,
+  Instructor,
+  InstructorDetail,
+  PendingApprovalRequest,
+} from '../types/employment';
 
 export interface PagedResult<T> {
   content: T[];
@@ -50,5 +56,42 @@ export const employmentService = {
 
   cancel: async (employmentId: string): Promise<void> => {
     await apiClient.delete(`/employments/${employmentId}/cancel`);
+  },
+
+  getInstructors: async (): Promise<Instructor[]> => {
+    const response = await apiClient.get<Instructor[]>('/employments/instructors');
+    return response.data;
+  },
+
+  getInstructorDetail: async (id: string): Promise<InstructorDetail> => {
+    const response = await apiClient.get<InstructorDetail>(`/employments/instructors/${id}`);
+    return response.data;
+  },
+
+  updatePermissions: async (id: string, permissions: string[]): Promise<InstructorDetail> => {
+    const response = await apiClient.patch<InstructorDetail>(
+      `/employments/instructors/${id}/permissions`,
+      { permissions },
+    );
+    return response.data;
+  },
+
+  resetPermissions: async (id: string): Promise<InstructorDetail> => {
+    const response = await apiClient.post<InstructorDetail>(
+      `/employments/instructors/${id}/permissions/reset`,
+    );
+    return response.data;
+  },
+
+  updateInstructorStatus: async (
+    id: string,
+    status: string,
+    reason?: string,
+  ): Promise<InstructorDetail> => {
+    const response = await apiClient.patch<InstructorDetail>(
+      `/employments/instructors/${id}/status`,
+      { status, reason },
+    );
+    return response.data;
   },
 };

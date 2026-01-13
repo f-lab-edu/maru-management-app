@@ -7,6 +7,8 @@ export const employmentKeys = {
   search: (keyword: string, page: number) => [...employmentKeys.all, 'search', keyword, page] as const,
   myRequests: () => [...employmentKeys.all, 'myRequests'] as const,
   pendingRequests: () => [...employmentKeys.all, 'pendingRequests'] as const,
+  instructors: () => [...employmentKeys.all, 'instructors'] as const,
+  instructorDetail: (id: string) => [...employmentKeys.all, 'instructorDetail', id] as const,
 };
 
 export function useDojangSearch(keyword: string, page: number = 0, enabled: boolean = true) {
@@ -94,6 +96,59 @@ export function useCancelRequest() {
     mutationFn: (employmentId: string) => employmentService.cancel(employmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employmentKeys.myRequests() });
+    },
+  });
+}
+
+export function useInstructors() {
+  return useQuery({
+    queryKey: employmentKeys.instructors(),
+    queryFn: () => employmentService.getInstructors(),
+  });
+}
+
+export function useInstructorDetail(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: employmentKeys.instructorDetail(id),
+    queryFn: () => employmentService.getInstructorDetail(id),
+    enabled: enabled && !!id,
+  });
+}
+
+export function useUpdatePermissions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, permissions }: { id: string; permissions: string[] }) =>
+      employmentService.updatePermissions(id, permissions),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructorDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructors() });
+    },
+  });
+}
+
+export function useResetPermissions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => employmentService.resetPermissions(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructorDetail(id) });
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructors() });
+    },
+  });
+}
+
+export function useUpdateInstructorStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
+      employmentService.updateInstructorStatus(id, status, reason),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructorDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: employmentKeys.instructors() });
     },
   });
 }

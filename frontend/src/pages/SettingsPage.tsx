@@ -1,6 +1,7 @@
 import { Users, Shield, Bell, User, GraduationCap } from 'lucide-react';
 import { SettingsLayout } from '../features/settings/components/SettingsLayout';
 import { InstructorApproval } from '../features/settings/components/InstructorApproval';
+import { InstructorPermissions } from '../features/settings/components/InstructorPermissions';
 import { DivisionSettings } from '../features/divisions';
 import { SettingsTab } from '../features/settings/types';
 
@@ -25,7 +26,7 @@ export default function SettingsPage() {
       label: '권한 설정',
       icon: Shield,
       description: '사범님들의 권한을 세부적으로 설정합니다.',
-      component: <div className="p-4 text-slate-500">준비 중인 기능입니다.</div>
+      component: <InstructorPermissions />
     },
     {
       id: 'notifications',
