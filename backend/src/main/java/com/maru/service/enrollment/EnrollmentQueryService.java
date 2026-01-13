@@ -1,6 +1,8 @@
 package com.maru.service.enrollment;
 
 import com.maru.common.aop.ValidateDojangAccess;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
 import com.maru.controller.enrollment.dto.EnrolledStudentRes;
 import com.maru.repository.enrollment.EnrollmentRepository;
@@ -26,6 +28,7 @@ public class EnrollmentQueryService {
      * @param divisionId 수련반 ID
      * @return 등록된 원생 목록
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public EnrolledStudentListRes getEnrollments(String dojangId, String divisionId) {
         List<EnrollmentStudentView> views = enrollmentRepository
                 .findAllWithStudentByDivisionId(dojangId, divisionId);

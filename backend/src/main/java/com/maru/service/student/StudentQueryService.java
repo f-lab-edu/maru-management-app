@@ -2,6 +2,8 @@ package com.maru.service.student;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.student.dto.GuardianRes;
 import com.maru.controller.student.dto.StudentListRes;
 import com.maru.controller.student.dto.StudentRes;
@@ -38,6 +40,7 @@ public class StudentQueryService {
      * @param divisionId 수련반 ID (선택)
      * @return 원생 목록
      */
+    @RequirePermission(PermissionType.STUDENT_VIEW)
     public StudentListRes getStudents(String dojangId, String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
 
@@ -74,6 +77,7 @@ public class StudentQueryService {
      * @return 원생 상세 정보
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_VIEW)
     public StudentRes getStudent(String dojangId, String studentId) {
         String tenantId = TenantContextHolder.getTenantId();
 

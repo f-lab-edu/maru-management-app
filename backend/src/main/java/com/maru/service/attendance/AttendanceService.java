@@ -3,6 +3,8 @@ package com.maru.service.attendance;
 import com.maru.common.aop.SkipDojangValidation;
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.attendance.dto.*;
 import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.AttendanceStatus;
@@ -65,6 +67,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_RETROACTIVE_LIMIT_EXCEEDED - 소급 입력 30일 초과
      * @throws BusinessException ATTENDANCE_DUPLICATE - 이미 출석 체크됨
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public AttendanceRes checkIn(String dojangId, String studentId, CheckMethod method, AttendanceStatus status,
                                   LocalDate date, LocalDateTime checkinAt, String note) {
@@ -97,6 +100,7 @@ public class AttendanceService {
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
      * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public BulkCheckRes bulkCheckIn(String dojangId, List<String> studentIds, CheckMethod method) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -124,6 +128,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
      * @throws BusinessException ATTENDANCE_ALREADY_CHECKOUT - 이미 퇴관 처리됨
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public AttendanceRes checkOut(String dojangId, String attendanceId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -148,6 +153,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
      * @throws BusinessException ATTENDANCE_NOT_CHECKOUT - 퇴관 기록이 없음
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public AttendanceRes cancelCheckout(String dojangId, String attendanceId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -168,6 +174,7 @@ public class AttendanceService {
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
      * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public BulkCheckRes bulkCheckOut(String dojangId, List<String> attendanceIds) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -196,6 +203,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
      * @throws BusinessException ATTENDANCE_SAME_STATUS - 이미 동일한 상태
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public AttendanceRes changeStatus(String dojangId, String attendanceId, AttendanceStatus status, String note) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -220,6 +228,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_NOT_FOUND - 출석 기록을 찾을 수 없음
      * @throws BusinessException ATTENDANCE_CHECKOUT_BEFORE_CHECKIN - 퇴관 시간이 출석 시간보다 이전
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public AttendanceRes changeTime(String dojangId, String attendanceId, LocalDateTime checkinAt, LocalDateTime checkoutAt) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -243,6 +252,7 @@ public class AttendanceService {
      * @throws BusinessException DOJANG_NOT_FOUND - 도장을 찾을 수 없음
      * @throws BusinessException DOJANG_UNAUTHORIZED_ACCESS - 도장 접근 권한 없음
      */
+    @RequirePermission(PermissionType.ATTENDANCE_UPDATE)
     @Transactional
     public BulkCheckRes bulkChangeStatus(String dojangId, List<String> attendanceIds, AttendanceStatus status, String note) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -272,6 +282,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_DATE_RANGE_INVALID - 시작일이 종료일보다 이후
      * @throws BusinessException ATTENDANCE_DATE_RANGE_TOO_LARGE - 조회 기간 31일 초과
      */
+    @RequirePermission(PermissionType.ATTENDANCE_VIEW)
     @Transactional(readOnly = true)
     public RangeAttendanceRes getAttendanceRange(String dojangId, LocalDate startDate, LocalDate endDate,
                                                   String sectionId, String divisionId) {
@@ -297,6 +308,7 @@ public class AttendanceService {
      * @throws BusinessException ATTENDANCE_DATE_RANGE_INVALID - 시작일이 종료일보다 이후
      * @throws BusinessException ATTENDANCE_DATE_RANGE_TOO_LARGE - 조회 기간 31일 초과
      */
+    @RequirePermission(PermissionType.ATTENDANCE_VIEW)
     @Transactional(readOnly = true)
     public List<AttendanceRes> getHistory(String dojangId, String studentId, LocalDate startDate, LocalDate endDate) {
         String tenantId = TenantContextHolder.getTenantId();

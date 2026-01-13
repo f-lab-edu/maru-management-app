@@ -1,6 +1,9 @@
 package com.maru.service.section;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.section.dto.DivisionDetailRes;
 import com.maru.controller.section.dto.DivisionListRes;
 import com.maru.controller.section.dto.DivisionRes;
@@ -16,6 +19,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class DivisionQueryService {
 
     private final DivisionRepository divisionRepository;
@@ -27,6 +31,7 @@ public class DivisionQueryService {
      * @param sectionId 수련부 ID
      * @return 수련반 목록 (displayOrder 순)
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public DivisionListRes getDivisions(String dojangId, String sectionId) {
         List<DivisionView> views = divisionRepository.findAllWithStudentCount(dojangId, sectionId);
 
@@ -45,6 +50,7 @@ public class DivisionQueryService {
      * @return 수련반 정보
      * @throws BusinessException NOT_FOUND - 수련반을 찾을 수 없는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public DivisionRes getDivision(String dojangId, String divisionId) {
         DivisionView view = divisionRepository.findDetailById(divisionId, dojangId)
                 .orElseThrow(() -> new BusinessException(DivisionErrorCode.NOT_FOUND));
@@ -60,6 +66,7 @@ public class DivisionQueryService {
      * @return 수련반 상세 정보
      * @throws BusinessException NOT_FOUND - 수련반을 찾을 수 없는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public DivisionDetailRes getDivisionDetail(String dojangId, String divisionId) {
         DivisionView view = divisionRepository.findDetailById(divisionId, dojangId)
                 .orElseThrow(() -> new BusinessException(DivisionErrorCode.NOT_FOUND));

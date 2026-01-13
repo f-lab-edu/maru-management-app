@@ -2,6 +2,8 @@ package com.maru.service.section;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.section.dto.SectionListRes;
 import com.maru.controller.section.dto.SectionRes;
 import com.maru.domain.section.exception.SectionErrorCode;
@@ -29,6 +31,7 @@ public class SectionQueryService {
      * @return 수련부 정보
      * @throws BusinessException NOT_FOUND - 수련부를 찾을 수 없는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public SectionRes getSection(String dojangId, String sectionId) {
         SectionView view = sectionRepository.findDetailById(sectionId, dojangId)
                 .orElseThrow(() -> new BusinessException(SectionErrorCode.NOT_FOUND));
@@ -42,6 +45,7 @@ public class SectionQueryService {
      * @param dojangId 도장 ID
      * @return 수련부 목록 (displayOrder 순, divisionCount 포함)
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     public SectionListRes getSections(String dojangId) {
         List<SectionView> views = sectionRepository.findAllWithDivisionCount(dojangId);
         List<SectionRes> sections = views.stream()

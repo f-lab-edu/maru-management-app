@@ -2,6 +2,8 @@ package com.maru.service.section;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.section.dto.*;
 import com.maru.domain.section.Section;
 import com.maru.domain.section.exception.SectionErrorCode;
@@ -39,6 +41,7 @@ public class SectionService {
      * @return 생성된 수련부 정보
      * @throws BusinessException 도장을 찾을 수 없거나 중복 이름인 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public SectionRes createSection(String dojangId, SectionCreateReq request) {
         validateDojangExists(dojangId);
@@ -60,6 +63,7 @@ public class SectionService {
      * @return 수정된 수련부 정보
      * @throws BusinessException 수련부를 찾을 수 없거나 중복 이름인 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public SectionRes updateSection(String dojangId, String sectionId, SectionUpdateReq request) {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
@@ -77,6 +81,7 @@ public class SectionService {
      * @param sectionId 수련부 ID
      * @throws BusinessException 수련부를 찾을 수 없거나 소속 수련반이 있는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void deleteSection(String dojangId, String sectionId) {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
@@ -97,6 +102,7 @@ public class SectionService {
      * @param request  순서 변경 요청 (ID 목록 순서대로 displayOrder 부여)
      * @throws BusinessException 요청한 수련부 갯수와 실제 갯수가 다른 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void reorderSections(String dojangId, SectionReorderReq request) {
         List<String> sectionIds = request.sectionIds();

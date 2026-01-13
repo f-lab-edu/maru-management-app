@@ -2,6 +2,8 @@ package com.maru.service.student;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.student.dto.StudentCreateReq;
 import com.maru.controller.student.dto.StudentRes;
 import com.maru.controller.student.dto.StudentUpdateReq;
@@ -37,6 +39,7 @@ public class StudentService {
      * @return 등록된 원생 정보
      * @throws BusinessException DUPLICATE - 이미 등록된 원생 (WITHDRAWN 상태면 재등록)
      */
+    @RequirePermission(PermissionType.STUDENT_CREATE)
     @Transactional
     public StudentRes createStudent(String dojangId, StudentCreateReq req, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -69,6 +72,7 @@ public class StudentService {
      * @return 수정된 원생 정보
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_UPDATE)
     @Transactional
     public StudentRes updateStudent(String dojangId, String studentId, StudentUpdateReq req, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -102,6 +106,7 @@ public class StudentService {
      * @param userId 현재 사용자 ID
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_DELETE)
     @Transactional
     public void deleteStudent(String dojangId, String studentId, String reason, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -121,6 +126,7 @@ public class StudentService {
      * @param userId 현재 사용자 ID
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_DELETE)
     @Transactional
     public void bulkDeleteStudents(String dojangId, List<String> studentIds, String userId) {
         String tenantId = TenantContextHolder.getTenantId();

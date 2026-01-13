@@ -1,6 +1,8 @@
 package com.maru.service.invoice;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.domain.invoice.exception.InvoiceErrorCode;
 import com.maru.domain.invoice.exception.PaymentErrorCode;
 import com.maru.controller.invoice.dto.*;
@@ -9,15 +11,13 @@ import com.maru.domain.invoice.Payment;
 import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
 import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
 import com.maru.repository.student.StudentRepository;
-import com.maru.repository.tenant.DojangRepository;
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +38,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ValidateDojangAccess
 public class PaymentService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
-    private final DojangRepository dojangRepository;
     private final StudentRepository studentRepository;
     private final InvoiceQueryService invoiceQueryService;
     private final PaymentQueryService paymentQueryService;
@@ -59,11 +59,10 @@ public class PaymentService {
      * @return 수납 기록 후 청구서 상세 정보
      * @throws BusinessException AMOUNT_EXCEEDS_REMAINING - 수납 금액이 남은 금액 초과
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes recordPayment(String dojangId, String invoiceId, PaymentRecordReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         Payment payment = createAndSavePayment(invoice, request, userId);
         invoice.addPayment(payment.getAmount());
@@ -85,11 +84,10 @@ public class PaymentService {
      * @throws BusinessException NOT_FOUND - 수납 내역을 찾을 수 없음
      * @throws BusinessException ALREADY_REFUNDED - 이미 환불된 수납
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes cancelPayment(String dojangId, String invoiceId, String paymentId, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
         Payment payment = findPaymentAndValidate(paymentId, invoiceId, tenantId, dojangId);
 
@@ -109,11 +107,10 @@ public class PaymentService {
      * @param divisionId 수련반 ID (선택)
      * @return 미납 청구서 목록 (연체일 포함)
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public List<UnpaidListRes> getUnpaidList(String dojangId, String sectionId, String divisionId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         return paymentQueryService.getUnpaidList(tenantId, dojangId, sectionId, divisionId);
     }
 
@@ -125,11 +122,10 @@ public class PaymentService {
      * @param month 청구 월 (1-12)
      * @return 수납 통계 (완납/미납/부분납 건수 및 금액)
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public PaymentStatisticsRes getPaymentStatistics(String dojangId, int year, int month) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         LocalDateTime startOfMonth = LocalDate.of(year, month, 1).atStartOfDay();
         LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
 
@@ -155,11 +151,10 @@ public class PaymentService {
      * @param year 조회 연도
      * @return 연간 통계 (월별 데이터 포함)
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public YearlyStatisticsRes getYearStatistics(String dojangId, int year) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         YearMonth startYearMonth = YearMonth.of(year, 1);
         YearMonth endYearMonth = YearMonth.of(year, 12);
 
@@ -225,11 +220,10 @@ public class PaymentService {
      * @return 원생의 납부 이력
      * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public StudentPaymentHistoryRes getStudentPaymentHistory(String dojangId, String studentId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         StudentMinimalView student = findStudentAndValidate(dojangId, studentId);
         List<Payment> payments = paymentRepository.findByStudentIdOrderByPaidAtDesc(tenantId, dojangId, studentId);
 
@@ -244,11 +238,10 @@ public class PaymentService {
      * @param userId 현재 사용자 ID
      * @return 선납 처리 결과
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public PrepaidPaymentRes processPrepaidPayment(String dojangId, PrepaidPaymentReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-        validateDojangAccess(dojangId, tenantId);
-
         validateStudentInDojang(request.studentId(), dojangId);
         List<YearMonth> months = calculateMonthRange(
                 request.startYearMonth(), request.endYearMonth()
@@ -261,15 +254,6 @@ public class PaymentService {
                 request.studentId(), months.size(), request.totalAmount(), userId);
 
         return buildPrepaidResponse(months.size(), request, invoiceIds);
-    }
-
-    private void validateDojangAccess(String dojangId, String tenantId) {
-        Dojang dojang = dojangRepository.findById(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
-
-        if (!dojang.getTenantId().equals(tenantId)) {
-            throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
-        }
     }
 
     private Invoice findInvoice(String invoiceId, String tenantId, String dojangId) {

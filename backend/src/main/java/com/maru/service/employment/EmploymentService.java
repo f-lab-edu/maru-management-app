@@ -13,6 +13,7 @@ import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.view.DojangMinimalView;
 import com.maru.security.DojangAccessValidator;
+import com.maru.security.PermissionCache;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class EmploymentService {
     private final UserService userService;
     private final EmploymentQueryService queryService;
     private final DojangAccessValidator dojangAccessValidator;
+    private final PermissionCache permissionCache;
 
     /**
      * 사범이 도장에 승인 요청 (거절/퇴사 후 재요청 시 기존 레코드 재활용)
@@ -93,7 +95,7 @@ public class EmploymentService {
 
         userService.updateOnboardingStep(employment.getUserId(), OnboardingStep.COMPLETED);
 
-        dojangAccessValidator.evictEmploymentCache(employment.getUserId(), employment.getDojangId());
+        evictCache(employment);
 
         log.info("승인 요청 승인: employmentId={}, ownerId={}, userId={}",
                 employmentId, ownerId, employment.getUserId());
@@ -249,7 +251,12 @@ public class EmploymentService {
     }
 
     private void evictCache(Employment employment) {
-        dojangAccessValidator.evictEmploymentCache(employment.getUserId(), employment.getDojangId());
+        String userId = employment.getUserId();
+        String tenantId = employment.getTenantId();
+        String dojangId = employment.getDojangId();
+
+        dojangAccessValidator.evictEmploymentCache(userId, dojangId);
+        permissionCache.invalidate(userId, tenantId, dojangId);
     }
 
     private Set<PermissionType> toPermissionTypes(Set<String> permissionNames) {

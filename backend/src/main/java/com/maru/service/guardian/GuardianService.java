@@ -2,6 +2,8 @@ package com.maru.service.guardian;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.student.dto.GuardianCreateReq;
 import com.maru.controller.student.dto.GuardianRes;
 import com.maru.controller.student.dto.GuardianUpdateReq;
@@ -40,6 +42,7 @@ public class GuardianService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      * @throws BusinessException GUARDIANSHIP_ALREADY_EXISTS - 이미 연결된 보호자
      */
+    @RequirePermission(PermissionType.STUDENT_CREATE)
     @Transactional
     public GuardianRes addGuardian(String dojangId, String studentId, GuardianCreateReq req) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -68,6 +71,7 @@ public class GuardianService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자를 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_UPDATE)
     @Transactional
     public GuardianRes updateGuardian(String dojangId, String studentId, String guardianId, GuardianUpdateReq req) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -94,6 +98,7 @@ public class GuardianService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자를 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_UPDATE)
     @Transactional
     public void setPrimaryGuardian(String dojangId, String studentId, String guardianId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -117,6 +122,7 @@ public class GuardianService {
      * @throws BusinessException STUDENT_NOT_FOUND - 원생을 찾을 수 없음
      * @throws BusinessException GUARDIAN_NOT_FOUND - 보호자 연결을 찾을 수 없음
      */
+    @RequirePermission(PermissionType.STUDENT_DELETE)
     @Transactional
     public void removeGuardian(String dojangId, String studentId, String guardianId) {
         String tenantId = TenantContextHolder.getTenantId();

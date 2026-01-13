@@ -2,6 +2,8 @@ package com.maru.service.invoice;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.invoice.dto.*;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
@@ -46,6 +48,7 @@ public class InvoiceService {
      * @return 생성된 청구서 상세 정보
      * @throws BusinessException DUPLICATE_INVOICE - 동일 월 중복 청구서
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes createInvoice(String dojangId, InvoiceCreateReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -70,6 +73,7 @@ public class InvoiceService {
      * @param userId 현재 사용자 ID
      * @return 생성 결과 (생성 수, 스킵 수)
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public BulkCreateRes createBulkInvoices(String dojangId, InvoiceBulkCreateReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -103,6 +107,7 @@ public class InvoiceService {
      * @param divisionId 수련반 ID (선택, 해당 수련반 소속 원생만 조회)
      * @return 청구서 목록
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public List<InvoiceListRes> getInvoices(String dojangId, InvoiceStatus status,
                                              String sectionId, String divisionId) {
@@ -121,6 +126,7 @@ public class InvoiceService {
      * @return 청구서 상세 정보 (수납 내역 포함)
      * @throws BusinessException NOT_FOUND - 청구서를 찾을 수 없음
      */
+    @RequirePermission(PermissionType.PAYMENT_VIEW)
     @Transactional(readOnly = true)
     public InvoiceDetailRes getInvoice(String dojangId, String invoiceId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -138,6 +144,7 @@ public class InvoiceService {
      * @return 수정된 청구서 상세 정보
      * @throws BusinessException CANNOT_UPDATE_NON_DRAFT - DRAFT 상태가 아닌 경우
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes updateInvoice(String dojangId, String invoiceId, InvoiceUpdateReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -159,6 +166,7 @@ public class InvoiceService {
      * @return 발행된 청구서 상세 정보
      * @throws BusinessException INVALID_STATUS_TRANSITION - 잘못된 상태 전이
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes issueInvoice(String dojangId, String invoiceId, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -180,6 +188,7 @@ public class InvoiceService {
      * @return 무효화된 청구서 상세 정보
      * @throws BusinessException CANNOT_VOID_PAID_INVOICE - PAID 상태에서 무효화 시도
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes voidInvoice(String dojangId, String invoiceId, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -201,6 +210,7 @@ public class InvoiceService {
      * @return 복구된 청구서 상세 정보
      * @throws BusinessException CANNOT_RESTORE_NON_VOID - VOID 상태가 아닌 경우
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes restoreInvoice(String dojangId, String invoiceId, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -221,6 +231,7 @@ public class InvoiceService {
      * @param userId 현재 사용자 ID
      * @throws BusinessException CANNOT_DELETE_NON_DRAFT - DRAFT 상태가 아닌 경우
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public void deleteInvoice(String dojangId, String invoiceId, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -242,6 +253,7 @@ public class InvoiceService {
      * @param userId 현재 사용자 ID
      * @return 발행 결과 (성공 수, 실패 수)
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public BulkIssueRes bulkIssueInvoices(String dojangId, BulkIssueReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
@@ -268,6 +280,7 @@ public class InvoiceService {
      * @param userId 현재 사용자 ID
      * @return 수정 결과 (전체 수, 성공 수, 스킵 수)
      */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public BulkUpdateRes bulkUpdateInvoices(String dojangId, InvoiceBulkUpdateReq request, String userId) {
         String tenantId = TenantContextHolder.getTenantId();

@@ -1,6 +1,9 @@
 package com.maru.service.section;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.section.dto.DivisionCreateReq;
 import com.maru.controller.section.dto.DivisionReorderReq;
 import com.maru.controller.section.dto.DivisionRes;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class DivisionService {
 
     private final DivisionRepository divisionRepository;
@@ -39,6 +43,7 @@ public class DivisionService {
      * @return 생성된 수련반 정보
      * @throws BusinessException 수련부를 찾을 수 없거나 중복 이름인 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public DivisionRes createDivision(String dojangId, DivisionCreateReq request) {
         Section section = findSectionByIdAndDojangId(request.sectionId(), dojangId);
@@ -66,6 +71,7 @@ public class DivisionService {
      * @return 수정된 수련반 정보
      * @throws BusinessException 수련반을 찾을 수 없거나 중복 이름인 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public DivisionRes updateDivision(String dojangId, String divisionId, DivisionUpdateReq request) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
@@ -85,6 +91,7 @@ public class DivisionService {
      * @param divisionId 수련반 ID
      * @throws BusinessException 수련반을 찾을 수 없는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void deleteDivision(String dojangId, String divisionId) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
@@ -98,6 +105,7 @@ public class DivisionService {
      * @param request 순서 변경 요청 (수련부 ID, 수련반 ID 목록)
      * @throws BusinessException 중복 ID, 개수 불일치, 수련반 미존재 시
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void reorderDivisions(String dojangId, DivisionReorderReq request) {
         findSectionByIdAndDojangId(request.sectionId(), dojangId);

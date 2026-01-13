@@ -2,6 +2,8 @@ package com.maru.service.enrollment;
 
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.permission.PermissionType;
+import com.maru.security.RequirePermission;
 import com.maru.controller.enrollment.dto.BulkEnrollmentRes;
 import com.maru.domain.enrollment.Enrollment;
 import com.maru.domain.enrollment.exception.EnrollmentErrorCode;
@@ -39,6 +41,7 @@ public class EnrollmentService {
      * @param studentId 원생 ID
      * @throws BusinessException 수련반/원생을 찾을 수 없거나 이미 등록된 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void enrollStudent(String dojangId, String divisionId, String studentId) {
         validateDivisionExists(divisionId, dojangId);
@@ -57,6 +60,7 @@ public class EnrollmentService {
      * @param studentId 원생 ID
      * @throws BusinessException 등록 정보를 찾을 수 없는 경우
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public void unenrollStudent(String dojangId, String divisionId, String studentId) {
         Enrollment enrollment = enrollmentRepository
@@ -74,6 +78,7 @@ public class EnrollmentService {
      * @param studentIds 원생 ID 목록
      * @return 등록 결과 (성공/스킵 수)
      */
+    @RequirePermission(PermissionType.DOJANG_MANAGE_CLASS)
     @Transactional
     public BulkEnrollmentRes bulkEnrollStudents(String dojangId, String divisionId, List<String> studentIds) {
         validateDivisionExists(divisionId, dojangId);
