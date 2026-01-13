@@ -3,6 +3,7 @@ package com.maru.repository.attendance;
 import com.maru.domain.attendance.Attendance;
 import com.maru.domain.student.StudentStatus;
 import com.maru.repository.attendance.view.AttendanceStudentView;
+import com.maru.repository.attendance.view.CurrentAttendanceCountView;
 import com.maru.repository.attendance.view.NotificationTargetView;
 import com.maru.repository.attendance.view.RangeAttendanceView;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -204,4 +205,45 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
         WHERE a.id = :id
         """)
     Optional<NotificationTargetView> findNotificationTarget(@Param("id") String id);
+
+    @Query("""
+        SELECT COUNT(a) as count
+        FROM Attendance a
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.attendanceDate = :date
+          AND a.checkinAt IS NOT NULL
+          AND a.checkoutAt IS NULL
+        """)
+    CurrentAttendanceCountView countCurrentlyAttending(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("date") LocalDate date);
+
+    @Query("""
+        SELECT COUNT(a) as count
+        FROM Attendance a
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.attendanceDate = :date
+          AND a.status = 'PRESENT'
+        """)
+    long countTodayPresent(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("date") LocalDate date);
+
+    @Query("""
+        SELECT COUNT(a) as count
+        FROM Attendance a
+        WHERE a.tenantId = :tenantId
+          AND a.dojangId = :dojangId
+          AND a.attendanceDate BETWEEN :startDate AND :endDate
+          AND a.status = 'PRESENT'
+        """)
+    long countMonthlyPresent(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

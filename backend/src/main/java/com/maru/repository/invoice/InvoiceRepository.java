@@ -5,7 +5,10 @@ import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.repository.invoice.view.InvoiceStatisticsView;
 import com.maru.repository.invoice.view.InvoiceStudentView;
 import com.maru.repository.invoice.view.MonthlyInvoiceStatisticsView;
+import com.maru.repository.invoice.view.RecentPaymentView;
 import com.maru.repository.invoice.view.UnpaidInvoiceView;
+
+import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -136,6 +139,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) AS paidCount,
             COUNT(CASE WHEN i.status = 'PARTIAL' THEN 1 END) AS partialCount,
             COUNT(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN 1 END) AS unpaidCount,
+            COALESCE(SUM(i.amount), 0) AS totalAmount,
+            COALESCE(SUM(i.paidAmount), 0) AS totalPaidAmount,
             COALESCE(SUM(CASE WHEN i.status IN ('OPEN', 'PARTIAL') THEN i.amount - i.paidAmount ELSE 0 END), 0) AS totalUnpaidAmount
         FROM Invoice i
         WHERE i.tenantId = :tenantId
@@ -190,4 +195,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
             @Param("dojangId") String dojangId,
             @Param("studentIds") List<String> studentIds,
             @Param("status") InvoiceStatus status);
+
+    @Query("""
+        SELECT i.studentId as studentId, s.name as studentName, i.updatedAt as paidAt
+        FROM Invoice i
+        JOIN Student s ON i.studentId = s.id
+        WHERE i.tenantId = :tenantId
+          AND i.dojangId = :dojangId
+          AND i.status = 'PAID'
+          AND i.updatedAt >= :since
+        ORDER BY i.updatedAt DESC
+        """)
+    List<RecentPaymentView> findRecentPayments(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("since") LocalDateTime since);
 }

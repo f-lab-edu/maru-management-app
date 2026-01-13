@@ -7,6 +7,9 @@ import com.maru.repository.employment.view.EmploymentDetailView;
 import com.maru.repository.employment.view.InstructorView;
 import com.maru.repository.employment.view.InstructorWithPermissionsView;
 import com.maru.repository.employment.view.MyDojangView;
+import com.maru.repository.employment.view.RecentApprovalView;
+
+import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -150,4 +153,19 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
     Optional<InstructorWithPermissionsView> findInstructorWithPermissionsById(
             @Param("tenantId") String tenantId,
             @Param("employmentId") String employmentId);
+
+    @Query("""
+        SELECT e.userId as userId, u.name as userName, e.joinedAt as approvedAt
+        FROM Employment e
+        JOIN User u ON e.userId = u.id
+        WHERE e.tenantId = :tenantId
+          AND e.dojangId = :dojangId
+          AND e.status = 'ACTIVE'
+          AND e.joinedAt >= :since
+        ORDER BY e.joinedAt DESC
+        """)
+    List<RecentApprovalView> findRecentApprovals(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("since") LocalDateTime since);
 }

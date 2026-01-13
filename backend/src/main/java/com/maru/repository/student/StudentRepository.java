@@ -2,6 +2,8 @@ package com.maru.repository.student;
 
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
+import com.maru.repository.student.view.RecentStudentView;
+import com.maru.repository.student.view.StudentCountView;
 import com.maru.repository.student.view.StudentDetailView;
 import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.repository.student.view.StudentSummaryView;
@@ -234,4 +236,47 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     Optional<StudentMinimalView> findMinimalByIdAndDojangId(
             @Param("id") String id,
             @Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT COUNT(s) as totalCount,
+               SUM(CASE WHEN s.status = 'ACTIVE' THEN 1 ELSE 0 END) as activeCount,
+               SUM(CASE WHEN s.status = 'PAUSED' THEN 1 ELSE 0 END) as pausedCount
+        FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+          AND s.status != 'WITHDRAWN'
+          AND s.deletedAt IS NULL
+        """)
+    StudentCountView countByStatus(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId);
+
+    @Query("""
+        SELECT COUNT(s)
+        FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+          AND s.status != 'WITHDRAWN'
+          AND s.deletedAt IS NULL
+          AND s.createdAt < :beforeDate
+        """)
+    long countAsOfDate(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("beforeDate") java.time.LocalDateTime beforeDate);
+
+    @Query("""
+        SELECT s.id as id, s.name as name, s.enrolledAt as enrolledAt,
+               s.status as status, s.photoUrl as photoUrl
+        FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+          AND s.enrolledAt >= :since
+          AND s.deletedAt IS NULL
+        ORDER BY s.enrolledAt DESC
+        """)
+    List<RecentStudentView> findRecentEnrolled(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("since") LocalDate since);
 }
