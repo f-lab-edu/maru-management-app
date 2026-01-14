@@ -239,8 +239,8 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("""
         SELECT COUNT(s) as totalCount,
-               SUM(CASE WHEN s.status = 'ACTIVE' THEN 1 ELSE 0 END) as activeCount,
-               SUM(CASE WHEN s.status = 'PAUSED' THEN 1 ELSE 0 END) as pausedCount
+               COALESCE(SUM(CASE WHEN s.status = 'ACTIVE' THEN 1 ELSE 0 END), 0) as activeCount,
+               COALESCE(SUM(CASE WHEN s.status = 'PAUSED' THEN 1 ELSE 0 END), 0) as pausedCount
         FROM Student s
         WHERE s.tenantId = :tenantId
           AND s.dojangId = :dojangId

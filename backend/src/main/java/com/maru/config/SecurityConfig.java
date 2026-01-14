@@ -53,8 +53,10 @@ public class SecurityConfig {
                         "/api/v1/auth/**",
                         "/api/v1/sms/**",
                         "/api/v1/dev/**",  // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
-                        "api/v1/dojangs/**", // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
-                        "/actuator/health"
+                        "/api/v1/dojangs/**", // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
+                        "/actuator/health",
+                        "/favicon.ico",
+                        "/error"
                 ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
