@@ -57,7 +57,7 @@ bin/
 
 # Spring Boot sensitive config files
 **/application-local.yml
-**/application-prod.yml
+**/application-dev.yml
 
 # Java compiled artifacts
 *.class
