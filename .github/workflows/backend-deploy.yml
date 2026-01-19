@@ -106,7 +106,7 @@ jobs:
 
             # 스모크 테스트
             sleep 5
-            curl -f http://localhost:8080/actuator/health || {
+            curl -f http://localhost:8080/internal/healthz || {
               echo "Health check failed. Rolling back..."
               mv -f /home/ec2-user/maru-backend.jar.bak /home/ec2-user/maru-backend.jar || true
               sudo systemctl restart maru-backend
