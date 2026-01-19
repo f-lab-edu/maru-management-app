@@ -1,0 +1,120 @@
+export const ERROR_MESSAGES: Record<string, string> = {
+  // 인증 관련 (AUTH_XXX)
+  // 인증/권한 실패 (001~099)
+  AUTH_001: '인증이 필요합니다',
+  AUTH_002: '접근 권한이 없습니다',
+  // 필수값 누락 (101~199)
+  AUTH_101: '리프레시 토큰이 필요합니다',
+  // 토큰 유효성 검증 (201~299)
+  AUTH_201: '유효하지 않은 토큰입니다',
+  AUTH_202: '토큰이 만료되었습니다',
+  AUTH_203: '유효하지 않은 리프레시 토큰입니다',
+  AUTH_204: '세션이 만료되었습니다. 다시 로그인해주세요',
+  // OAuth 관련 (301~399)
+  AUTH_301: '소셜 로그인에 실패했습니다',
+  AUTH_302: '유효하지 않은 인가 코드입니다',
+  AUTH_303: '사용자 정보를 가져오지 못했습니다',
+
+  // 사용자 관련 (USER_XXX)
+  // 조회 실패 (001~099)
+  USER_001: '사용자를 찾을 수 없습니다',
+  // 유효성 검증 (201~299)
+  USER_201: '유효하지 않은 역할입니다',
+
+  // 온보딩 관련 (ONBOARDING_XXX)
+  // 비즈니스 규칙 (301~399)
+  ONBOARDING_301: '현재 단계에서 수행할 수 없는 작업입니다',
+  ONBOARDING_302: '전화번호 인증을 완료해주세요',
+
+  // SMS 인증 관련 (SMS_XXX)
+  // 조회 실패 (001~099)
+  SMS_001: '인증 요청 내역이 없습니다',
+  // 유효성 검증 (201~299)
+  SMS_201: '인증번호가 일치하지 않습니다',
+  SMS_202: '인증번호가 만료되었습니다',
+  // 비즈니스 규칙 (301~399)
+  SMS_301: '본인 인증만 가능합니다',
+  SMS_302: '잠시 후 다시 시도해주세요',
+  SMS_303: '인증 시도 횟수를 초과했습니다',
+  SMS_304: 'SMS 발송에 실패했습니다',
+
+  // 고용/승인 관련 (EMPLOYMENT_XXX)
+  // 조회/권한 (001~099)
+  EMPLOYMENT_001: '승인 요청을 찾을 수 없습니다',
+  EMPLOYMENT_002: '관장만 승인/거절할 수 있습니다',
+  EMPLOYMENT_003: '본인의 요청만 취소할 수 있습니다',
+  // 비즈니스 규칙 (301~399)
+  EMPLOYMENT_301: '이미 승인 요청이 존재합니다',
+  EMPLOYMENT_302: '대기 상태의 요청만 처리할 수 있습니다',
+  EMPLOYMENT_303: '활성 상태의 고용만 정지할 수 있습니다',
+  EMPLOYMENT_304: '정지 상태의 고용만 재활성화할 수 있습니다',
+  EMPLOYMENT_305: '활성 또는 정지 상태의 고용만 퇴사 처리할 수 있습니다',
+  EMPLOYMENT_306: '퇴사 또는 거절 상태의 고용만 재입사 처리할 수 있습니다',
+  EMPLOYMENT_307: '도장의 Tenant와 입력된 Tenant가 일치하지 않습니다',
+
+  // 도장 관련 (DOJANG_XXX)
+  // 조회/권한 (001~099)
+  DOJANG_001: '도장을 찾을 수 없습니다',
+  DOJANG_002: '해당 도장에 접근 권한이 없습니다',
+  // 비즈니스 규칙 (301~399)
+  DOJANG_301: '도장 소유자는 테넌트 소유자와 일치해야 합니다',
+
+  // 원생 관련 (STUDENT_XXX)
+  // 조회 실패 (001~099)
+  STUDENT_001: '원생을 찾을 수 없습니다',
+  // 비즈니스 규칙 (301~399)
+  STUDENT_301: '이미 등록된 원생입니다',
+  STUDENT_302: '퇴원한 원생입니다',
+
+  // 보호자 관련 (GUARDIAN_XXX)
+  // 조회 실패 (001~099)
+  GUARDIAN_001: '보호자를 찾을 수 없습니다',
+  // 비즈니스 규칙 (301~399)
+  GUARDIAN_301: '이미 연결된 보호자입니다',
+
+  // 출석 관련 (ATTENDANCE_XXX)
+  // 조회 실패 (001~099)
+  ATTENDANCE_001: '출석 기록을 찾을 수 없습니다',
+  // 유효성 검증 (201~299)
+  ATTENDANCE_201: '유효하지 않은 출석 상태입니다',
+  // 비즈니스 규칙 (301~399)
+  ATTENDANCE_301: '이미 출석 체크되었습니다',
+  ATTENDANCE_302: '이미 퇴관 처리되었습니다',
+  ATTENDANCE_303: '퇴관 시각은 입관 시각보다 이후여야 합니다',
+  ATTENDANCE_304: '이미 동일한 상태입니다',
+
+  // 청구서 관련 (INVOICE_XXX)
+  // 비즈니스 규칙 (301~399)
+  INVOICE_301: '해당 월에 이미 청구서가 존재합니다',
+  INVOICE_311: '선납 기간 내 청구서가 이미 존재합니다. 기존 청구서를 삭제하고 진행해주세요',
+
+  // 일반 에러 (COMMON_XXX)
+  // 조회 실패 (001~099)
+  COMMON_001: '요청한 정보를 찾을 수 없습니다',
+  // 유효성 검증 (201~299)
+  COMMON_201: '잘못된 요청입니다',
+  // 서버 오류 (501~599)
+  COMMON_501: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요',
+  COMMON_502: '준비 중인 기능입니다',
+};
+
+export const getErrorMessage = (code: string): string => {
+  return ERROR_MESSAGES[code] || '알 수 없는 오류가 발생했습니다';
+};
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      code?: string;
+    };
+  };
+}
+
+export const extractErrorCode = (error: unknown): string | undefined => {
+  return (error as ApiErrorResponse)?.response?.data?.code;
+};
+
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const code = extractErrorCode(error);
+  return code ? getErrorMessage(code) : fallback;
+};

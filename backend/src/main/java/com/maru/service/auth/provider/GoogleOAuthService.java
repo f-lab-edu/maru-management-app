@@ -1,6 +1,7 @@
 package com.maru.service.auth.provider;
 
-import com.maru.common.exception.AuthException;
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
 import com.maru.config.properties.GoogleOauthProperties;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.OAuthService;
@@ -16,8 +17,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -79,10 +78,10 @@ public class GoogleOAuthService implements OAuthService {
             return response.getBody();
         } catch (HttpClientErrorException e) {
             log.error("Google 토큰 교환 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new AuthException(AUTH_OAUTH_INVALID_CODE);
+            throw new AuthException(AuthErrorCode.OAUTH_INVALID_CODE);
         } catch (Exception e) {
             log.error("Google 토큰 교환 실패: {}", e.getMessage());
-            throw new AuthException(AUTH_OAUTH_FAILED);
+            throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
     }
 
@@ -99,7 +98,7 @@ public class GoogleOAuthService implements OAuthService {
             return response.getBody();
         } catch (Exception e) {
             log.error("Google 사용자 정보 조회 실패: {}", e.getMessage());
-            throw new AuthException(AUTH_OAUTH_USER_INFO_FAILED);
+            throw new AuthException(AuthErrorCode.OAUTH_USER_INFO_FAILED);
         }
     }
 

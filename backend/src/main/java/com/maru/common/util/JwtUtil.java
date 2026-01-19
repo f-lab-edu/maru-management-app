@@ -49,12 +49,12 @@ public class JwtUtil {
      * @param role 사용자 역할
      * @return JWT 토큰
      */
-    public String generateAccessToken(Long userId, Long tenantId, Long dojangId, String role) {
+        public String generateAccessToken(String userId, String tenantId, String dojangId, String role) {
         Instant now = Instant.now();
         Instant expiryDate = now.plus(jwtProperties.accessTokenExpiration());
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(userId)
                 .issuer("maru-management-api")
                 .audience().add("maru-management-client").and()
                 .claim("type", TOKEN_TYPE_ACCESS)
@@ -101,15 +101,31 @@ public class JwtUtil {
      * @param userId 사용자 ID
      * @return Refresh Token
      */
-    public String generateRefreshToken(Long userId) {
+    public String generateRefreshToken(String userId) {
+        return generateRefreshToken(userId, null, null, null);
+    }
+
+    /**
+     * Refresh Token 생성 (테넌트/도장/역할 포함)
+     *
+     * @param userId 사용자 ID
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
+     * @param role 사용자 역할
+     * @return Refresh Token
+     */
+    public String generateRefreshToken(String userId, String tenantId, String dojangId, String role) {
         Instant now = Instant.now();
         Instant expiryDate = now.plus(jwtProperties.refreshTokenExpiration());
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(userId)
                 .issuer("maru-management-api")
                 .audience().add("maru-management-client").and()
                 .claim("type", TOKEN_TYPE_REFRESH)
+                .claim("tenantId", tenantId)
+                .claim("dojangId", dojangId)
+                .claim("role", role)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiryDate))
                 .signWith(getSigningKey())
@@ -160,8 +176,8 @@ public class JwtUtil {
      * @param token JWT 토큰
      * @return 사용자 ID
      */
-    public Long extractUserId(String token) {
+        public String extractUserId(String token) {
         Claims claims = parseClaims(token);
-        return Long.parseLong(claims.getSubject());
+        return claims.getSubject();
     }
 }

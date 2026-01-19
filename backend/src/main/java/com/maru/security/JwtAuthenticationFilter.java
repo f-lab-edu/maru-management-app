@@ -1,6 +1,7 @@
 package com.maru.security;
 
-import com.maru.common.exception.AuthException;
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
 import com.maru.common.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -22,8 +23,6 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.List;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Component
@@ -57,37 +56,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         try {
-            // Cookie에서 JWT 토큰 추출
             String token = extractToken(request);
 
-            // 토큰이 없으면 필터 체인 계속
             if (token == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // JwtUtil을 사용한 토큰 검증
             JwtUtil.TokenValidationResult validationResult = jwtUtil.validateAccessToken(token);
             if (validationResult == JwtUtil.TokenValidationResult.EXPIRED) {
                 log.warn("만료된 JWT 토큰: {}", request.getRequestURI());
-                exceptionResolver.resolveException(request, response, null, new AuthException(AUTH_TOKEN_EXPIRED));
+                exceptionResolver.resolveException(request, response, null, new AuthException(AuthErrorCode.TOKEN_EXPIRED));
                 return;
             }
             if (validationResult != JwtUtil.TokenValidationResult.VALID) {
-                log.warn("유효하지 않은 JWT 토큰: {}, 상태: {}", request.getRequestURI(), validationResult);
+                log.warn("유효하지 않은 JWT 토큰: uri={}, 상태={}, IP={}",
+                        request.getRequestURI(), validationResult, request.getRemoteAddr());
+                SecurityContextHolder.clearContext();
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // 유효한 토큰에서 Claims 추출
             Claims claims = jwtUtil.parseClaims(token);
             JwtClaims jwtClaims = JwtClaims.fromJwt(claims);
 
-            // 테넌트 컨텍스트 + MDC userId 설정
-            try (AutoCloseable ignored = TenantContextHolder.withTenant(jwtClaims.tenantId());
+            try (AutoCloseable ignored = TenantContextHolder.withContext(
+                        jwtClaims.tenantId(), jwtClaims.userId(), jwtClaims.dojangId(), jwtClaims.role());
                  MDC.MDCCloseable mdcUserId = MDC.putCloseable("userId", String.valueOf(jwtClaims.userId()))) {
 
-                // UsernamePasswordAuthenticationToken 생성 및 SecurityContext 설정
                 List<SimpleGrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + jwtClaims.role())
                 );
@@ -100,11 +96,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                // 인증 성공 로깅
                 log.debug("JWT 인증 성공: userId={}, tenantId={}, dojangId={}, role={}, endpoint={}",
                         jwtClaims.userId(), jwtClaims.tenantId(), jwtClaims.dojangId(), jwtClaims.role(), request.getRequestURI());
 
-                // 필터 체인 계속
                 filterChain.doFilter(request, response);
             }
 

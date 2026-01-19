@@ -1,5 +1,8 @@
 package com.maru.common.exception;
 
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
+import com.maru.common.exception.sms.SmsVerificationException;
 import com.maru.controller.common.ErrorRes;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -11,9 +14,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
 
-import static com.maru.common.exception.ErrorCode.*;
-
-
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
             SmsVerificationException ex,
             HttpServletRequest request) {
 
-        ErrorCode errorCode = ex.getErrorCode();
+        BaseErrorCode errorCode = ex.getErrorCode();
 
         log.warn("SMS 인증 예외: code={}, remainingAttempts={}, path={}",
                 errorCode.getCode(), ex.getRemainingAttempts(), request.getRequestURI());
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
             BusinessException ex,
             HttpServletRequest request) {
 
-        ErrorCode errorCode = ex.getErrorCode();
+        BaseErrorCode errorCode = ex.getErrorCode();
 
         log.warn("비즈니스 예외: code={}, status={}, path={}",
                 errorCode.getCode(), errorCode.getStatus().value(), request.getRequestURI());
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
             AuthException ex,
             HttpServletRequest request) {
 
-        ErrorCode errorCode = ex.getErrorCode();
+        BaseErrorCode errorCode = ex.getErrorCode();
 
         log.warn("인증 예외: code={}, status={}, path={}",
                 errorCode.getCode(), errorCode.getStatus().value(), request.getRequestURI());
@@ -73,8 +73,8 @@ public class GlobalExceptionHandler {
         log.warn("인증 실패: path={}, error={}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity
-                .status(AUTH_REQUIRED.getStatus())
-                .body(ErrorRes.of(AUTH_REQUIRED, request.getRequestURI()));
+                .status(AuthErrorCode.REQUIRED.getStatus())
+                .body(ErrorRes.of(AuthErrorCode.REQUIRED, request.getRequestURI()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -85,8 +85,8 @@ public class GlobalExceptionHandler {
         log.warn("권한 거부: path={}, error={}", request.getRequestURI(), ex.getMessage());
 
         return ResponseEntity
-                .status(AUTH_ACCESS_DENIED.getStatus())
-                .body(ErrorRes.of(AUTH_ACCESS_DENIED, request.getRequestURI()));
+                .status(AuthErrorCode.ACCESS_DENIED.getStatus())
+                .body(ErrorRes.of(AuthErrorCode.ACCESS_DENIED, request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
         log.error("서버 내부 오류: path={}", request.getRequestURI(), ex);
 
         return ResponseEntity
-                .status(INTERNAL_SERVER_ERROR.getStatus())
-                .body(ErrorRes.of(INTERNAL_SERVER_ERROR, request.getRequestURI()));
+                .status(CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus())
+                .body(ErrorRes.of(CommonErrorCode.INTERNAL_SERVER_ERROR, request.getRequestURI()));
     }
 }

@@ -5,6 +5,7 @@ import com.maru.domain.tenant.Dojang;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.domain.user.User;
 import com.maru.security.CurrentUserId;
+import com.maru.service.employment.EmploymentQueryService;
 import com.maru.service.tenant.TenantService;
 import com.maru.service.user.UserService;
 import jakarta.validation.Valid;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -21,6 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private final TenantService tenantService;
+    private final EmploymentQueryService employmentQueryService;
 
     /**
      * 현재 로그인한 사용자 정보 조회
@@ -29,7 +33,7 @@ public class UserController {
      * @return 사용자 정보
      */
     @GetMapping("/me")
-    public ResponseEntity<UserMeRes> getCurrentUser(@CurrentUserId Long userId) {
+    public ResponseEntity<UserMeRes> getCurrentUser(@CurrentUserId String userId) {
         User user = userService.getCurrentUser(userId);
         OAuthProvider provider = userService.getOAuthProvider(userId);
 
@@ -45,7 +49,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/profile")
     public ResponseEntity<OnboardingProfileRes> updateOnboardingProfile(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingProfileReq request) {
         User user = userService.updateOnboardingProfile(
                 userId,
@@ -66,7 +70,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/role")
     public ResponseEntity<OnboardingRoleRes> updateOnboardingRole(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingRoleReq request) {
         User user = userService.updateOnboardingRole(userId, request.role());
 
@@ -82,7 +86,7 @@ public class UserController {
      */
     @PostMapping("/onboarding/dojang")
     public ResponseEntity<OnboardingDojangRes> createDojang(
-            @CurrentUserId Long userId,
+            @CurrentUserId String userId,
             @Valid @RequestBody OnboardingDojangReq request) {
         Dojang dojang = tenantService.createTenantWithDojang(
                 userId,
@@ -103,10 +107,22 @@ public class UserController {
      * @return 업데이트된 사용자 정보
      */
     @PostMapping("/onboarding/step/previous")
-    public ResponseEntity<UserMeRes> rollbackOnboardingStep(@CurrentUserId Long userId) {
+    public ResponseEntity<UserMeRes> rollbackOnboardingStep(@CurrentUserId String userId) {
         User user = userService.rollbackOnboardingStep(userId);
         OAuthProvider provider = userService.getOAuthProvider(userId);
 
         return ResponseEntity.ok(UserMeRes.from(user, provider));
+    }
+
+    /**
+     * 소속 도장 목록 조회
+     *
+     * @param userId 현재 인증된 사용자 ID
+     * @return 도장 목록 및 개수
+     */
+    @GetMapping("/me/dojangs")
+    public ResponseEntity<MyDojangsRes> getMyDojangs(@CurrentUserId String userId) {
+        List<MyDojangRes> dojangs = employmentQueryService.getMyDojangs(userId);
+        return ResponseEntity.ok(MyDojangsRes.from(dojangs));
     }
 }

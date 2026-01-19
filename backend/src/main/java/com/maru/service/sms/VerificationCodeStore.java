@@ -13,7 +13,7 @@ public interface VerificationCodeStore {
      * @param userId 요청자 ID
      * @param ttl 유효 기간
      */
-    void save(String phone, String code, Long userId, Duration ttl);
+    void save(String phone, String code, String userId, Duration ttl);
 
     /**
      * 요청자 ID 조회
@@ -21,7 +21,7 @@ public interface VerificationCodeStore {
      * @param phone 전화번호
      * @return 요청자 ID (없으면 empty)
      */
-    Optional<Long> getUserId(String phone);
+    Optional<String> getUserId(String phone);
 
     /**
      * 인증번호 상태 조회

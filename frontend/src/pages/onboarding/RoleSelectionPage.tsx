@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '../../hooks';
 import { userService } from '../../services/userService';
 import { UserRole } from '../../types/auth';
 import { CardHeader, CardTitle, CardDescription, CardContent } from '../../shared/components/ui/card';
@@ -11,7 +11,7 @@ import { OnboardingBackButton } from './components/OnboardingBackButton';
 
 export default function RoleSelectionPage() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { refetch: refreshUser } = useUser();
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

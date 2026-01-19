@@ -1,4 +1,4 @@
-import { Applicant, CalendarEvent, NotificationItem } from './types';
+import { CalendarEvent, NotificationItem, RecentStudent } from './types';
 
 export const EVENTS: CalendarEvent[] = [
   { date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 2), type: 'payment' },
@@ -17,18 +17,21 @@ export const NOTIFICATIONS: NotificationItem[] = [
   { title: '차량 운행 일지 미작성', desc: '어제 날짜 차량 운행 일지가 작성되지 않았습니다.', time: '1일 전', type: 'alert' },
 ];
 
-export const APPLICANTS: Applicant[] = [
-  { name: '최민수', age: '8세', phone: '010-1234-5678', status: '상담대기' },
-  { name: '김지아', age: '10세', phone: '010-9876-5432', status: '방문예정' },
-  { name: '박서준', age: '7세', phone: '010-5555-4444', status: '신규문의' },
-  { name: '이서윤', age: '9세', phone: '010-1111-2222', status: '상담대기' },
-  { name: '정우성', age: '11세', phone: '010-3333-4444', status: '신규문의' },
+export const RECENT_STUDENTS: RecentStudent[] = [
+  { id: '1', name: '최민수', age: 8, enrolledAt: '1월 5일', photoUrl: null },
+  { id: '2', name: '김지아', age: 10, enrolledAt: '1월 3일', photoUrl: null },
+  { id: '3', name: '박서준', age: 7, enrolledAt: '1월 2일', photoUrl: null },
+  { id: '4', name: '이서윤', age: 9, enrolledAt: '12월 28일', photoUrl: null },
+  { id: '5', name: '정우성', age: 11, enrolledAt: '12월 25일', photoUrl: null },
 ];
 
 export const MOCK_DASHBOARD_STATS: import('./types').DashboardStats = {
   totalStudents: 127,
+  studentsDiff: 2,
   attendanceRate: 89,
+  attendanceRateDiff: 5,
   monthlyRevenue: 12500000,
   revenueTarget: 15000000,
   activeStudents: 118,
+  pausedStudents: 9,
 };

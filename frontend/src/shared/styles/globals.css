@@ -74,3 +74,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* 스크롤바 스타일 - Webkit 기반 브라우저 (Chrome, Safari, Edge) */
+  .scrollbar-visible::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb {
+    background: rgb(203 213 225);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184);
+    background-clip: padding-box;
+  }
+
+  /* Firefox에서 항상 스크롤바 표시 */
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+}

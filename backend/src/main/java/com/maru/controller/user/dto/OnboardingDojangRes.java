@@ -7,14 +7,14 @@ import lombok.Builder;
 
 @Builder
 public record OnboardingDojangRes(
-        Long userId,
-        Long tenantId,
+        String userId,
+        String tenantId,
         DojangInfo dojang,
         OnboardingStep onboardingStep
 ) {
     @Builder
     public record DojangInfo(
-            Long id,
+            String id,
             String name,
             String address,
             String phone
@@ -32,7 +32,7 @@ public record OnboardingDojangRes(
     public static OnboardingDojangRes from(User user, Dojang dojang) {
         return OnboardingDojangRes.builder()
                 .userId(user.getId())
-                .tenantId(dojang.getTenant().getId())
+                .tenantId(dojang.getTenantId())
                 .dojang(DojangInfo.from(dojang))
                 .onboardingStep(user.getOnboardingStep())
                 .build();

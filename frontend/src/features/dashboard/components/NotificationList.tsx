@@ -1,13 +1,22 @@
 import { Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
+import { Button } from '../../../shared/components/ui/button';
 import { cn } from '../../../shared/utils';
 import { NotificationItem } from '../types';
 
 interface NotificationListProps {
   notifications: NotificationItem[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoading?: boolean;
 }
 
-export function NotificationList({ notifications }: NotificationListProps) {
+export function NotificationList({
+  notifications,
+  hasMore = false,
+  onLoadMore,
+  isLoading = false
+}: NotificationListProps) {
   return (
     <Card className="border-none shadow-sm bg-white flex-1 flex flex-col min-h-0">
       <CardHeader className="shrink-0">
@@ -32,6 +41,16 @@ export function NotificationList({ notifications }: NotificationListProps) {
               <span className="text-xs text-slate-400 whitespace-nowrap">{item.time}</span>
             </div>
           ))}
+          {hasMore && onLoadMore && (
+            <Button
+              variant="ghost"
+              className="w-full text-xs text-slate-500 hover:text-primary"
+              onClick={onLoadMore}
+              disabled={isLoading}
+            >
+              {isLoading ? '불러오는 중...' : '더보기'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

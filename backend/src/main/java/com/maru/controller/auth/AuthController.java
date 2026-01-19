@@ -1,16 +1,17 @@
 package com.maru.controller.auth;
 
-import com.maru.common.exception.AuthException;
+import com.maru.common.exception.auth.AuthErrorCode;
+import com.maru.common.exception.auth.AuthException;
 import com.maru.common.util.CookieUtil;
-
-import static com.maru.common.exception.ErrorCode.*;
 import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.AuthService;
 import com.maru.controller.auth.dto.TokenRes;
+import com.maru.security.CurrentUserId;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -39,13 +40,37 @@ public class AuthController {
         HttpServletResponse response) {
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new AuthException(AUTH_REFRESH_TOKEN_REQUIRED);
+            throw new AuthException(AuthErrorCode.REFRESH_TOKEN_REQUIRED);
         }
 
         TokenRes tokenRes = authService.refreshAccessToken(refreshToken);
         cookieUtil.setAuthCookies(response, tokenRes);
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 도장 선택 후 토큰 재발급
+     *
+     * @param userId 현재 인증된 사용자 ID
+     * @param dojangId 선택할 도장 ID
+     * @param response HTTP 응답
+     * @return 204 No Content (토큰은 httpOnly 쿠키로 설정)
+     */
+    @PostMapping("/select-dojang")
+    public ResponseEntity<Void> selectDojang(
+        @CurrentUserId String userId,
+        @RequestParam @NotNull String dojangId,
+        HttpServletResponse response
+    ) {
+        if (userId == null) {
+            throw new AuthException(AuthErrorCode.REQUIRED);
+        }
+
+        TokenRes tokenRes = authService.selectDojang(userId, dojangId);
+        cookieUtil.setAuthCookies(response, tokenRes);
+
+        return ResponseEntity.noContent().build();
     }
 
     /**

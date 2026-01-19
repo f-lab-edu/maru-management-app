@@ -2,7 +2,7 @@ package com.maru.controller.common;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.maru.common.exception.ErrorCode;
+import com.maru.common.exception.BaseErrorCode;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -20,11 +20,11 @@ public record ErrorRes(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Map<String, Object> data
 ) {
-    public static ErrorRes of(ErrorCode errorCode, String path) {
+    public static ErrorRes of(BaseErrorCode errorCode, String path) {
         return ErrorRes.of(errorCode, path, null);
     }
 
-    public static ErrorRes of(ErrorCode errorCode, String path, Map<String, Object> data) {
+    public static ErrorRes of(BaseErrorCode errorCode, String path, Map<String, Object> data) {
         return ErrorRes.builder()
                 .timestamp(LocalDateTime.now())
                 .status(errorCode.getStatus().value())

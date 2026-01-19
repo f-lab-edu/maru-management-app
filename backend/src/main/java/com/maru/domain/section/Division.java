@@ -1,0 +1,79 @@
+package com.maru.domain.section;
+
+import com.maru.common.exception.DomainAssert;
+import com.maru.domain.common.BaseEntity;
+import com.maru.domain.section.exception.DivisionErrorCode;
+import com.maru.common.converter.ScheduleDaysConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.Set;
+
+@Entity
+@Table(name = "division")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Division extends BaseEntity {
+
+    @Column(name = "dojang_id", nullable = false)
+    private String dojangId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "section_id")
+    private Section section;
+
+    @Convert(converter = ScheduleDaysConverter.class)
+    @Column(name = "schedule_days", columnDefinition = "TINYINT")
+    private Set<DayOfWeek> scheduleDays;
+
+    @Column(name = "start_time")
+    private LocalTime startTime;
+
+    @Column(name = "end_time")
+    private LocalTime endTime;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "display_order")
+    private Integer displayOrder;
+
+    private Division(String dojangId, Section section, String name, Integer displayOrder) {
+        this.dojangId = dojangId;
+        this.section = section;
+        this.name = name;
+        this.displayOrder = displayOrder;
+    }
+
+    public static Division create(String dojangId, Section section, String name, Integer displayOrder) {
+        DomainAssert.hasText(dojangId, DivisionErrorCode.DOJANG_REQUIRED);
+        DomainAssert.notNull(section, DivisionErrorCode.SECTION_REQUIRED);
+        DomainAssert.hasText(name, DivisionErrorCode.NAME_REQUIRED);
+        return new Division(dojangId, section, name, displayOrder);
+    }
+
+    public void updateName(String name) {
+        DomainAssert.hasText(name, DivisionErrorCode.NAME_REQUIRED);
+        this.name = name;
+    }
+
+    public void updateDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
+    public void updateSchedule(Set<DayOfWeek> scheduleDays, LocalTime startTime, LocalTime endTime) {
+        this.scheduleDays = scheduleDays;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+}

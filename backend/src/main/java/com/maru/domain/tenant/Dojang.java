@@ -1,33 +1,24 @@
 package com.maru.domain.tenant;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.SoftDeletableEntity;
-import com.maru.domain.user.User;
+import com.maru.domain.tenant.exception.DojangErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
-@Table(
-    name = "dojang",
-    indexes = {
-        @Index(name = "idx_dojang_tenant_id", columnList = "tenant_id"),
-        @Index(name = "idx_dojang_user_id", columnList = "user_id"),
-        @Index(name = "idx_dojang_plan", columnList = "plan")
-    }
-)
+@Table(name = "dojang")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Dojang extends SoftDeletableEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User owner;
+    @Column(name = "user_id", nullable = false)
+    private String ownerId;
 
     @Column(nullable = false, length = 255)
     private String name;
@@ -45,11 +36,10 @@ public class Dojang extends SoftDeletableEntity {
     @Column(nullable = false)
     private Boolean isActive = true;
 
-    private Dojang(Tenant tenant, User owner, String name, String address, String phone) {
-        validateNotNull(tenant, owner, name);
-        validateOwnership(tenant, owner);
-        this.tenant = tenant;
-        this.owner = owner;
+    private Dojang(String tenantId, String ownerId, String name, String address, String phone) {
+        validateNotNull(tenantId, ownerId, name);
+        this.tenantId = tenantId;
+        this.ownerId = ownerId;
         this.name = name;
         this.plan = Plan.FREE;
         this.address = address;
@@ -57,8 +47,8 @@ public class Dojang extends SoftDeletableEntity {
         this.isActive = true;
     }
 
-    public static Dojang create(Tenant tenant, User owner, String name, String address, String phone) {
-        return new Dojang(tenant, owner, name, address, phone);
+    public static Dojang create(String tenantId, String ownerId, String name, String address, String phone) {
+        return new Dojang(tenantId, ownerId, name, address, phone);
     }
 
     public void updatePlan(Plan newPlan) {
@@ -81,15 +71,10 @@ public class Dojang extends SoftDeletableEntity {
         this.phone = phone;
     }
 
-    private void validateNotNull(Tenant tenant, User owner, String name) {
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(owner, "owner는 필수입니다.");
-        Assert.hasText(name, "name은 필수입니다.");
+    private void validateNotNull(String tenantId, String ownerId, String name) {
+        DomainAssert.hasText(tenantId, DojangErrorCode.TENANT_REQUIRED);
+        DomainAssert.hasText(ownerId, DojangErrorCode.OWNER_REQUIRED);
+        DomainAssert.hasText(name, DojangErrorCode.NAME_REQUIRED);
     }
 
-    private void validateOwnership(Tenant tenant, User owner) {
-        if (!tenant.getOwner().getId().equals(owner.getId())) {
-            throw new IllegalStateException("도장 소유자는 테넌트 소유자와 일치해야 합니다.");
-        }
-    }
 }

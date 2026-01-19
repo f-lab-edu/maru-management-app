@@ -19,7 +19,12 @@ export function StatsGrid({ stats }: StatsGridProps) {
         <CardContent>
           <div className="text-2xl font-bold text-slate-900">{stats.totalStudents}명</div>
           <p className="text-xs text-slate-500 mt-1">
-            <span className="text-emerald-600 font-medium">↑ 2명</span> 지난달 대비
+            {stats.studentsDiff !== 0 && (
+              <span className={stats.studentsDiff > 0 ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+                {stats.studentsDiff > 0 ? '↑' : '↓'} {Math.abs(stats.studentsDiff)}명
+              </span>
+            )}{' '}
+            지난달 대비
           </p>
         </CardContent>
       </Card>
@@ -33,7 +38,12 @@ export function StatsGrid({ stats }: StatsGridProps) {
         <CardContent>
           <div className="text-2xl font-bold text-slate-900">{stats.attendanceRate}%</div>
           <p className="text-xs text-slate-500 mt-1">
-            <span className="text-emerald-600 font-medium">↑ 5%</span> 어제 대비
+            {stats.attendanceRateDiff !== 0 && (
+              <span className={stats.attendanceRateDiff > 0 ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+                {stats.attendanceRateDiff > 0 ? '↑' : '↓'} {Math.abs(stats.attendanceRateDiff)}%
+              </span>
+            )}{' '}
+            지난달 대비
           </p>
         </CardContent>
       </Card>
@@ -45,9 +55,16 @@ export function StatsGrid({ stats }: StatsGridProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-slate-900">₩{stats.monthlyRevenue.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-slate-900">
+            ₩{stats.monthlyRevenue.toLocaleString()}
+            <span className="text-sm text-slate-400 font-normal ml-1">
+              / ₩{stats.revenueTarget.toLocaleString()}
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            목표 달성률 <span className="text-slate-900 font-medium">{(stats.monthlyRevenue / stats.revenueTarget * 100).toFixed(1)}%</span>
+            수납률 <span className="text-slate-900 font-medium">
+              {stats.revenueTarget > 0 ? (stats.monthlyRevenue / stats.revenueTarget * 100).toFixed(1) : 0}%
+            </span>
           </p>
         </CardContent>
       </Card>
@@ -61,7 +78,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
         <CardContent>
           <div className="text-2xl font-bold text-slate-900">{stats.activeStudents}명</div>
           <p className="text-xs text-slate-500 mt-1">
-            휴원 <span className="text-slate-900 font-medium">{stats.totalStudents - stats.activeStudents}명</span>
+            휴원 <span className="text-slate-900 font-medium">{stats.pausedStudents}명</span>
           </p>
         </CardContent>
       </Card>

@@ -9,8 +9,21 @@ export type OnboardingStep =
 
 export type OAuthProvider = 'GOOGLE' | 'KAKAO';
 
+export interface DojangSummary {
+  dojangId: string;
+  dojangName: string;
+  tenantId: string;
+  role: UserRole;
+  permissions?: string[];
+}
+
+export interface MyDojangsRes {
+  dojangs: DojangSummary[];
+  count: number;
+}
+
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;
@@ -22,10 +35,3 @@ export interface User {
   lastLoginAt?: string;
 }
 
-export interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}

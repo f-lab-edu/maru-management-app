@@ -1,25 +1,15 @@
 package com.maru.domain.user;
 
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.user.exception.UserErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 @Entity
-@Table(
-    name = "oauth_account",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_oauth_provider_account",
-            columnNames = {"provider", "provider_account_id"}
-        )
-    },
-    indexes = {
-        @Index(name = "idx_oauth_user_id", columnList = "user_id")
-    }
-)
+@Table(name = "oauth_account")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OAuthAccount extends BaseEntity {
@@ -32,7 +22,7 @@ public class OAuthAccount extends BaseEntity {
     @Column(nullable = false, length = 20)
     private OAuthProvider provider;
 
-    @Column(name = "provider_account_id", nullable = false, length = 255)
+    @Column(nullable = false, length = 255)
     private String providerAccountId;
 
     public OAuthAccount(User user, OAuthProvider provider, String providerAccountId) {
@@ -47,8 +37,8 @@ public class OAuthAccount extends BaseEntity {
     }
 
     private void validateNotNull(User user, OAuthProvider provider, String providerAccountId) {
-        Assert.notNull(user, "user는 필수입니다.");
-        Assert.notNull(provider, "provider는 필수입니다.");
-        Assert.hasText(providerAccountId, "providerAccountId는 필수입니다.");
+        DomainAssert.notNull(user, UserErrorCode.USER_REQUIRED);
+        DomainAssert.notNull(provider, UserErrorCode.PROVIDER_REQUIRED);
+        DomainAssert.hasText(providerAccountId, UserErrorCode.PROVIDER_ACCOUNT_ID_REQUIRED);
     }
 }

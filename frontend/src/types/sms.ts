@@ -15,6 +15,6 @@ export interface SmsVerifyRequest {
 
 export interface SmsVerifyResponse {
   verified: boolean;
-  userId: number;
+  userId: string;
   isExistingUser: boolean;
 }

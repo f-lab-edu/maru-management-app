@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '../hooks';
 import { OnboardingStep } from '../types/auth';
 
 const getOnboardingPath = (step: OnboardingStep): string => {
@@ -20,7 +20,7 @@ const getOnboardingPath = (step: OnboardingStep): string => {
 };
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { data: user, isLoading } = useUser();
   const location = useLocation();
 
   if (isLoading) {
@@ -39,7 +39,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { data: user, isLoading } = useUser();
 
   if (isLoading) {
     return (
@@ -58,7 +58,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function OnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { data: user, isLoading } = useUser();
   const location = useLocation();
 
   if (isLoading) {
@@ -86,7 +86,7 @@ export function OnboardingRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function CompletedOnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { data: user, isLoading } = useUser();
   const location = useLocation();
 
   if (isLoading) {

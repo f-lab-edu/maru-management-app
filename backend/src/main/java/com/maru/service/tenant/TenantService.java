@@ -1,6 +1,7 @@
 package com.maru.service.tenant;
 
 import com.maru.common.exception.BusinessException;
+import com.maru.domain.user.exception.OnboardingErrorCode;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
@@ -8,16 +9,18 @@ import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
 import com.maru.domain.user.UserRole;
+import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.repository.tenant.TenantRepository;
+import com.maru.security.DojangAccessValidator;
+import com.maru.service.search.dojang.DojangSearchService;
 import com.maru.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.maru.common.exception.ErrorCode.*;
 
 @Slf4j
 @Service
@@ -28,6 +31,8 @@ public class TenantService {
     private final TenantRepository tenantRepository;
     private final DojangRepository dojangRepository;
     private final EmploymentRepository employmentRepository;
+    private final DojangSearchService dojangSearchService;
+    private final DojangAccessValidator dojangAccessValidator;
 
     /**
      * 테넌트와 도장을 생성하고 관장 권한을 부여
@@ -41,7 +46,7 @@ public class TenantService {
      * @throws BusinessException ONBOARDING_STAGE_INVALID - 온보딩 단계가 DOJANG_INFO가 아닌 경우
      */
     @Transactional
-    public Dojang createTenantWithDojang(Long userId, String dojangName, String address, String phone) {
+    public Dojang createTenantWithDojang(String userId, String dojangName, String address, String phone) {
         User user = userService.getUserById(userId);
         validateOwnerRole(user);
         validateOnboardingStep(user);
@@ -53,6 +58,8 @@ public class TenantService {
 
         user.updateOnboardingStep(OnboardingStep.COMPLETED);
 
+        dojangSearchService.addToIndex(dojang, user.getName());
+
         log.info("테넌트 및 도장 생성 완료: userId={}, tenantId={}, dojangId={}",
             userId, tenant.getId(), dojang.getId());
 
@@ -61,32 +68,64 @@ public class TenantService {
 
     private void validateOwnerRole(User user) {
         if (user.getRole() != UserRole.OWNER) {
-            throw new BusinessException(USER_INVALID_ROLE);
+            throw new BusinessException(UserErrorCode.INVALID_ROLE);
         }
     }
 
     private void validateOnboardingStep(User user) {
         if (user.getOnboardingStep() != OnboardingStep.DOJANG_INFO) {
-            throw new BusinessException(ONBOARDING_STAGE_INVALID);
+            throw new BusinessException(OnboardingErrorCode.STAGE_INVALID);
         }
     }
 
     private Tenant createTenant(User owner) {
-        Tenant tenant = Tenant.create(owner);
+        Tenant tenant = Tenant.create(owner.getId());
         return tenantRepository.save(tenant);
     }
 
     private Dojang createDojang(Tenant tenant, User owner, String name, String address, String phone) {
-        Dojang dojang = Dojang.create(tenant, owner, name, address, phone);
+        Dojang dojang = Dojang.create(tenant.getId(), owner.getId(), name, address, phone);
         return dojangRepository.save(dojang);
     }
 
     private Employment createOwnerEmployment(User owner, Tenant tenant, Dojang dojang) {
-        Employment employment = Employment.createForOwner(owner, tenant, dojang);
+        Employment employment = Employment.createForOwner(owner.getId(), tenant.getId(), dojang.getId());
         return employmentRepository.save(employment);
     }
 
     private void grantOwnerPermissions(Employment employment) {
         PermissionType.getAllPermissions().forEach(employment::grantPermission);
+    }
+
+    /**
+     * 테넌트 비활성화
+     *
+     * @param tenantId 테넌트 ID
+     */
+    @Transactional
+    public void deactivate(String tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
+
+        tenant.deactivate();
+        dojangAccessValidator.evictTenantActiveCache(tenantId);
+
+        log.info("테넌트 비활성화: tenantId={}", tenantId);
+    }
+
+    /**
+     * 테넌트 활성화
+     *
+     * @param tenantId 테넌트 ID
+     */
+    @Transactional
+    public void activate(String tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new BusinessException(TenantErrorCode.NOT_FOUND));
+
+        tenant.activate();
+        dojangAccessValidator.evictTenantActiveCache(tenantId);
+
+        log.info("테넌트 활성화: tenantId={}", tenantId);
     }
 }

@@ -1,50 +1,34 @@
 package com.maru.domain.employment;
 
+import com.maru.common.exception.BusinessException;
+import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
-import com.maru.domain.permission.converter.PermissionSetConverter;
+import com.maru.domain.employment.exception.EmploymentErrorCode;
 import com.maru.domain.permission.PermissionType;
-import com.maru.domain.tenant.Dojang;
-import com.maru.domain.tenant.Tenant;
-import com.maru.domain.user.User;
+import com.maru.domain.permission.converter.PermissionSetConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(
-    name = "employment",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_employment_user_dojang",
-            columnNames = {"user_id", "dojang_id"}
-        )
-    },
-    indexes = {
-        @Index(name = "idx_employment_tenant_status", columnList = "tenant_id, status"),
-        @Index(name = "idx_employment_dojang_status", columnList = "dojang_id, status")
-    }
-)
+@Table(name = "employment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Employment extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id", nullable = false)
-    private Tenant tenant;
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dojang_id", nullable = false)
-    private Dojang dojang;
+    @Column(name = "dojang_id", nullable = false)
+    private String dojangId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -53,65 +37,63 @@ public class Employment extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime joinedAt;
 
-    @Column
     private LocalDateTime endedAt;
 
     @Convert(converter = PermissionSetConverter.class)
-    @Column(name = "permissions", columnDefinition = "json")
+    @Column(columnDefinition = "json")
     private Set<PermissionType> permissions = new HashSet<>();
 
-    private Employment(User user, Tenant tenant, Dojang dojang) {
-        validateNotNull(user, tenant, dojang);
-        validateTenantIntegrity(tenant, dojang);
+    private Employment(String userId, String tenantId, String dojangId) {
+        validateNotNull(userId, tenantId, dojangId);
 
-        this.user = user;
-        this.tenant = tenant;
-        this.dojang = dojang;
+        this.userId = userId;
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
         this.status = EmploymentStatus.PENDING;
         this.joinedAt = LocalDateTime.now();
     }
 
-    public static Employment create(User user, Tenant tenant, Dojang dojang) {
-        return new Employment(user, tenant, dojang);
+    public static Employment create(String userId, String tenantId, String dojangId) {
+        return new Employment(userId, tenantId, dojangId);
     }
 
-    public static Employment createForOwner(User owner, Tenant tenant, Dojang dojang) {
-        Employment employment = new Employment(owner, tenant, dojang);
+    public static Employment createForOwner(String ownerId, String tenantId, String dojangId) {
+        Employment employment = new Employment(ownerId, tenantId, dojangId);
         employment.status = EmploymentStatus.ACTIVE;
         return employment;
     }
 
     public void approve() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new IllegalStateException("대기 상태의 고용만 승인할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void reject() {
         if (this.status != EmploymentStatus.PENDING) {
-            throw new IllegalStateException("대기 상태의 고용만 거부할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_PENDING);
         }
         this.status = EmploymentStatus.REJECTED;
     }
 
     public void suspend() {
         if (this.status != EmploymentStatus.ACTIVE) {
-            throw new IllegalStateException("활성 상태의 고용만 정지할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE);
         }
         this.status = EmploymentStatus.SUSPENDED;
     }
 
     public void reactivate() {
         if (this.status != EmploymentStatus.SUSPENDED) {
-            throw new IllegalStateException("정지 상태의 고용만 재활성화할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_SUSPENDED);
         }
         this.status = EmploymentStatus.ACTIVE;
     }
 
     public void leave() {
         if (this.status != EmploymentStatus.ACTIVE && this.status != EmploymentStatus.SUSPENDED) {
-            throw new IllegalStateException("활성 또는 정지 상태의 고용만 퇴사 처리할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_ACTIVE_OR_SUSPENDED);
         }
         this.status = EmploymentStatus.LEFT;
         this.endedAt = LocalDateTime.now();
@@ -119,7 +101,7 @@ public class Employment extends BaseEntity {
 
     public void rejoin() {
         if (this.status != EmploymentStatus.LEFT && this.status != EmploymentStatus.REJECTED) {
-            throw new IllegalStateException("퇴사 또는 거절 상태의 고용만 재입사 처리할 수 있습니다");
+            throw new BusinessException(EmploymentErrorCode.NOT_LEFT_OR_REJECTED);
         }
 
         this.status = EmploymentStatus.PENDING;
@@ -139,15 +121,20 @@ public class Employment extends BaseEntity {
         return this.permissions.contains(permission);
     }
 
-    private void validateNotNull(User user, Tenant tenant, Dojang dojang){
-        Assert.notNull(user, "user는 필수입니다.");
-        Assert.notNull(tenant, "tenant는 필수입니다.");
-        Assert.notNull(dojang, "dojang은 필수입니다.");
+
+    public void replacePermissions(Set<PermissionType> newPermissions) {
+        this.permissions.clear();
+        this.permissions.addAll(newPermissions);
     }
 
-    private void validateTenantIntegrity(Tenant tenant, Dojang dojang){
-        if(!dojang.getTenant().getId().equals(tenant.getId())){
-            throw new IllegalStateException("도장의 Tenant와 입력된 Tenant가 일치하지 않습니다.");
-        }
+    public void resetToDefaultPermissions() {
+        this.permissions.clear();
+        this.permissions.addAll(PermissionType.getDefaultPermissions());
+    }
+
+    private void validateNotNull(String userId, String tenantId, String dojangId) {
+        DomainAssert.notNull(userId, EmploymentErrorCode.USER_REQUIRED);
+        DomainAssert.notNull(tenantId, EmploymentErrorCode.TENANT_REQUIRED);
+        DomainAssert.notNull(dojangId, EmploymentErrorCode.DOJANG_REQUIRED);
     }
 }

@@ -62,7 +62,7 @@ export function SettingsLayout({ tabs }: SettingsLayoutProps) {
 
       {/* Content Area */}
       <div className="flex-1 min-w-0 overflow-auto">
-        <div className="max-w-4xl mx-auto p-4 lg:p-8">
+        <div className="p-4 lg:p-8">
           <div className="mb-6 lg:mb-8">
             <h1 className="text-xl lg:text-2xl font-bold text-slate-900">{activeTab?.label}</h1>
             {activeTab?.description && (

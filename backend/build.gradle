@@ -21,6 +21,7 @@ ext {
     lombokVersion = '1.18.30'
     jjwtVersion = '0.12.3'
     springdocVersion = '2.2.0'
+    hypersistenceTsidVersion = '2.1.4'
 }
 
 configurations {
@@ -55,6 +56,9 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 
+    // TSID (Time-Sorted Unique Identifier)
+    implementation "io.hypersistence:hypersistence-tsid:${hypersistenceTsidVersion}"
+
     // ============== Security & Authentication==============
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -75,6 +79,10 @@ dependencies {
     // ============== API Documentation ==============
     // SpringDoc OpenAPI (Swagger UI)
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+    // ============== Caching ==============
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // ============== External Services ==============
     // Solapi SMS SDK
