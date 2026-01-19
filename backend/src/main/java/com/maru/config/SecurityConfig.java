@@ -55,6 +55,7 @@ public class SecurityConfig {
                         "/api/v1/dev/**",  // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
                         "/api/v1/dojangs/**", // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
                         "/internal/healthz",
+                        "/actuator/health",
                         "/favicon.ico",
                         "/error"
                 ).permitAll()

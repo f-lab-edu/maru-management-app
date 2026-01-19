@@ -104,13 +104,22 @@ jobs:
             # 서비스 재시작
             sudo systemctl restart maru-backend
 
-            # 스모크 테스트
-            sleep 5
-            curl -f http://localhost:8080/internal/healthz || {
-              echo "Health check failed. Rolling back..."
-              mv -f /home/ec2-user/maru-backend.jar.bak /home/ec2-user/maru-backend.jar || true
-              sudo systemctl restart maru-backend
-              echo "Rollback complete. Service status:"
-              sudo systemctl status maru-backend --no-pager
-              exit 1
-            }
+            # 스모크 테스트 (최대 60초 대기, 5초 간격 재시도)
+            echo "Waiting for application to start..."
+            for i in {1..12}; do
+              sleep 5
+              if curl -sf http://localhost:8080/internal/healthz > /dev/null 2>&1; then
+                echo "Health check passed on attempt $i"
+                exit 0
+              fi
+              echo "Attempt $i/12: Application not ready yet..."
+            done
+
+            # 60초 후에도 실패하면 롤백
+            echo "Health check failed after 60 seconds. Rolling back..."
+            mv -f /home/ec2-user/maru-backend.jar.bak /home/ec2-user/maru-backend.jar || true
+            sudo systemctl restart maru-backend
+            echo "Rollback complete. Service status:"
+            sudo systemctl status maru-backend --no-pager
+            journalctl -u maru-backend -n 50 --no-pager
+            exit 1
