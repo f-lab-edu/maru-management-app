@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 
@@ -87,6 +88,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(AuthErrorCode.ACCESS_DENIED.getStatus())
                 .body(ErrorRes.of(AuthErrorCode.ACCESS_DENIED, request.getRequestURI()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorRes> handleNoResourceFoundException(
+            NoResourceFoundException ex,
+            HttpServletRequest request) {
+
+        log.debug("리소스 없음: path={}", request.getRequestURI());
+
+        return ResponseEntity
+                .status(CommonErrorCode.NOT_FOUND.getStatus())
+                .body(ErrorRes.of(CommonErrorCode.NOT_FOUND, request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)

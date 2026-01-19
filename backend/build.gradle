@@ -39,6 +39,9 @@ dependencies {
     // Spring Boot Starter
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
+    // Spring Boot Actuator (health check, metrics)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     // Spring validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
