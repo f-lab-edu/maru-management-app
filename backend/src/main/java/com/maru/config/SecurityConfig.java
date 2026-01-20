@@ -63,7 +63,7 @@ public class SecurityConfig {
                         // Swagger UI
                         "/swagger-ui/**",
                         "/swagger-ui.html",
-                        "/api-docs.html",
+                        "/api/docs.html",
                         "/v3/api-docs/**",
                         "/webjars/**"
                 ).permitAll()
