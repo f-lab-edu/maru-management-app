@@ -25,7 +25,12 @@ public enum AuthErrorCode implements BaseErrorCode {
     // OAuth 관련
     OAUTH_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_301", "OAuth 인증에 실패했습니다"),
     OAUTH_INVALID_CODE(HttpStatus.UNAUTHORIZED, "AUTH_302", "유효하지 않은 인가 코드입니다"),
-    OAUTH_USER_INFO_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_303", "사용자 정보 조회에 실패했습니다");
+    OAUTH_USER_INFO_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_303", "사용자 정보 조회에 실패했습니다"),
+
+    // 데모 관련
+    DEMO_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "AUTH_401", "데모 로그인이 설정되지 않았습니다"),
+    NO_EMPLOYMENT(HttpStatus.FORBIDDEN, "AUTH_402", "소속된 도장이 없습니다"),
+    DEMO_RESTRICTED(HttpStatus.FORBIDDEN, "AUTH_403", "데모 계정에서는 이 기능을 사용할 수 없습니다");
 
     private final HttpStatus status;
     private final String code;

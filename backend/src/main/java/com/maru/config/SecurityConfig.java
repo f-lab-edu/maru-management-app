@@ -1,5 +1,6 @@
 package com.maru.config;
 
+import com.maru.security.DemoRestrictionFilter;
 import com.maru.security.EmploymentAwarePermissionEvaluator;
 import com.maru.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final DemoRestrictionFilter demoRestrictionFilter;
     private final EmploymentAwarePermissionEvaluator permissionEvaluator;
     private final CorsConfigurationSource corsConfigurationSource;
 
@@ -57,7 +59,13 @@ public class SecurityConfig {
                         "/internal/healthz",
                         "/actuator/health",
                         "/favicon.ico",
-                        "/error"
+                        "/error",
+                        // Swagger UI
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/api-docs.html",
+                        "/v3/api-docs/**",
+                        "/webjars/**"
                 ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
@@ -66,7 +74,10 @@ public class SecurityConfig {
 
             // JWT 인증 필터를 Spring Security 필터 체인에 추가
             // UsernamePasswordAuthenticationFilter 앞에 실행됨
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // 데모 사용자 제한 필터 (JWT 인증 이후 실행)
+            .addFilterAfter(demoRestrictionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
