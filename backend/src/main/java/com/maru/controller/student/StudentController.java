@@ -7,12 +7,14 @@ import com.maru.security.CurrentUserId;
 import com.maru.service.guardian.GuardianService;
 import com.maru.service.student.StudentQueryService;
 import com.maru.service.student.StudentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "원생")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/students")

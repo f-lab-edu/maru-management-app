@@ -5,6 +5,7 @@ import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.security.CurrentUserId;
 import com.maru.service.invoice.InvoiceService;
 import com.maru.service.invoice.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "수납")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/invoices")

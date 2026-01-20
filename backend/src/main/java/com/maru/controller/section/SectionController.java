@@ -3,11 +3,13 @@ package com.maru.controller.section;
 import com.maru.controller.section.dto.*;
 import com.maru.service.section.SectionQueryService;
 import com.maru.service.section.SectionService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "수업 편성")
 @RestController
 @RequestMapping("/api/v1/sections")
 @RequiredArgsConstructor

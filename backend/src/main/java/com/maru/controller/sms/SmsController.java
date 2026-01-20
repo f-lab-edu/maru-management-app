@@ -8,12 +8,14 @@ import com.maru.security.CurrentUserId;
 import com.maru.service.sms.PhoneVerificationService;
 import com.maru.service.user.UserMergeService;
 import com.maru.service.user.dto.PhoneVerificationRes;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "인증")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/sms")

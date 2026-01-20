@@ -6,6 +6,7 @@ import com.maru.controller.enrollment.dto.EnrolledStudentListRes;
 import com.maru.controller.enrollment.dto.EnrollStudentReq;
 import com.maru.service.enrollment.EnrollmentQueryService;
 import com.maru.service.enrollment.EnrollmentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "등록")
 @RestController
 @RequestMapping("/api/v1/enrollments")
 @RequiredArgsConstructor

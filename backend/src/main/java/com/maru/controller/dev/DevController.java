@@ -17,6 +17,7 @@ import com.maru.service.dev.DevStudentSeeder;
 import com.maru.service.search.dojang.DojangSearchIndexer;
 import com.maru.service.search.dojang.DojangSearchService;
 import com.maru.service.search.dojang.dto.DojangSearchDto;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Hidden
 @Slf4j
 @Profile({"dev", "local"})
 @RestController

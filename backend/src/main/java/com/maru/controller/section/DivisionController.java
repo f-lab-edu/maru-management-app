@@ -8,6 +8,7 @@ import com.maru.controller.section.dto.DivisionRes;
 import com.maru.controller.section.dto.DivisionUpdateReq;
 import com.maru.service.section.DivisionQueryService;
 import com.maru.service.section.DivisionService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "수업 편성")
 @RestController
 @RequestMapping("/api/v1/divisions")
 @RequiredArgsConstructor

@@ -6,6 +6,7 @@ import com.maru.controller.invoice.dto.UnpaidListRes;
 import com.maru.controller.invoice.dto.YearlyStatisticsRes;
 import com.maru.security.CurrentUserId;
 import com.maru.service.invoice.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "수납")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/payments")

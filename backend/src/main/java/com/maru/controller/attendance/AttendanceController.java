@@ -3,6 +3,7 @@ package com.maru.controller.attendance;
 import com.maru.controller.attendance.dto.*;
 import com.maru.security.CurrentUserId;
 import com.maru.service.attendance.AttendanceService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+@Tag(name = "출결")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/attendance")

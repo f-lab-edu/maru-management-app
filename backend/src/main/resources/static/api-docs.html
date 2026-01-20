@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>마루 API 문서</title>
+    <link rel="stylesheet" href="/webjars/swagger-ui/swagger-ui.css">
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; }
+        #swagger-ui { height: 100%; }
+
+        #dev-board {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            padding: 16px;
+            background-color: #ffffff;
+            color: #333;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            min-width: 300px;
+            max-width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        #dev-board .title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #dev-board .title span { color: #666; font-size: 11px; cursor: pointer; }
+        #dev-board .title span:hover { color: #333; }
+        #dev-board .section { margin-bottom: 12px; }
+        #dev-board .section-title {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #dev-board .section-title .clear-btn {
+            color: #999;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        #dev-board .section-title .clear-btn:hover { color: #666; }
+        #dev-board button {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        #dev-board .btn-demo {
+            background: #4f46e5;
+            color: white;
+        }
+        #dev-board .btn-demo:hover { background: #4338ca; }
+        #dev-board .btn-demo:disabled { opacity: 0.6; cursor: not-allowed; }
+        #dev-board .id-row {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        #dev-board .id-row:last-child { border-bottom: none; }
+        #dev-board .id-label {
+            color: #666;
+            min-width: 80px;
+            font-size: 11px;
+        }
+        #dev-board .id-value {
+            flex: 1;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #059669;
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #dev-board .id-value:hover { background: #e0f2e9; }
+        #dev-board .id-name {
+            font-size: 10px;
+            color: #888;
+            margin-left: 6px;
+            flex-shrink: 0;
+        }
+        #dev-board .status { font-size: 11px; color: #666; text-align: center; margin-top: 8px; }
+        #dev-board .status.success { color: #059669; }
+        #dev-board .status.error { color: #dc2626; }
+        #dev-board.minimized { min-width: auto; padding: 12px; }
+        #dev-board.minimized .content { display: none; }
+        #dev-board .extracted-ids {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        #dev-board .response-group {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        #dev-board .response-group:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        #dev-board .response-header {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        #dev-board .response-header:hover { color: #555; }
+        #dev-board .response-header::before {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #888;
+            margin-right: 6px;
+            transition: transform 0.2s;
+        }
+        #dev-board .response-group.collapsed .response-header::before {
+            transform: rotate(-90deg);
+        }
+        #dev-board .response-group.collapsed .id-row,
+        #dev-board .response-group.collapsed .tree-node {
+            display: none;
+        }
+        #dev-board .id-count {
+            margin-left: auto;
+            font-size: 9px;
+            color: #aaa;
+        }
+        #dev-board .method {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 9px;
+            margin-right: 4px;
+        }
+        #dev-board .method-get { background: #61affe; color: white; }
+        #dev-board .method-post { background: #49cc90; color: white; }
+        #dev-board .method-put { background: #fca130; color: white; }
+        #dev-board .method-delete { background: #f93e3e; color: white; }
+        #dev-board .method-patch { background: #50e3c2; color: white; }
+
+        /* 트리 노드 스타일 */
+        #dev-board .tree-node {
+            margin-left: 12px;
+            border-left: 1px solid #e0e0e0;
+            padding-left: 8px;
+        }
+        #dev-board .tree-header {
+            font-size: 10px;
+            color: #555;
+            padding: 4px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        #dev-board .tree-header:hover { color: #333; }
+        #dev-board .tree-toggle {
+            display: inline-block;
+            width: 0; height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid #888;
+            margin-right: 6px;
+            transition: transform 0.15s;
+        }
+        #dev-board .tree-node.collapsed > .tree-header .tree-toggle {
+            transform: rotate(-90deg);
+        }
+        #dev-board .tree-node.collapsed > .tree-children {
+            display: none;
+        }
+        #dev-board .tree-children { margin-top: 2px; }
+        #dev-board .tree-count {
+            margin-left: auto;
+            font-size: 9px;
+            color: #aaa;
+        }
+        #dev-board .tree-id {
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #059669;
+            cursor: pointer;
+            padding: 2px 6px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 6px;
+        }
+        #dev-board .tree-id:hover { background: #e0f2e9; }
+        #dev-board .tree-name {
+            color: #666;
+            font-size: 10px;
+        }
+        #dev-board .response-summary {
+            font-size: 9px;
+            color: #888;
+            margin: 4px 0 8px 0;
+            padding: 4px 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+        #dev-board .demo-notice {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fef3c7;
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+        #dev-board .extracted-help {
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+
+    <div id="dev-board">
+        <div class="title">
+            개발 도구
+            <span onclick="toggleBoard()">접기</span>
+        </div>
+        <div class="content">
+            <div class="section">
+                <button class="btn-demo" onclick="demoLogin()">데모 계정으로 로그인</button>
+                <div class="demo-notice">
+                    데모 계정은 데이터 보호를 위해 DELETE 요청과 SMS 발송이 차단됩니다.
+                    API 응답은 정상적으로 표시되지만 실제로 처리되지 않습니다.
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">기본 ID (클릭하여 복사)</div>
+                <div class="id-row">
+                    <span class="id-label">dojangId</span>
+                    <span class="id-value" onclick="copyId(this)" data-id="0DEMODOJANG1">0DEMODOJANG1</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    응답에서 추출된 ID (최근 5개)
+                    <span class="clear-btn" onclick="clearExtractedIds()">초기화</span>
+                </div>
+                <div class="extracted-help">API 실행 후 응답에서 ID가 자동 추출됩니다. 클릭하면 복사됩니다.</div>
+                <div id="extracted-ids" class="extracted-ids"></div>
+            </div>
+
+            <div id="status" class="status"></div>
+        </div>
+    </div>
+
+    <script src="/webjars/swagger-ui/swagger-ui-bundle.js"></script>
+    <script src="/webjars/swagger-ui/swagger-ui-standalone-preset.js"></script>
+    <script>
+        // ============ 상태 ============
+        const responses = [];
+        const reqMap = new Map(); // pathname -> method
+
+        // ============ 유틸리티 ============
+        function safeUrl(u) {
+            try { return new URL(u, location.origin); }
+            catch { return null; }
+        }
+
+        function getJsonFromRes(res) {
+            const raw = res.data ?? res.body ?? res.text ?? null;
+            if (raw == null) return null;
+            try {
+                return (typeof raw === 'string') ? JSON.parse(raw) : raw;
+            } catch { return null; }
+        }
+
+        function addResponse(endpoint, method, data) {
+            const existing = responses.findIndex(r => r.endpoint === endpoint && r.method === method);
+            if (existing >= 0) {
+                responses[existing] = { endpoint, method, ...data };
+            } else {
+                responses.unshift({ endpoint, method, ...data });
+            }
+            if (responses.length > 5) responses.pop();
+        }
+
+        // ============ ID 추출 (일반) ============
+        function extractGenericIds(obj, path = [], results = [], seen = new WeakSet()) {
+            if (!obj || typeof obj !== 'object' || seen.has(obj)) return results;
+            seen.add(obj);
+
+            if (Array.isArray(obj)) {
+                obj.forEach((item, i) => extractGenericIds(item, path, results, seen));
+                return results;
+            }
+
+            const name = obj.name ?? obj.studentName ?? null;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const isIdKey = key === 'id' || key.endsWith('Id') || key.endsWith('id');
+
+                if (isIdKey && typeof value === 'string' && value.trim() && value !== 'string') {
+                    results.push({
+                        path: [...path, key],
+                        key,
+                        value: value.trim(),
+                        name: key === 'id' ? name : null
+                    });
+                }
+
+                if (value && typeof value === 'object') {
+                    extractGenericIds(value, [...path, key], results, seen);
+                }
+            }
+            return results;
+        }
+
+        const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+        function pathToLabel(path, key) {
+            if (key !== 'id') return key;
+
+            const parts = path.slice(0, -1);
+
+            // 날짜 키 찾기
+            const dateKey = parts.find(p => DATE_REGEX.test(p));
+
+            // 복수형 부모 찾기
+            for (let i = parts.length - 1; i >= 0; i--) {
+                const p = parts[i];
+                if (p.endsWith('s') && p.length > 1 && !DATE_REGEX.test(p)) {
+                    const label = p.slice(0, -1) + 'Id';
+                    return dateKey ? `${label}` : label;
+                }
+            }
+
+            return 'id';
+        }
+
+        function buildGenericTree(json) {
+            const raw = extractGenericIds(json);
+            const uniqueIds = new Set(raw.map(r => r.value));
+
+            // 플랫 리스트로 변환 (순서 유지)
+            const items = raw.map(item => {
+                const label = pathToLabel(item.path, item.key);
+                const dateKey = item.path.find(p => DATE_REGEX.test(p));
+                return {
+                    label,
+                    value: item.value,
+                    name: item.name,
+                    date: dateKey || null
+                };
+            });
+
+            return {
+                type: 'generic',
+                items,
+                stats: { total: raw.length, unique: uniqueIds.size }
+            };
+        }
+
+        // ============ ID 추출 (출석 range 전용) ============
+        function buildAttendanceRangeTree(json) {
+            const list = Array.isArray(json) ? json : (Array.isArray(json?.students) ? json.students : []);
+            const students = [];
+            const uniqueIds = new Set();
+            let attendanceCount = 0;
+
+            for (const s of list) {
+                const studentId = s.studentId ?? s.id ?? null;
+                if (!studentId) continue;
+
+                uniqueIds.add(studentId);
+
+                const node = {
+                    type: 'student',
+                    id: studentId,
+                    name: s.name ?? null,
+                    dates: []
+                };
+
+                const att = s.attendances ?? null;
+                if (att && typeof att === 'object' && !Array.isArray(att)) {
+                    const dates = Object.keys(att).filter(k => DATE_REGEX.test(k)).sort().reverse();
+                    for (const d of dates) {
+                        const a = att[d];
+                        const attendanceId = a?.id ?? null;
+                        if (!attendanceId) continue;
+                        uniqueIds.add(attendanceId);
+                        node.dates.push({ date: d, id: attendanceId });
+                        attendanceCount++;
+                    }
+                }
+
+                students.push(node);
+            }
+
+            return {
+                type: 'attendanceRange',
+                students,
+                stats: {
+                    students: students.length,
+                    attendance: attendanceCount,
+                    unique: uniqueIds.size
+                }
+            };
+        }
+
+        // ============ 렌더링 ============
+        function renderExtractedIds() {
+            const container = document.getElementById('extracted-ids');
+            if (!container) return;
+            container.innerHTML = '';
+            if (responses.length === 0) return;
+
+            responses.forEach(({ endpoint, method, type, items, students, stats }, idx) => {
+                const group = document.createElement('div');
+                group.className = 'response-group' + (idx > 0 ? ' collapsed' : '');
+
+                // 헤더
+                const header = document.createElement('div');
+                header.className = 'response-header';
+                header.innerHTML = `
+                    <span class="method method-${method.toLowerCase()}">${method}</span>
+                    ${endpoint}
+                    <span class="id-count">${stats.unique}개</span>
+                `;
+                header.onclick = () => group.classList.toggle('collapsed');
+                group.appendChild(header);
+
+                // 요약
+                const summary = document.createElement('div');
+                summary.className = 'response-summary';
+                summary.textContent = type === 'attendanceRange'
+                    ? `학생 ${stats.students}명, 출석 ${stats.attendance}건`
+                    : `ID ${stats.unique}개`;
+                group.appendChild(summary);
+
+                // 본문
+                const body = document.createElement('div');
+                body.className = 'tree-children';
+
+                if (type === 'attendanceRange') {
+                    renderAttendanceRangeTree(students, body);
+                } else {
+                    renderGenericList(items, body);
+                }
+
+                group.appendChild(body);
+                container.appendChild(group);
+            });
+        }
+
+        function renderAttendanceRangeTree(students, container) {
+            const MAX = 30;
+            const sliced = students.slice(0, MAX);
+
+            sliced.forEach((s, idx) => {
+                const node = document.createElement('div');
+                node.className = 'tree-node' + (idx > 0 ? ' collapsed' : '');
+
+                const header = document.createElement('div');
+                header.className = 'tree-header';
+                header.innerHTML = `
+                    <span class="tree-toggle"></span>
+                    <span class="tree-name">${s.name || '이름없음'}</span>
+                    <span class="tree-id" data-id="${s.id}">${s.id}</span>
+                    <span class="tree-count">${s.dates.length}건</span>
+                `;
+                header.onclick = (e) => {
+                    if (e.target.classList.contains('tree-id')) {
+                        e.stopPropagation();
+                        copyId(e.target);
+                    } else {
+                        node.classList.toggle('collapsed');
+                    }
+                };
+                node.appendChild(header);
+
+                const children = document.createElement('div');
+                children.className = 'tree-children';
+                s.dates.forEach(({ date, id }) => {
+                    const row = document.createElement('div');
+                    row.className = 'id-row';
+                    row.innerHTML = `
+                        <span class="id-label">${date}</span>
+                        <span class="id-value" onclick="copyId(this)" data-id="${id}">${id}</span>
+                    `;
+                    children.appendChild(row);
+                });
+                node.appendChild(children);
+
+                container.appendChild(node);
+            });
+
+            if (students.length > MAX) {
+                const more = document.createElement('div');
+                more.className = 'response-summary';
+                more.textContent = `${MAX}/${students.length}명만 표시`;
+                container.appendChild(more);
+            }
+        }
+
+        function renderGenericList(items, container) {
+            const MAX = 30;
+            const sliced = items.slice(0, MAX);
+
+            sliced.forEach(({ label, value, name, date }) => {
+                const row = document.createElement('div');
+                row.className = 'id-row';
+                const extra = name ? name : (date ? date : '');
+                const extraTag = extra ? `<span class="id-name">${extra}</span>` : '';
+                row.innerHTML = `
+                    <span class="id-label">${label}</span>
+                    <span class="id-value" onclick="copyId(this)" data-id="${value}">${value}</span>
+                    ${extraTag}
+                `;
+                container.appendChild(row);
+            });
+
+            if (items.length > MAX) {
+                const more = document.createElement('div');
+                more.className = 'response-summary';
+                more.textContent = `${MAX}/${items.length}개만 표시`;
+                container.appendChild(more);
+            }
+        }
+
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + (isError ? 'error' : 'success');
+            setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 2000);
+        }
+
+        async function demoLogin() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '로그인 중...';
+
+            try {
+                const res = await fetch('/api/v1/auth/demo', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (res.ok) {
+                    showStatus('데모 로그인 성공');
+                    btn.textContent = '로그인 완료';
+                } else {
+                    const error = await res.json().catch(() => ({}));
+                    showStatus(error.message || '로그인 실패', true);
+                    btn.textContent = '데모 계정으로 로그인';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                showStatus('네트워크 오류', true);
+                btn.textContent = '데모 계정으로 로그인';
+                btn.disabled = false;
+            }
+        }
+
+        function copyId(el) {
+            const id = el?.dataset?.id ?? el?.textContent?.trim();
+            if (!id) return;
+            navigator.clipboard.writeText(id);
+            const original = el.textContent;
+            el.textContent = '복사됨';
+            el.style.background = '#d1fae5';
+            setTimeout(() => {
+                el.textContent = original;
+                el.style.background = '';
+            }, 500);
+        }
+
+        function clearExtractedIds() {
+            responses.length = 0;
+            renderExtractedIds();
+            showStatus('초기화됨');
+        }
+
+        function toggleBoard() {
+            const board = document.getElementById('dev-board');
+            const toggle = board.querySelector('.title span');
+            board.classList.toggle('minimized');
+            toggle.textContent = board.classList.contains('minimized') ? '펼치기' : '접기';
+        }
+
+        window.onload = function() {
+            window.ui = SwaggerUIBundle({
+                url: "/v3/api-docs",
+                dom_id: '#swagger-ui',
+                presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+                layout: "StandaloneLayout",
+
+                requestInterceptor: (req) => {
+                    try {
+                        const u = safeUrl(req.url);
+                        if (u) reqMap.set(u.pathname, req.method || 'GET');
+                    } catch {}
+                    return req;
+                },
+
+                responseInterceptor: (res) => {
+                    try {
+                        const u = safeUrl(res.url);
+                        if (!u || u.pathname.includes('/v3/api-docs')) return res;
+
+                        const json = getJsonFromRes(res);
+                        if (!json) return res;
+
+                        const method = reqMap.get(u.pathname) || 'GET';
+                        const endpoint = u.pathname.replace(/^\/api\/v1/, '');
+
+                        const isAttendanceRange = endpoint === '/attendance/range';
+                        const data = isAttendanceRange
+                            ? buildAttendanceRangeTree(json)
+                            : buildGenericTree(json);
+
+                        if (!data.stats || data.stats.unique === 0) return res;
+
+                        addResponse(endpoint, method, data);
+                        renderExtractedIds();
+                        showStatus(`ID ${data.stats.unique}개 추출`);
+                    } catch {}
+                    return res;
+                }
+            });
+        };
+    </script>
+</body>
+</html>
