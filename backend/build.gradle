@@ -20,7 +20,7 @@ ext {
     javaVersion = '21'
     lombokVersion = '1.18.30'
     jjwtVersion = '0.12.3'
-    springdocVersion = '2.2.0'
+    springdocVersion = '2.8.4'
     hypersistenceTsidVersion = '2.1.4'
 }
 
@@ -82,6 +82,9 @@ dependencies {
     // ============== API Documentation ==============
     // SpringDoc OpenAPI (Swagger UI)
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    // JavaDoc to Swagger
+    annotationProcessor 'com.github.therapi:therapi-runtime-javadoc-scribe:0.15.0'
+    implementation 'com.github.therapi:therapi-runtime-javadoc:0.15.0'
 
     // ============== Caching ==============
     implementation 'org.springframework.boot:spring-boot-starter-cache'
