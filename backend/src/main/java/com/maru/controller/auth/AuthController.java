@@ -7,17 +7,20 @@ import com.maru.controller.auth.dto.OAuthCallbackReq;
 import com.maru.controller.auth.dto.OAuthUrlRes;
 import com.maru.domain.user.OAuthProvider;
 import com.maru.service.auth.AuthService;
+import com.maru.service.auth.DemoAuthService;
 import com.maru.controller.auth.dto.TokenRes;
 import com.maru.security.CurrentUserId;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
+@Tag(name = "인증")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -25,7 +28,21 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final DemoAuthService demoAuthService;
     private final CookieUtil cookieUtil;
+
+    /**
+     * 데모 로그인 API - 소셜 로그인 없이 바로 체험
+     *
+     * @param response HTTP 응답
+     * @return 응답
+     */
+    @PostMapping("/demo")
+    public ResponseEntity<Void> demoLogin(HttpServletResponse response) {
+        TokenRes tokenRes = demoAuthService.login();
+        cookieUtil.setAuthCookies(response, tokenRes);
+        return ResponseEntity.ok().build();
+    }
 
     /**
      * Access Token 갱신 API
