@@ -1,17 +1,3 @@
 spring:
   profiles:
     active: local
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
-  packages-to-scan: com.maru.controller
-  use-javadoc: true
-
-maru:
-  demo:
-    user-id: 0DEMOUSER001

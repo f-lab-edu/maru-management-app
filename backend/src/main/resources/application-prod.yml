@@ -91,3 +91,17 @@ logging:
     org.springframework.security: DEBUG
   file:
     name: ${LOG_PATH:/home/ec2-user}/logs/application.log
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  packages-to-scan: com.maru.controller
+  use-javadoc: true
+
+maru:
+  demo:
+    user-id: ${DEMO_USER_ID}
