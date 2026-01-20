@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+  workflow_dispatch:
 
 concurrency:
   group: maru-backend-prod
@@ -52,6 +53,7 @@ jobs:
             printf 'SMS_SOLAPI_API_KEY=%s\n' "${{ secrets.SMS_SOLAPI_API_KEY }}"
             printf 'SMS_SOLAPI_API_SECRET=%s\n' "${{ secrets.SMS_SOLAPI_API_SECRET }}"
             printf 'SMS_SOLAPI_SENDER_NUMBER=%s\n' "${{ secrets.SMS_SOLAPI_SENDER_NUMBER }}"
+            printf 'DEMO_USER_ID=%s\n' "${{ secrets.DEMO_USER_ID }}"
           } > maru-backend.env
 
       - name: Verify artifacts
