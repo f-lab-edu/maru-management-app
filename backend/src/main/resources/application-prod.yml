@@ -85,13 +85,6 @@ management:
       show-details: never
 
 logging:
-  level:
-    root: INFO
-    com.maru: DEBUG
-    org.springframework: INFO
-    org.hibernate: WARN
-    org.hibernate.SQL: OFF
-    org.springframework.security: DEBUG
   file:
     name: ${LOG_PATH:/home/ec2-user}/logs/application.log
 
