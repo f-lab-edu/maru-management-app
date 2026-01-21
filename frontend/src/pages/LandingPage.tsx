@@ -9,11 +9,11 @@ import { ArrowRight, Check } from 'lucide-react';
 const LANDING_DATA = {
   heroTitle: "도장 관리의 모든 것,\nMARU 하나로 완성하다",
   heroSubtitle: "출석부터 수납, 원생 관리까지.\n관장님의 소중한 시간을 돌려드립니다.\n지금 바로 시작하세요.",
-  heroImage: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=2000&auto=format&fit=crop",
+  heroImage: "https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=2000&auto=format&fit=crop",
   features: [
     {
       title: "스마트 출석체크",
-      desc: "QR코드와 얼굴인식으로 빠르고 정확하게.\n등하원 알림은 기본입니다.",
+      desc: "원생 출석을 간편하게 관리하세요.\n실시간 출석 현황을 한눈에 확인합니다.",
       image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop"
     },
     {
@@ -23,7 +23,7 @@ const LANDING_DATA = {
     },
     {
       title: "체계적인 원생관리",
-      desc: "입관부터 승급까지,\n원생의 성장 데이터를 한눈에 파악하세요.",
+      desc: "원생 정보를 체계적으로 관리하세요.\n반 편성부터 연락처까지 한 곳에서.",
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop"
     }
   ],
@@ -55,23 +55,25 @@ const LANDING_DATA = {
   ],
   pricing: [
     {
-      name: "Basic",
-      price: "무료",
-      desc: "소규모 도장을 위한 핵심 기능",
-      features: ["원생 50명까지", "출석체크", "기본 통계"]
-    },
-    {
       name: "Pro",
       price: "₩39,000",
       desc: "성장하는 도장을 위한 모든 기능",
       features: ["원생 무제한", "수납 관리", "알림톡 발송", "사범 관리"],
+      disabled: true
+    },
+    {
+      name: "Basic",
+      price: "무료",
+      desc: "소규모 도장을 위한 핵심 기능",
+      features: ["원생 50명까지", "출석체크", "기본 통계"],
       popular: true
     },
     {
       name: "Enterprise",
       price: "별도 문의",
       desc: "프랜차이즈 및 대형 도장 맞춤",
-      features: ["전담 매니저", "커스텀 기능 개발", "API 연동"]
+      features: ["전담 매니저", "커스텀 기능 개발", "API 연동"],
+      disabled: true
     }
   ],
   faq: [
@@ -86,10 +88,6 @@ const LANDING_DATA = {
     {
       question: "약정 기간이 있나요?",
       answer: "아니요, 언제든지 해지하실 수 있으며 위약금은 없습니다."
-    },
-    {
-      question: "앱은 어디서 다운로드하나요?",
-      answer: "구글 플레이스토어와 애플 앱스토어에서 'MARU'를 검색하시면 됩니다."
     }
   ]
 };
@@ -249,8 +247,12 @@ export default function LandingPage() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full" variant={plan.popular ? 'default' : 'outline'}>
-                    시작하기
+                  <Button
+                    className="w-full"
+                    variant={plan.popular ? 'default' : 'outline'}
+                    disabled={plan.disabled}
+                  >
+                    {plan.disabled ? '준비중' : '시작하기'}
                   </Button>
                 </CardFooter>
               </Card>

@@ -1,11 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService, OAuthProvider } from '../services/authService';
 import { Button } from '../shared/components/ui/button';
 import { CardHeader, CardTitle, CardDescription, CardContent } from '../shared/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Play } from 'lucide-react';
+
+type LoadingState = OAuthProvider | 'demo' | null;
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState<OAuthProvider | null>(null);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState<LoadingState>(null);
 
   const handleLogin = async (provider: OAuthProvider) => {
     setIsLoading(provider);
@@ -14,6 +18,17 @@ export default function LoginPage() {
       window.location.href = authUrl;
     } catch (error) {
       console.error('OAuth URL 조회 실패:', error);
+      setIsLoading(null);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading('demo');
+    try {
+      await authService.demoLogin();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('데모 로그인 실패:', error);
       setIsLoading(null);
     }
   };
@@ -66,6 +81,31 @@ export default function LoginPage() {
             </>
           )}
         </Button>
+
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 border-t border-slate-200" />
+          <span className="text-sm text-slate-500">또는</span>
+          <div className="flex-1 border-t border-slate-200" />
+        </div>
+
+        <Button
+          className="w-full h-14 bg-slate-900 text-white hover:bg-slate-800 font-medium text-base relative shadow-sm transition-all hover:shadow-md"
+          onClick={handleDemoLogin}
+          disabled={isLoading !== null}
+        >
+          {isLoading === 'demo' ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            <>
+              <Play className="w-5 h-5 absolute left-4" />
+              데모로 체험하기
+            </>
+          )}
+        </Button>
+
+        <p className="text-center text-sm text-slate-500 mt-3">
+          가입 없이 바로 체험해볼 수 있습니다
+        </p>
       </CardContent>
     </div>
   );

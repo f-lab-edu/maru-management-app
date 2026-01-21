@@ -5,7 +5,7 @@ import { Button } from '../shared/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '../shared/utils';
 
-const HERO_IMAGE = 'https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=2000&auto=format&fit=crop';
+const HERO_IMAGE = 'https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=2000&auto=format&fit=crop';
 
 export default function AuthLayout() {
   const location = useLocation();
