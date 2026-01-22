@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -276,7 +277,7 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     long countAsOfDate(
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
-            @Param("beforeDate") java.time.LocalDateTime beforeDate);
+            @Param("beforeDate") LocalDateTime beforeDate);
 
     @Query("""
         SELECT s.id as id, s.name as name, s.enrolledAt as enrolledAt,
