@@ -1,37 +1,51 @@
-import { Calendar, Clock, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
+import { format, startOfMonth } from 'date-fns';
+import { Calendar, TrendingUp } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/badge';
+import { Skeleton } from '@/shared/components/ui/skeleton';
+import { useAuthStore } from '@/stores/authStore';
+import { useStudentAttendance } from '@/features/attendance/hooks/useStudentAttendance';
+import { ATTENDANCE_STATUS_LABELS, ATTENDANCE_STATUS_COLORS } from '@/features/attendance/constants';
+import type { AttendanceStatus } from '@/features/attendance/types';
+import { cn } from '@/shared/utils';
 
 interface AttendanceHistoryTabProps {
   studentId: string;
 }
 
-interface AttendanceRecord {
-  id: string;
-  date: string;
-  checkIn?: string;
-  checkOut?: string;
-}
-
-// TODO: API 연동 시 실제 데이터로 교체
-const MOCK_ATTENDANCE: AttendanceRecord[] = [
-  { id: '1', date: '2024-12-07', checkIn: '16:30', checkOut: '18:00' },
-  { id: '2', date: '2024-12-05', checkIn: '16:25', checkOut: '17:55' },
-  { id: '3', date: '2024-12-03', checkIn: '16:35', checkOut: '18:05' },
-  { id: '4', date: '2024-12-01', checkIn: '16:30', checkOut: '18:00' },
-  { id: '5', date: '2024-11-29', checkIn: '16:20', checkOut: '17:50' },
-];
-
-const MOCK_STATS = {
-  monthlyRate: 85,
-  totalDays: 12,
-  attendedDays: 10,
-};
-
 export function AttendanceHistoryTab({ studentId }: AttendanceHistoryTabProps) {
-  // TODO: useQuery로 실제 API 호출
-  const attendance = MOCK_ATTENDANCE;
-  const stats = MOCK_STATS;
-  console.log('출결이력 조회 - studentId:', studentId);
+  const { selectedDojang } = useAuthStore();
+  const dojangId = selectedDojang?.dojangId ?? null;
+
+  const today = new Date();
+  const startDate = format(startOfMonth(today), 'yyyy-MM-dd');
+  const endDate = format(today, 'yyyy-MM-dd');
+
+  const { data: attendanceList, isLoading } = useStudentAttendance({
+    dojangId,
+    studentId,
+    startDate,
+    endDate,
+  });
+
+  const stats = useMemo(() => {
+    if (!attendanceList || attendanceList.length === 0) {
+      return { monthlyRate: 0, totalDays: 0, attendedDays: 0 };
+    }
+
+    const totalDays = attendanceList.length;
+    const attendedDays = attendanceList.filter((r) => r.status === 'PRESENT').length;
+    const monthlyRate = totalDays > 0 ? Math.round((attendedDays / totalDays) * 100) : 0;
+
+    return { monthlyRate, totalDays, attendedDays };
+  }, [attendanceList]);
+
+  const recentAttendance = useMemo(() => {
+    if (!attendanceList) return [];
+    return [...attendanceList]
+      .sort((a, b) => new Date(b.attendanceDate).getTime() - new Date(a.attendanceDate).getTime())
+      .slice(0, 5);
+  }, [attendanceList]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -41,6 +55,35 @@ export function AttendanceHistoryTab({ studentId }: AttendanceHistoryTabProps) {
       weekday: 'short',
     });
   };
+
+  const formatTime = (isoString: string | null): string | null => {
+    if (!isoString) return null;
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getStatusBadge = (status: AttendanceStatus) => {
+    const colorClass = ATTENDANCE_STATUS_COLORS[status];
+    const label = ATTENDANCE_STATUS_LABELS[status];
+    return (
+      <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0.5', colorClass)}>
+        {label}
+      </Badge>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -65,32 +108,45 @@ export function AttendanceHistoryTab({ studentId }: AttendanceHistoryTabProps) {
           <span>최근 5회 출결 기록</span>
         </div>
 
-        <div className="space-y-2">
-          {attendance.map((record) => (
-            <div
-              key={record.id}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
-              <div>
-                <p className="font-medium">{formatDate(record.date)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {record.checkIn && (
-                  <Badge variant="outline" className="border-0 bg-blue-100 text-blue-800">
-                    <Clock className="mr-1 h-3 w-3" />
-                    {record.checkIn}
-                  </Badge>
-                )}
-                {record.checkOut && (
-                  <Badge variant="outline" className="border-0 bg-gray-100 text-gray-800">
-                    <Clock className="mr-1 h-3 w-3" />
-                    {record.checkOut}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        {recentAttendance.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>출결 기록이 없습니다</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {recentAttendance.map((record) => {
+              const showTime = record.status === 'PRESENT';
+              return (
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <span className="text-sm font-medium">{formatDate(record.attendanceDate)}</span>
+                  <div className="flex items-center gap-2">
+                    {showTime && record.checkinAt && (
+                      <span className="text-[11px] text-blue-600 font-medium">
+                        {formatTime(record.checkinAt)}
+                      </span>
+                    )}
+                    {showTime && record.checkinAt && record.checkoutAt && (
+                      <span className="text-muted-foreground">→</span>
+                    )}
+                    {showTime && record.checkoutAt && (
+                      <span className="text-[11px] text-gray-500 font-medium">
+                        {formatTime(record.checkoutAt)}
+                      </span>
+                    )}
+                    {!showTime && record.status !== 'PRESENT' && (
+                      <span className="text-[11px] text-muted-foreground">-</span>
+                    )}
+                    {getStatusBadge(record.status)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
