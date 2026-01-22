@@ -105,6 +105,7 @@ export function InvoiceDetailSheet({ invoiceId, isOpen, onClose }: InvoiceDetail
           hideOverlay
           onInteractOutside={handleInteractOutside}
           onPointerDownOutside={handleInteractOutside}
+          aria-describedby={undefined}
         >
           <SheetHeader>
             <SheetTitle>청구서 상세</SheetTitle>

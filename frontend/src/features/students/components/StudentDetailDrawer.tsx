@@ -54,7 +54,7 @@ export function StudentDetailDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange} modal={false}>
-      <SheetContent side="right" className="w-[400px] overflow-y-auto sm:w-[540px]">
+      <SheetContent side="right" className="w-[400px] overflow-y-auto sm:w-[540px]" aria-describedby={undefined}>
         {isLoading || !student ? (
           <DrawerSkeleton />
         ) : (
