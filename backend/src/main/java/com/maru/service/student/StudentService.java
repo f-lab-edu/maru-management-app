@@ -130,21 +130,27 @@ public class StudentService {
     @Transactional
     public void bulkDeleteStudents(String dojangId, List<String> studentIds, String userId) {
         String tenantId = TenantContextHolder.getTenantId();
-
         List<Student> students = studentRepository.findAllById(studentIds);
 
+        validateBulkDeleteAccess(students, tenantId, dojangId);
+        withdrawAll(students);
+
+        log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
+    }
+
+    private void validateBulkDeleteAccess(List<Student> students, String tenantId, String dojangId) {
         for (Student student : students) {
-            if (!student.getDojangId().equals(dojangId) ||
-                !student.getTenantId().equals(tenantId)) {
+            if (!student.getDojangId().equals(dojangId) || !student.getTenantId().equals(tenantId)) {
                 throw new BusinessException(DojangErrorCode.UNAUTHORIZED_ACCESS);
             }
             if (student.getStatus() == StudentStatus.WITHDRAWN) {
                 throw new BusinessException(StudentErrorCode.NOT_FOUND);
             }
-            student.withdraw();
         }
+    }
 
-        log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
+    private void withdrawAll(List<Student> students) {
+        students.forEach(Student::withdraw);
     }
 
 

@@ -43,26 +43,39 @@ public class StudentQueryService {
      */
     @RequirePermission(PermissionType.STUDENT_VIEW)
     public StudentListRes getStudents(String dojangId, String sectionId, String divisionId, Boolean includeWithdrawn) {
+        List<StudentSummaryView> views = findStudentViews(dojangId, sectionId, divisionId, includeWithdrawn);
+        return buildStudentListRes(views);
+    }
+
+    private List<StudentSummaryView> findStudentViews(String dojangId, String sectionId, String divisionId, Boolean includeWithdrawn) {
         String tenantId = TenantContextHolder.getTenantId();
 
-        boolean hasFilter = sectionId != null || divisionId != null;
-        boolean includeDeleted = Boolean.TRUE.equals(includeWithdrawn);
-
-        List<StudentSummaryView> views;
-        if (hasFilter) {
-            List<String> filteredStudentIds = enrollmentQueryService.getStudentIdsByFilter(dojangId, sectionId, divisionId);
-            if (filteredStudentIds.isEmpty()) {
-                return StudentListRes.empty();
-            }
-            views = studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN);
-        } else {
-            if (includeDeleted) {
-                views = studentRepository.findAllWithEnrollmentStatusIncludingDeleted(tenantId, dojangId);
-            } else {
-                views = studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
-            }
+        if (hasEnrollmentFilter(sectionId, divisionId)) {
+            return findByEnrollmentFilter(tenantId, dojangId, sectionId, divisionId);
         }
+        return findAll(tenantId, dojangId, includeWithdrawn);
+    }
 
+    private boolean hasEnrollmentFilter(String sectionId, String divisionId) {
+        return sectionId != null || divisionId != null;
+    }
+
+    private List<StudentSummaryView> findByEnrollmentFilter(String tenantId, String dojangId, String sectionId, String divisionId) {
+        List<String> studentIds = enrollmentQueryService.getStudentIdsByFilter(dojangId, sectionId, divisionId);
+        if (studentIds.isEmpty()) {
+            return List.of();
+        }
+        return studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, studentIds, StudentStatus.WITHDRAWN);
+    }
+
+    private List<StudentSummaryView> findAll(String tenantId, String dojangId, Boolean includeWithdrawn) {
+        if (Boolean.TRUE.equals(includeWithdrawn)) {
+            return studentRepository.findAllWithEnrollmentStatusIncludingDeleted(tenantId, dojangId);
+        }
+        return studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
+    }
+
+    private StudentListRes buildStudentListRes(List<StudentSummaryView> views) {
         List<StudentSummaryRes> summaries = views.stream()
                 .map(this::toStudentSummaryRes)
                 .toList();
