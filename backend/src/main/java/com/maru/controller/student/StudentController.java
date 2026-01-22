@@ -48,6 +48,7 @@ public class StudentController {
      * @param dojangId 도장 ID
      * @param sectionId 수련부 ID (선택)
      * @param divisionId 수련반 ID (선택)
+     * @param includeWithdrawn 퇴원 원생 포함 여부
      * @param userId 현재 사용자 ID
      * @return 원생 목록 (enrolled_at DESC 정렬)
      */
@@ -56,8 +57,9 @@ public class StudentController {
             @RequestParam String dojangId,
             @RequestParam(required = false) String sectionId,
             @RequestParam(required = false) String divisionId,
+            @RequestParam(required = false, defaultValue = "false") Boolean includeWithdrawn,
             @CurrentUserId String userId) {
-        StudentListRes response = studentQueryService.getStudents(dojangId, sectionId, divisionId);
+        StudentListRes response = studentQueryService.getStudents(dojangId, sectionId, divisionId, includeWithdrawn);
         return ResponseEntity.ok(response);
     }
 
@@ -131,6 +133,24 @@ public class StudentController {
             @CurrentUserId String userId) {
         studentService.bulkDeleteStudents(dojangId, request.studentIds(), userId);
         return ResponseEntity.noContent().build();
+    }
+
+
+    /**
+     * 퇴원 원생 복구
+     *
+     * @param id 원생 ID
+     * @param dojangId 도장 ID
+     * @param userId 현재 사용자 ID
+     * @return 복구된 원생 정보
+     */
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<StudentRes> restoreStudent(
+            @PathVariable String id,
+            @RequestParam String dojangId,
+            @CurrentUserId String userId) {
+        StudentRes response = studentService.restoreStudent(dojangId, id, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**

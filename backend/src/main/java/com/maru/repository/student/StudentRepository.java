@@ -141,6 +141,20 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("dojangId") String dojangId,
             @Param("excludeStatus") StudentStatus excludeStatus);
 
+
+    @Query("""
+        SELECT s.id as id, s.name as name, s.birth as birth,
+               s.photoUrl as photoUrl, s.enrolledAt as enrolledAt, s.status as status,
+               (SELECT COUNT(e) > 0 FROM Enrollment e WHERE e.studentId = s.id AND e.dojangId = :dojangId) as hasEnrollment
+        FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+        ORDER BY s.enrolledAt DESC
+        """)
+    List<StudentSummaryView> findAllWithEnrollmentStatusIncludingDeleted(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId);
+
     @Query("""
         SELECT s.id as id, s.name as name, s.birth as birth,
                s.photoUrl as photoUrl, s.enrolledAt as enrolledAt, s.status as status,
@@ -231,7 +245,6 @@ public interface StudentRepository extends JpaRepository<Student, String> {
         FROM Student s
         WHERE s.id = :id
           AND s.dojangId = :dojangId
-          AND s.deletedAt IS NULL
         """)
     Optional<StudentMinimalView> findMinimalByIdAndDojangId(
             @Param("id") String id,
@@ -279,4 +292,26 @@ public interface StudentRepository extends JpaRepository<Student, String> {
             @Param("tenantId") String tenantId,
             @Param("dojangId") String dojangId,
             @Param("since") LocalDate since);
+
+
+    @Query("""
+        SELECT s FROM Student s
+        WHERE s.id = :id
+          AND s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
+        """)
+    Optional<Student> findByIdIncludingDeleted(
+            @Param("id") String id,
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId);
+
+
+    @Query("""
+        SELECT s FROM Student s
+        WHERE s.id = :id
+          AND s.dojangId = :dojangId
+        """)
+    Optional<Student> findByIdAndDojangId(
+            @Param("id") String id,
+            @Param("dojangId") String dojangId);
 }

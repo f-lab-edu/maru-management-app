@@ -38,13 +38,15 @@ public class StudentQueryService {
      * @param dojangId 도장 ID
      * @param sectionId 수련부 ID (선택)
      * @param divisionId 수련반 ID (선택)
+     * @param includeWithdrawn 퇴원 원생 포함 여부
      * @return 원생 목록
      */
     @RequirePermission(PermissionType.STUDENT_VIEW)
-    public StudentListRes getStudents(String dojangId, String sectionId, String divisionId) {
+    public StudentListRes getStudents(String dojangId, String sectionId, String divisionId, Boolean includeWithdrawn) {
         String tenantId = TenantContextHolder.getTenantId();
 
         boolean hasFilter = sectionId != null || divisionId != null;
+        boolean includeDeleted = Boolean.TRUE.equals(includeWithdrawn);
 
         List<StudentSummaryView> views;
         if (hasFilter) {
@@ -54,7 +56,11 @@ public class StudentQueryService {
             }
             views = studentRepository.findAllByIdsWithEnrollmentStatus(tenantId, dojangId, filteredStudentIds, StudentStatus.WITHDRAWN);
         } else {
-            views = studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
+            if (includeDeleted) {
+                views = studentRepository.findAllWithEnrollmentStatusIncludingDeleted(tenantId, dojangId);
+            } else {
+                views = studentRepository.findAllWithEnrollmentStatus(tenantId, dojangId, StudentStatus.WITHDRAWN);
+            }
         }
 
         List<StudentSummaryRes> summaries = views.stream()

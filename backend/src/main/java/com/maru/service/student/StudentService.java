@@ -146,4 +146,28 @@ public class StudentService {
 
         log.info("원생 일괄 퇴원 - count: {}, dojangId: {}", students.size(), dojangId);
     }
+
+
+    /**
+     * 퇴원 원생 복구
+     *
+     * @param dojangId 도장 ID
+     * @param studentId 원생 ID
+     * @param userId 현재 사용자 ID
+     * @return 복구된 원생 정보
+     * @throws BusinessException NOT_FOUND - 원생을 찾을 수 없음
+     */
+    @RequirePermission(PermissionType.STUDENT_UPDATE)
+    @Transactional
+    public StudentRes restoreStudent(String dojangId, String studentId, String userId) {
+        String tenantId = TenantContextHolder.getTenantId();
+
+        Student student = studentRepository.findByIdIncludingDeleted(studentId, tenantId, dojangId)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+
+        student.reactivate();
+        log.info("원생 복구 - studentId: {}, dojangId: {}", studentId, dojangId);
+
+        return queryService.getStudent(dojangId, studentId);
+    }
 }

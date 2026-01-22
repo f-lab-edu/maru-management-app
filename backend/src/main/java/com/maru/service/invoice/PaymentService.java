@@ -10,6 +10,7 @@ import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.Payment;
 import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
+import com.maru.domain.student.Student;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.repository.invoice.InvoiceRepository;
@@ -291,8 +292,10 @@ public class PaymentService {
     }
 
     private void validateStudentInDojang(String studentId, String dojangId) {
-        if (!studentRepository.existsByIdAndDojangId(studentId, dojangId)) {
-            throw new BusinessException(StudentErrorCode.NOT_FOUND);
+        Student student = studentRepository.findByIdAndDojangId(studentId, dojangId)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+        if (student.isDeleted()) {
+            throw new BusinessException(StudentErrorCode.WITHDRAWN);
         }
     }
 

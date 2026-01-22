@@ -8,6 +8,7 @@ import com.maru.controller.invoice.dto.*;
 import com.maru.domain.invoice.Invoice;
 import com.maru.domain.invoice.InvoiceStatus;
 import com.maru.domain.invoice.exception.InvoiceErrorCode;
+import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.repository.invoice.InvoiceRepository;
@@ -303,8 +304,10 @@ public class InvoiceService {
     }
 
     private void validateStudentInDojang(String studentId, String dojangId) {
-        if (!studentRepository.existsByIdAndDojangId(studentId, dojangId)) {
-            throw new BusinessException(StudentErrorCode.NOT_FOUND);
+        Student student = studentRepository.findByIdAndDojangId(studentId, dojangId)
+                .orElseThrow(() -> new BusinessException(StudentErrorCode.NOT_FOUND));
+        if (student.isDeleted()) {
+            throw new BusinessException(StudentErrorCode.WITHDRAWN);
         }
     }
 
