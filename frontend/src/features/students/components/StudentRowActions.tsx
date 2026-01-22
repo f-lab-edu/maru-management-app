@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, LogOut } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +35,8 @@ export function StudentRowActions({ student, onEdit, onDelete, canUpdate = true,
           className="text-destructive focus:text-destructive"
           disabled={!canDelete}
         >
-          <Trash2 className="mr-2 h-4 w-4" />
-          삭제
+          <LogOut className="mr-2 h-4 w-4" />
+          퇴원
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
