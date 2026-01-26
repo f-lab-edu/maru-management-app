@@ -17,6 +17,7 @@ public record InvoiceListRes(
         InvoiceStatus status,
         LocalDate dueDate,
         LocalDate issueDate,
-        YearMonth billingYearMonth
+        YearMonth billingYearMonth,
+        boolean studentDeleted
 ) {
 }

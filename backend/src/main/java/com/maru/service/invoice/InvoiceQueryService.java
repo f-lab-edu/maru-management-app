@@ -102,6 +102,7 @@ public class InvoiceQueryService {
                 .dueDate(view.getDueDate())
                 .issueDate(view.getIssueDate())
                 .billingYearMonth(view.getBillingYearMonth())
+                .studentDeleted(Boolean.TRUE.equals(view.getStudentDeleted()))
                 .build();
     }
 
@@ -118,6 +119,7 @@ public class InvoiceQueryService {
                 .issueDate(view.getIssueDate())
                 .note(view.getNote())
                 .billingYearMonth(view.getBillingYearMonth())
+                .studentDeleted(Boolean.TRUE.equals(view.getStudentDeleted()))
                 .payments(payments)
                 .build();
     }

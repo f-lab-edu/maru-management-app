@@ -25,7 +25,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         SELECT i.id as id, i.studentId as studentId, s.name as studentName,
                i.amount as amount, i.paidAmount as paidAmount, i.status as status,
                i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
-               i.billingYearMonth as billingYearMonth
+               i.billingYearMonth as billingYearMonth,
+               CASE WHEN s.deletedAt IS NOT NULL THEN true ELSE false END as studentDeleted
         FROM Invoice i
         JOIN Student s ON i.studentId = s.id
         WHERE i.tenantId = :tenantId
@@ -42,7 +43,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         SELECT i.id as id, i.studentId as studentId, s.name as studentName,
                i.amount as amount, i.paidAmount as paidAmount, i.status as status,
                i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
-               i.billingYearMonth as billingYearMonth
+               i.billingYearMonth as billingYearMonth,
+               CASE WHEN s.deletedAt IS NOT NULL THEN true ELSE false END as studentDeleted
         FROM Invoice i
         JOIN Student s ON i.studentId = s.id
         LEFT JOIN Enrollment e ON e.studentId = s.id
@@ -51,6 +53,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.status IN ('OPEN', 'PARTIAL')
+          AND s.deletedAt IS NULL
           AND (:sectionId IS NULL OR d.section.id = :sectionId)
           AND (:divisionId IS NULL OR e.divisionId = :divisionId)
         ORDER BY i.dueDate ASC
@@ -72,6 +75,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         WHERE i.tenantId = :tenantId
           AND i.dojangId = :dojangId
           AND i.status IN ('OPEN', 'PARTIAL')
+          AND s.deletedAt IS NULL
           AND (:sectionId IS NULL OR d.section.id = :sectionId)
           AND (:divisionId IS NULL OR e.divisionId = :divisionId)
         ORDER BY i.dueDate ASC
@@ -122,7 +126,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         SELECT i.id as id, i.studentId as studentId, s.name as studentName,
                i.amount as amount, i.paidAmount as paidAmount, i.status as status,
                i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
-               i.billingYearMonth as billingYearMonth
+               i.billingYearMonth as billingYearMonth,
+               CASE WHEN s.deletedAt IS NOT NULL THEN true ELSE false END as studentDeleted
         FROM Invoice i
         JOIN Student s ON i.studentId = s.id
         WHERE i.id = :id
@@ -181,7 +186,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
         SELECT i.id as id, i.studentId as studentId, s.name as studentName,
                i.amount as amount, i.paidAmount as paidAmount, i.status as status,
                i.dueDate as dueDate, i.issueDate as issueDate, i.note as note,
-               i.billingYearMonth as billingYearMonth
+               i.billingYearMonth as billingYearMonth,
+               CASE WHEN s.deletedAt IS NOT NULL THEN true ELSE false END as studentDeleted
         FROM Invoice i
         JOIN Student s ON i.studentId = s.id
         WHERE i.tenantId = :tenantId

@@ -17,4 +17,5 @@ public interface InvoiceStudentView {
     LocalDate getIssueDate();
     String getNote();
     YearMonth getBillingYearMonth();
+    Boolean getStudentDeleted();
 }

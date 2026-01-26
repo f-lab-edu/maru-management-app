@@ -21,6 +21,7 @@ public record InvoiceDetailRes(
         LocalDate issueDate,
         String note,
         YearMonth billingYearMonth,
+        boolean studentDeleted,
         List<PaymentRes> payments
 ) {
 }

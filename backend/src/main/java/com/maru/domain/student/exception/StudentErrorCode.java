@@ -19,7 +19,8 @@ public enum StudentErrorCode implements BaseErrorCode {
     BIRTH_REQUIRED(HttpStatus.BAD_REQUEST, "STUDENT_103", "birth는 필수입니다"),
 
     // 비즈니스 규칙
-    DUPLICATE(HttpStatus.CONFLICT, "STUDENT_301", "이미 등록된 원생입니다");
+    DUPLICATE(HttpStatus.CONFLICT, "STUDENT_301", "이미 등록된 원생입니다"),
+    WITHDRAWN(HttpStatus.CONFLICT, "STUDENT_302", "퇴원한 원생입니다");
 
     private final HttpStatus status;
     private final String code;
