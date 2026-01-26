@@ -1,4 +1,4 @@
-import { Search, Trash2, X } from 'lucide-react';
+import { Search, LogOut, X } from 'lucide-react';
 import { Input } from '@/shared/components/ui/input';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/utils';
@@ -167,8 +167,8 @@ export function StudentTableToolbar({
               onClick={onBulkDelete}
               disabled={!canDelete}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              선택 삭제
+              <LogOut className="mr-2 h-4 w-4" />
+              선택 퇴원
             </Button>
           </div>
         )}

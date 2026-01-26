@@ -58,7 +58,7 @@ export default function StudentListPage() {
   const { data: studentsData, isLoading } = useStudents(dojangId, {
     sectionId: sectionId ?? undefined,
     divisionId: divisionId ?? undefined,
-    includeWithdrawn: activeTab === 'withdrawn',
+    includeWithdrawn: true,
   });
 
   // 선택 상태
@@ -139,6 +139,9 @@ export default function StudentListPage() {
 
   // Drawer 핸들러
   function handleRowClick(student: StudentSummary) {
+    if (student.status === 'WITHDRAWN') {
+      return;
+    }
     setSelectedStudentId(student.id);
   }
 
@@ -167,9 +170,9 @@ export default function StudentListPage() {
 
   async function handleDeleteStudent(student: StudentSummary) {
     const { isConfirmed } = await confirmDelete({
-      title: '수련생 삭제',
-      text: `${student.name} 수련생을 삭제하시겠습니까?`,
-      confirmText: '삭제',
+      title: '수련생 퇴원',
+      text: `${student.name} 수련생을 퇴원 처리하시겠습니까?`,
+      confirmText: '퇴원',
       cancelText: '취소',
     });
     if (!isConfirmed) return;
@@ -185,9 +188,9 @@ export default function StudentListPage() {
   async function handleBulkDeleteStudents() {
     if (selectedCount === 0) return;
     const { isConfirmed } = await confirmDelete({
-      title: '수련생 일괄 삭제',
-      text: `선택한 ${selectedCount}명의 수련생을 삭제하시겠습니까?`,
-      confirmText: `${selectedCount}명 삭제`,
+      title: '수련생 일괄 퇴원',
+      text: `선택한 ${selectedCount}명의 수련생을 퇴원 처리하시겠습니까?`,
+      confirmText: `${selectedCount}명 퇴원`,
       cancelText: '취소',
     });
     if (!isConfirmed) return;
