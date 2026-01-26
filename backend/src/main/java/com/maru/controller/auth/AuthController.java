@@ -45,6 +45,18 @@ public class AuthController {
     }
 
     /**
+     * 로그아웃 API - 인증 쿠키 삭제
+     *
+     * @param response HTTP 응답
+     * @return 응답
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        cookieUtil.clearAuthCookies(response);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Access Token 갱신 API
      *
      * @param refreshToken Refresh Token (쿠키)
