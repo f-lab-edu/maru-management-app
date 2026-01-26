@@ -42,6 +42,19 @@ public class CookieUtil {
     }
 
     /**
+     * 인증 토큰 쿠키를 삭제하여 로그아웃 처리
+     *
+     * @param response HTTP 응답 객체
+     */
+    public void clearAuthCookies(HttpServletResponse response) {
+        ResponseCookie accessTokenCookie = createExpiredCookie(COOKIE_TYPE_ACCESS);
+        response.addHeader("Set-Cookie", accessTokenCookie.toString());
+
+        ResponseCookie refreshTokenCookie = createExpiredCookie(COOKIE_TYPE_REFRESH);
+        response.addHeader("Set-Cookie", refreshTokenCookie.toString());
+    }
+
+    /**
      * ResponseCookie 객체 생성
      *
      * @param name Cookie 이름
@@ -54,6 +67,22 @@ public class CookieUtil {
             .secure(cookieProperties.secure())
             .path(cookieProperties.path())
             .maxAge(cookieProperties.maxAge())
+            .sameSite(cookieProperties.sameSite())
+            .build();
+    }
+
+    /**
+     * 만료된 ResponseCookie 객체 생성 (쿠키 삭제용)
+     *
+     * @param name Cookie 이름
+     * @return 만료된 ResponseCookie 객체
+     */
+    private ResponseCookie createExpiredCookie(String name) {
+        return ResponseCookie.from(name, "")
+            .httpOnly(cookieProperties.httpOnly())
+            .secure(cookieProperties.secure())
+            .path(cookieProperties.path())
+            .maxAge(Duration.ZERO)
             .sameSite(cookieProperties.sameSite())
             .build();
     }
