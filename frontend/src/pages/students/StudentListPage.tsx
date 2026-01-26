@@ -142,7 +142,11 @@ export default function StudentListPage() {
     if (student.status === 'WITHDRAWN') {
       return;
     }
-    setSelectedStudentId(student.id);
+    if (selectedStudentId === student.id) {
+      setSelectedStudentId(null);
+    } else {
+      setSelectedStudentId(student.id);
+    }
   }
 
   function handleCloseDrawer() {

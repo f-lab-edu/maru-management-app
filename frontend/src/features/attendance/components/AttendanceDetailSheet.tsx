@@ -260,9 +260,15 @@ export function AttendanceDetailSheet({
   };
 
   const handleInteractOutside = (e: Event) => {
-    // SweetAlert가 열려있으면 외부 클릭 무시
-    const swalContainer = document.querySelector('.swal2-container');
-    if (swalContainer) {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('tr') ||
+      target.closest('button') ||
+      target.closest('[role="dialog"]') ||
+      target.closest('[data-radix-select-content]') ||
+      target.closest('[data-radix-popper-content-wrapper]') ||
+      document.querySelector('.swal2-container')
+    ) {
       e.preventDefault();
     }
   };

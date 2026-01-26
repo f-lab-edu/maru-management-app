@@ -149,7 +149,11 @@ export default function AttendanceListPage() {
 
   // Row 클릭 핸들러
   const handleRowClick = (student: StudentAttendanceRow) => {
-    setSelectedStudentId(student.id);
+    if (selectedStudentId === student.id) {
+      setSelectedStudentId(null);
+    } else {
+      setSelectedStudentId(student.id);
+    }
   };
 
   // Sheet 닫기
