@@ -44,8 +44,8 @@ public class SolapiSmsAdapter implements MessageChannelAdapter {
         }
 
         try {
-            smsService.sendBatch(recipients);
-            return allSuccess(messages);
+            Map<String, String> vendorMessageIds = smsService.sendBatch(recipients);
+            return buildSuccessResult(messages, vendorMessageIds);
         } catch (Exception e) {
             log.error("SMS 배치 발송 실패", e);
             return allFailed(messages, "SEND_EXCEPTION", e.getMessage());
@@ -70,16 +70,18 @@ public class SolapiSmsAdapter implements MessageChannelAdapter {
                 .filter(msg -> phoneMap.containsKey(msg.getGuardianId()))
                 .filter(msg -> msg.getBody() != null)
                 .map(msg -> new SmsRecipient(
+                        msg.getId(),
                         phoneMap.get(msg.getGuardianId()),
                         msg.getBody()
                 ))
                 .toList();
     }
 
-    private BatchSendResult allSuccess(List<MessageDispatch> messages) {
+    private BatchSendResult buildSuccessResult(List<MessageDispatch> messages, Map<String, String> vendorMessageIds) {
         Map<String, SendResult> results = new HashMap<>();
         for (MessageDispatch msg : messages) {
-            results.put(msg.getId(), SendResult.success(msg.getId(), null));
+            String vendorMessageId = vendorMessageIds.get(msg.getId());
+            results.put(msg.getId(), SendResult.success(msg.getId(), vendorMessageId));
         }
         return new BatchSendResult(results);
     }

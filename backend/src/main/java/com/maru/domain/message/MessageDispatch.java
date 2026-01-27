@@ -159,6 +159,7 @@ public class MessageDispatch extends BaseEntity {
     public void markAsAccepted(String vendorMessageId) {
         this.status = MessageStatus.ACCEPTED;
         this.vendorMessageId = vendorMessageId;
+        this.sentAt = LocalDateTime.now();
         this.acceptedAt = LocalDateTime.now();
         this.processingOwner = null;
         this.processingStartedAt = null;

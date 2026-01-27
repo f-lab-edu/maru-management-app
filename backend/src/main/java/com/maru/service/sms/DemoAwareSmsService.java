@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Primary
@@ -39,12 +40,12 @@ public class DemoAwareSmsService implements SmsService {
     }
 
     @Override
-    public void sendBatch(List<SmsRecipient> recipients) {
+    public Map<String, String> sendBatch(List<SmsRecipient> recipients) {
         if (isDemoUser()) {
             log.info("데모 사용자 SMS 배치 발송 스킵: {}건", recipients != null ? recipients.size() : 0);
-            return;
+            return Map.of();
         }
-        delegate.sendBatch(recipients);
+        return delegate.sendBatch(recipients);
     }
 
     @Override
