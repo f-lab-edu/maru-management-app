@@ -71,8 +71,7 @@ public class SolapiSmsAdapter implements MessageChannelAdapter {
                 .filter(msg -> msg.getBody() != null)
                 .map(msg -> new SmsRecipient(
                         phoneMap.get(msg.getGuardianId()),
-                        msg.getBody(),
-                        msg.getId()
+                        msg.getBody()
                 ))
                 .toList();
     }
