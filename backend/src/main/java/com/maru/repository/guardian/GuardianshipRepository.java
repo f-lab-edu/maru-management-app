@@ -90,4 +90,14 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
     Optional<GuardianshipView> findGuardianshipByStudentIdAndGuardianId(
             @Param("studentId") String studentId,
             @Param("guardianId") String guardianId);
+
+    @Query("""
+            SELECT g.guardian.id
+            FROM Guardianship g
+            WHERE g.studentId = :studentId
+              AND g.isPrimary = true
+              AND g.deletedAt IS NULL
+              AND g.guardian.deletedAt IS NULL
+            """)
+    List<String> findPrimaryGuardianIdsByStudentId(@Param("studentId") String studentId);
 }
