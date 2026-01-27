@@ -28,7 +28,8 @@ UPDATE message_queue SET accepted_at = sent_at WHERE status = 'SENT';
 UPDATE message_queue SET status = 'ACCEPTED' WHERE status = 'SENT';
 UPDATE message_queue SET status = 'DEAD' WHERE status = 'FAILED';
 
--- 4. student_id 컬럼 삭제
+-- 4. student_id FK 및 컬럼 삭제
+ALTER TABLE message_queue DROP FOREIGN KEY fk_message_queue_student_id;
 ALTER TABLE message_queue DROP COLUMN student_id;
 
 -- 5. 테이블 리네이밍
