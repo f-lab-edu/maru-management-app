@@ -26,6 +26,9 @@ public interface SmsService {
 
     /**
      * SMS 수신자 정보
+     *
+     * @param phone 수신자 전화번호
+     * @param message 발송할 메시지
      */
     record SmsRecipient(String phone, String message) {}
 }
