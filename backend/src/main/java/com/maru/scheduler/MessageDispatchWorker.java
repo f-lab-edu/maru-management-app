@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.net.InetAddress;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class MessageDispatchWorker {
      */
     @Scheduled(fixedDelayString = "${message.worker.poll-delay-ms:3000}")
     public void processMessages() {
-        LocalDateTime claimTime = LocalDateTime.now();
+        LocalDateTime claimTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         List<MessageDispatch> messages = claimMessages(claimTime);
 
         if (messages.isEmpty()) {

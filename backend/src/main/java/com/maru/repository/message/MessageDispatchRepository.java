@@ -45,10 +45,10 @@ public interface MessageDispatchRepository extends JpaRepository<MessageDispatch
     @Modifying
     @Query("""
             UPDATE MessageDispatch m
-            SET m.status = com.maru.domain.message.MessageStatus.PENDING,
+            SET m.status = 'PENDING',
                 m.processingOwner = NULL,
                 m.processingStartedAt = NULL
-            WHERE m.status = com.maru.domain.message.MessageStatus.PROCESSING
+            WHERE m.status = 'PROCESSING'
               AND m.processingStartedAt < :threshold
             """)
     int recoverStuckProcessing(@Param("threshold") LocalDateTime threshold);
@@ -75,7 +75,7 @@ public interface MessageDispatchRepository extends JpaRepository<MessageDispatch
     @Query("""
             SELECT m FROM MessageDispatch m
             WHERE m.processingOwner = :owner
-              AND m.status = com.maru.domain.message.MessageStatus.PROCESSING
+              AND m.status = 'PROCESSING'
               AND m.processingStartedAt = :claimTime
             """)
     List<MessageDispatch> findClaimedMessages(
