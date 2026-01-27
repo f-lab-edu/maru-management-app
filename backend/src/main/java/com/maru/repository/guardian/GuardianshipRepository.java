@@ -4,6 +4,7 @@ import com.maru.domain.guardian.Guardian;
 import com.maru.domain.guardian.Guardianship;
 import com.maru.repository.guardian.view.GuardianshipView;
 import com.maru.repository.guardian.view.PrimaryGuardianView;
+import com.maru.repository.guardian.view.StudentGuardianIdView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -100,4 +101,15 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
               AND g.guardian.deletedAt IS NULL
             """)
     List<String> findPrimaryGuardianIdsByStudentId(@Param("studentId") String studentId);
+
+    @Query("""
+            SELECT g.studentId as studentId, g.guardian.id as guardianId
+            FROM Guardianship g
+            WHERE g.studentId IN :studentIds
+              AND g.isPrimary = true
+              AND g.deletedAt IS NULL
+              AND g.guardian.deletedAt IS NULL
+            """)
+    List<StudentGuardianIdView> findPrimaryGuardianIdsByStudentIds(
+            @Param("studentIds") List<String> studentIds);
 }

@@ -9,20 +9,27 @@ import com.maru.controller.attendance.dto.*;
 import com.maru.domain.attendance.Attendance;
 import com.maru.domain.attendance.AttendanceStatus;
 import com.maru.domain.attendance.CheckMethod;
-import com.maru.domain.attendance.event.AttendanceCheckedEvent;
 import com.maru.domain.attendance.exception.AttendanceErrorCode;
+import com.maru.domain.message.MessageChannel;
+import com.maru.domain.message.MessageDispatch;
+import com.maru.domain.message.MessageType;
 import com.maru.domain.student.Student;
 import com.maru.domain.student.StudentStatus;
 import com.maru.domain.student.exception.StudentErrorCode;
 import com.maru.domain.tenant.exception.DojangErrorCode;
 import com.maru.repository.attendance.AttendanceRepository;
+import com.maru.repository.attendance.view.NotificationTargetView;
+import com.maru.repository.guardian.GuardianshipRepository;
+import com.maru.repository.guardian.view.StudentGuardianIdView;
+import com.maru.repository.message.MessageDispatchRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.student.view.StudentMinimalView;
 import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentQueryService;
+import com.maru.service.notification.MessageContentRenderer;
+import com.maru.service.notification.MessageContentRenderer.RenderedContent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,11 +51,15 @@ public class AttendanceService {
     private static final int MAX_RETROACTIVE_DAYS = 30;
     private static final LocalTime DEFAULT_CHECKIN_TIME = LocalTime.of(9, 0);
 
+    private static final String REF_TYPE_ATTENDANCE = "ATTENDANCE";
+
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentQueryService enrollmentQueryService;
-    private final ApplicationEventPublisher eventPublisher;
     private final AttendanceQueryService attendanceQueryService;
+    private final MessageDispatchRepository messageDispatchRepository;
+    private final GuardianshipRepository guardianshipRepository;
+    private final MessageContentRenderer contentRenderer;
 
     /**
      * 단일 원생 출석 기록 생성
@@ -83,7 +94,7 @@ public class AttendanceService {
         Attendance attendance = saveAttendanceWithDuplicateCheck(
                 tenantId, dojangId, studentId, method, targetStatus, targetCheckinAt, note);
 
-        publishCheckedEvent(attendance, tenantId, studentId, true);
+        saveOutboxMessages(tenantId, dojangId, studentId, attendance.getId(), MessageType.ATTENDANCE_CHECKIN);
 
         log.info("출석 기록 생성 - attendanceId: {}, studentId: {}, status: {}, dojangId: {}",
                 attendance.getId(), studentId, targetStatus, dojangId);
@@ -111,7 +122,7 @@ public class AttendanceService {
 
         List<Attendance> attendances = createAndSaveBulkAttendances(tenantId, dojangId, validStudents, method);
 
-        publishBulkCheckedEvents(attendances, tenantId, true);
+        saveBatchOutboxMessages(tenantId, dojangId, attendances, MessageType.ATTENDANCE_CHECKIN);
 
         log.info("일괄 출석 체크 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
         return buildBulkCheckRes(tenantId, dojangId, attendances, failures);
@@ -136,7 +147,7 @@ public class AttendanceService {
 
         attendance.checkOut(LocalDateTime.now());
 
-        publishCheckedEvent(attendance, tenantId, attendance.getStudentId(), false);
+        saveOutboxMessages(tenantId, dojangId, attendance.getStudentId(), attendanceId, MessageType.ATTENDANCE_CHECKOUT);
 
         log.info("퇴관 처리 - attendanceId: {}, dojangId: {}", attendanceId, dojangId);
         return attendanceQueryService.getAttendance(tenantId, dojangId, attendanceId);
@@ -184,7 +195,7 @@ public class AttendanceService {
 
         processCheckOut(attendances);
 
-        publishBulkCheckedEvents(attendances, tenantId, false);
+        saveBatchOutboxMessages(tenantId, dojangId, attendances, MessageType.ATTENDANCE_CHECKOUT);
 
         log.info("일괄 퇴관 처리 - dojangId: {}, success: {}, failure: {}", dojangId, attendances.size(), failures.size());
         return buildBulkCheckRes(tenantId, dojangId, attendances, failures);
@@ -511,18 +522,95 @@ public class AttendanceService {
                 .toList();
     }
 
-    private void publishCheckedEvent(Attendance attendance, String tenantId, String studentId, boolean isCheckin) {
-        eventPublisher.publishEvent(new AttendanceCheckedEvent(
-                attendance.getId(),
-                studentId,
-                tenantId,
-                isCheckin
-        ));
+    private void saveOutboxMessages(String tenantId, String dojangId, String studentId,
+                                     String attendanceId, MessageType messageType) {
+        List<String> guardianIds = guardianshipRepository.findPrimaryGuardianIdsByStudentId(studentId);
+
+        if (guardianIds.isEmpty()) {
+            log.debug("알림 대상 보호자 없음: studentId={}", studentId);
+            return;
+        }
+
+        NotificationTargetView target = attendanceRepository.findNotificationTarget(attendanceId)
+                .orElse(null);
+        if (target == null) {
+            log.warn("출결 정보 조회 실패로 알림 생성 스킵: attendanceId={}", attendanceId);
+            return;
+        }
+
+        RenderedContent content = contentRenderer.renderAttendance(messageType, target);
+
+        List<MessageDispatch> outboxMessages = guardianIds.stream()
+                .map(guardianId -> MessageDispatch.createPending(
+                        tenantId, dojangId, guardianId,
+                        REF_TYPE_ATTENDANCE, attendanceId,
+                        messageType, MessageChannel.SMS,
+                        content.title(), content.body(), content.dataPayload()))
+                .toList();
+
+        messageDispatchRepository.saveAll(outboxMessages);
+        log.debug("outbox 메시지 생성: attendanceId={}, count={}", attendanceId, outboxMessages.size());
     }
 
-    private void publishBulkCheckedEvents(List<Attendance> attendances, String tenantId, boolean isCheckin) {
-        for (Attendance attendance : attendances) {
-            publishCheckedEvent(attendance, tenantId, attendance.getStudentId(), isCheckin);
+    private void saveBatchOutboxMessages(String tenantId, String dojangId,
+                                          List<Attendance> attendances, MessageType messageType) {
+        if (attendances.isEmpty()) {
+            return;
         }
+
+        List<String> studentIds = attendances.stream()
+                .map(Attendance::getStudentId)
+                .distinct()
+                .toList();
+        List<String> attendanceIds = attendances.stream()
+                .map(Attendance::getId)
+                .toList();
+
+        Map<String, List<String>> guardianMap = buildGuardianMap(studentIds);
+        Map<String, NotificationTargetView> targetMap = buildTargetMap(attendanceIds);
+
+        List<MessageDispatch> allMessages = new ArrayList<>();
+        for (Attendance attendance : attendances) {
+            NotificationTargetView target = targetMap.get(attendance.getId());
+            if (target == null) {
+                log.warn("출결 정보 조회 실패로 알림 생성 스킵: attendanceId={}", attendance.getId());
+                continue;
+            }
+
+            List<String> guardianIds = guardianMap.getOrDefault(attendance.getStudentId(), List.of());
+            if (guardianIds.isEmpty()) {
+                log.debug("알림 대상 보호자 없음: studentId={}", attendance.getStudentId());
+                continue;
+            }
+
+            RenderedContent content = contentRenderer.renderAttendance(messageType, target);
+
+            for (String guardianId : guardianIds) {
+                allMessages.add(MessageDispatch.createPending(
+                        tenantId, dojangId, guardianId,
+                        REF_TYPE_ATTENDANCE, attendance.getId(),
+                        messageType, MessageChannel.SMS,
+                        content.title(), content.body(), content.dataPayload()));
+            }
+        }
+
+        if (!allMessages.isEmpty()) {
+            messageDispatchRepository.saveAll(allMessages);
+            log.debug("배치 outbox 메시지 생성: count={}", allMessages.size());
+        }
+    }
+
+    private Map<String, List<String>> buildGuardianMap(List<String> studentIds) {
+        return guardianshipRepository.findPrimaryGuardianIdsByStudentIds(studentIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        StudentGuardianIdView::getStudentId,
+                        Collectors.mapping(StudentGuardianIdView::getGuardianId, Collectors.toList())));
+    }
+
+    private Map<String, NotificationTargetView> buildTargetMap(List<String> attendanceIds) {
+        return attendanceRepository.findNotificationTargets(attendanceIds)
+                .stream()
+                .collect(Collectors.toMap(NotificationTargetView::getId, t -> t));
     }
 }

@@ -207,6 +207,16 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
     Optional<NotificationTargetView> findNotificationTarget(@Param("id") String id);
 
     @Query("""
+        SELECT a.id as id, a.tenantId as tenantId, a.dojangId as dojangId,
+               a.studentId as studentId, s.name as studentName, d.name as dojangName
+        FROM Attendance a
+        JOIN Student s ON a.studentId = s.id
+        JOIN Dojang d ON a.dojangId = d.id
+        WHERE a.id IN :ids
+        """)
+    List<NotificationTargetView> findNotificationTargets(@Param("ids") List<String> ids);
+
+    @Query("""
         SELECT COUNT(a) as count
         FROM Attendance a
         WHERE a.tenantId = :tenantId
