@@ -185,8 +185,14 @@ export function InvoiceCreateSheet({
       showSuccess('청구서가 생성되었습니다');
       singleForm.reset();
       onClose();
-    } catch {
-      showError('청구서 생성에 실패했습니다');
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { code?: string } } };
+      const errorCode = axiosError.response?.data?.code;
+      if (errorCode === 'INVOICE_301') {
+        showError('해당 월에 이미 청구서가 존재합니다');
+      } else {
+        showError('청구서 생성에 실패했습니다');
+      }
     }
   };
 

@@ -52,42 +52,63 @@ export function StudentDetailDrawer({
     }
   };
 
+  const handleInteractOutside = (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('tr') ||
+      target.closest('button') ||
+      target.closest('[role="dialog"]') ||
+      target.closest('[data-radix-select-content]') ||
+      target.closest('[data-radix-popper-content-wrapper]')
+    ) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange} modal={false}>
-      <SheetContent side="right" className="w-[400px] overflow-y-auto sm:w-[540px]" aria-describedby={undefined}>
+      <SheetContent
+        side="right"
+        className="w-[400px] overflow-y-auto sm:w-[540px]"
+        aria-describedby={undefined}
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handleInteractOutside}
+      >
+        <SheetHeader className="space-y-1 pt-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-xl">
+              {isLoading || !student ? '원생 정보' : student.name}
+            </SheetTitle>
+            {student && <StatusBadge status={student.status} />}
+          </div>
+        </SheetHeader>
+
         {isLoading || !student ? (
-          <DrawerSkeleton />
+          <div className="mt-6">
+            <DrawerSkeleton />
+          </div>
         ) : (
-          <>
-            <SheetHeader className="space-y-1 pt-4">
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-xl">{student.name}</SheetTitle>
-                <StatusBadge status={student.status} />
-              </div>
-            </SheetHeader>
+          <div className="mt-6">
+            <Tabs defaultValue="info">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info">기본정보</TabsTrigger>
+                <TabsTrigger value="payments">수납내역</TabsTrigger>
+                <TabsTrigger value="attendance">출결이력</TabsTrigger>
+              </TabsList>
 
-            <div className="mt-6">
-              <Tabs defaultValue="info">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="info">기본정보</TabsTrigger>
-                  <TabsTrigger value="payments">수납내역</TabsTrigger>
-                  <TabsTrigger value="attendance">출결이력</TabsTrigger>
-                </TabsList>
+              <TabsContent value="info" className="mt-4">
+                <StudentInfoTab student={student} />
+              </TabsContent>
 
-                <TabsContent value="info" className="mt-4">
-                  <StudentInfoTab student={student} />
-                </TabsContent>
+              <TabsContent value="payments" className="mt-4">
+                <PaymentHistoryTab studentId={student.id} />
+              </TabsContent>
 
-                <TabsContent value="payments" className="mt-4">
-                  <PaymentHistoryTab studentId={student.id} />
-                </TabsContent>
-
-                <TabsContent value="attendance" className="mt-4">
-                  <AttendanceHistoryTab studentId={student.id} />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </>
+              <TabsContent value="attendance" className="mt-4">
+                <AttendanceHistoryTab studentId={student.id} />
+              </TabsContent>
+            </Tabs>
+          </div>
         )}
       </SheetContent>
     </Sheet>

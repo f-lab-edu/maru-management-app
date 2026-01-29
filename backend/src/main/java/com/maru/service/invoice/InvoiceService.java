@@ -17,7 +17,6 @@ import com.maru.security.TenantContextHolder;
 import com.maru.service.enrollment.EnrollmentQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -347,12 +346,13 @@ public class InvoiceService {
     private Invoice createAndSaveInvoice(String tenantId, String dojangId, String studentId,
                                          YearMonth billingYearMonth, BigDecimal amount,
                                          LocalDate dueDate, String note) {
-        Invoice invoice = Invoice.create(tenantId, dojangId, studentId, billingYearMonth, amount, dueDate, note);
-        try {
-            return invoiceRepository.save(invoice);
-        } catch (DataIntegrityViolationException e) {
+        boolean exists = invoiceRepository.existsByBillingYearMonth(tenantId, dojangId, studentId, billingYearMonth);
+        if (exists) {
             throw new BusinessException(InvoiceErrorCode.DUPLICATE_INVOICE);
         }
+
+        Invoice invoice = Invoice.create(tenantId, dojangId, studentId, billingYearMonth, amount, dueDate, note);
+        return invoiceRepository.save(invoice);
     }
 
     private int createInvoicesForStudents(String tenantId, String dojangId, List<String> studentIds,
