@@ -56,7 +56,7 @@ public class MessageDispatchAttempt {
     /**
      * 발송 시도 시작
      *
-     * @param dispatchId MessageDispatchEntity
+     * @param dispatch MessageDispatchEntity
      * @param attemptNumber 시도 번호 (1부터 시작)
      * @param channel 발송 채널
      * @param owner 워커 인스턴스 ID
