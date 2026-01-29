@@ -63,7 +63,7 @@ public class MessageDispatchWorker {
             } else {
                 log.warn("본문 없는 메시지 (DEAD 처리): dispatchId={}", msg.getId());
                 MessageDispatchAttempt attempt = MessageDispatchAttempt.start(
-                        msg.getId(), msg.getFailedCount() + 1, msg.getChannel(), INSTANCE_ID);
+                        msg, msg.getFailedCount() + 1, msg.getChannel(), INSTANCE_ID);
                 msg.markAsDead("메시지 본문이 없습니다");
                 attempt.complete(false, null, ERROR_BODY_MISSING, "메시지 본문이 없습니다");
                 invalidMessages.add(msg);
@@ -103,7 +103,7 @@ public class MessageDispatchWorker {
     private void processChannelBatch(MessageChannel channel, List<MessageDispatch> messages) {
         List<MessageDispatchAttempt> attempts = messages.stream()
                 .map(msg -> MessageDispatchAttempt.start(
-                        msg.getId(), msg.getFailedCount() + 1, channel, INSTANCE_ID))
+                        msg, msg.getFailedCount() + 1, channel, INSTANCE_ID))
                 .toList();
 
         MessageChannelAdapter adapter = adapterFactory.getAdapter(channel);

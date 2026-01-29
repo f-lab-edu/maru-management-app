@@ -76,7 +76,7 @@ public class MessageQueryService {
             throw new BusinessException(MessageDispatchErrorCode.NOT_FOUND);
         }
 
-        return attemptRepository.findByDispatchIdOrderByAttemptNumberAsc(messageId).stream()
+        return attemptRepository.findByDispatchIdOrderByAttemptNumberAsc(message).stream()
                 .map(AttemptRes::from)
                 .toList();
     }

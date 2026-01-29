@@ -17,8 +17,9 @@ public class MessageDispatchAttempt {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "dispatch_id", nullable = false, length = 13)
-    private String dispatchId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dispatch_id", nullable = false)
+    private MessageDispatch dispatch;
 
     @Column(name = "attempt_number", nullable = false)
     private int attemptNumber;
@@ -55,16 +56,16 @@ public class MessageDispatchAttempt {
     /**
      * 발송 시도 시작
      *
-     * @param dispatchId 디스패치 ID
+     * @param dispatchId MessageDispatchEntity
      * @param attemptNumber 시도 번호 (1부터 시작)
      * @param channel 발송 채널
      * @param owner 워커 인스턴스 ID
      * @return 생성된 MessageDispatchAttempt
      */
-    public static MessageDispatchAttempt start(String dispatchId, int attemptNumber,
+    public static MessageDispatchAttempt start(MessageDispatch dispatch, int attemptNumber,
                                                MessageChannel channel, String owner) {
         MessageDispatchAttempt attempt = new MessageDispatchAttempt();
-        attempt.dispatchId = dispatchId;
+        attempt.dispatch = dispatch;
         attempt.attemptNumber = attemptNumber;
         attempt.channel = channel;
         attempt.processingOwner = owner;
