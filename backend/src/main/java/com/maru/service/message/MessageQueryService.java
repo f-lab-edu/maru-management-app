@@ -5,6 +5,7 @@ import com.maru.controller.message.dto.AttemptRes;
 import com.maru.controller.message.dto.MessageDetailRes;
 import com.maru.controller.message.dto.MessageSummaryRes;
 import com.maru.domain.message.MessageDispatch;
+import com.maru.domain.message.MessageDispatchAttempt;
 import com.maru.domain.message.MessageStatus;
 import com.maru.domain.message.exception.MessageDispatchErrorCode;
 import com.maru.repository.message.MessageDispatchAttemptRepository;
@@ -76,7 +77,7 @@ public class MessageQueryService {
             throw new BusinessException(MessageDispatchErrorCode.NOT_FOUND);
         }
 
-        return attemptRepository.findByDispatchIdOrderByAttemptNumberAsc(message).stream()
+        return attemptRepository.findByDispatchOrderByAttemptNumberAsc(message).stream()
                 .map(AttemptRes::from)
                 .toList();
     }

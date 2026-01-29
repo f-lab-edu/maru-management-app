@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MessageDispatchAttemptRepository extends JpaRepository<MessageDispatchAttempt, Long> {
-    List<MessageDispatchAttempt> findByDispatchIdOrderByAttemptNumberAsc(MessageDispatch dispatch);
+    List<MessageDispatchAttempt> findByDispatchOrderByAttemptNumberAsc(MessageDispatch dispatch);
 }
