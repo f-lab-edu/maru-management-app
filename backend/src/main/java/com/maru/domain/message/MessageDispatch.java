@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MessageDispatch extends BaseEntity {
 
-    // TODO : Properties 로 분리하는 것도 고민해볼 것. 엔티티 객체에 반드시 가지고 있어야 하는가?
     private static final int[] BACKOFF_SECONDS = {30, 120, 600, 1800, 3600};
 
     @Column(nullable = false, length = 13)
@@ -37,6 +36,9 @@ public class MessageDispatch extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private MessageType messageType;
+
+    @Column(nullable = false)
+    private int priority;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -118,6 +120,7 @@ public class MessageDispatch extends BaseEntity {
         md.refType = refType;
         md.refId = refId;
         md.messageType = messageType;
+        md.priority = messageType.getPriority();
         md.channel = channel;
         md.title = title;
         md.body = body;

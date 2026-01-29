@@ -62,7 +62,7 @@ public interface MessageDispatchRepository extends JpaRepository<MessageDispatch
             WHERE status = 'PENDING'
               AND next_retry_at <= :claimTime
               AND failed_count < :maxRetry
-            ORDER BY next_retry_at ASC
+            ORDER BY priority ASC, next_retry_at ASC, id ASC
             LIMIT :batchSize
             """, nativeQuery = true)
     int claimBatch(
@@ -102,4 +102,6 @@ public interface MessageDispatchRepository extends JpaRepository<MessageDispatch
             @Param("guardianId") String guardianId,
             @Param("status") MessageStatus status,
             Pageable pageable);
+
+
 }
