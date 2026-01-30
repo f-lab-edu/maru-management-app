@@ -158,6 +158,22 @@ public class UserService {
         return user;
     }
 
+    /**
+     * 사용자 프로필 수정 (이름, 전화번호)
+     *
+     * @param userId 사용자 ID
+     * @param name 이름
+     * @param phone 전화번호
+     * @return 업데이트된 사용자 엔티티
+     */
+    @Transactional
+    public User updateMyProfile(String userId, String name, String phone) {
+        User user = getUserById(userId);
+        user.updateNameAndPhone(name, phone);
+        log.info("사용자 프로필 수정: userId={}", userId);
+        return user;
+    }
+
     private OnboardingStep getPreviousStep(OnboardingStep currentStep) {
         return switch (currentStep) {
             case ROLE_SELECT -> OnboardingStep.PROFILE_INPUT;

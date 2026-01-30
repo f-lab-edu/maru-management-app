@@ -127,4 +127,21 @@ public class UserController {
         List<MyDojangRes> dojangs = employmentQueryService.getMyDojangs(userId);
         return ResponseEntity.ok(MyDojangsRes.from(dojangs));
     }
+
+    /**
+     * 사용자 프로필 수정 (이름, 전화번호)
+     *
+     * @param userId 현재 인증된 사용자 ID
+     * @param request 프로필 수정 정보
+     * @return 수정된 사용자 정보
+     */
+    @PatchMapping("/me")
+    public ResponseEntity<UserMeRes> updateMyProfile(
+            @CurrentUserId String userId,
+            @Valid @RequestBody UserProfileUpdateReq request) {
+        User user = userService.updateMyProfile(userId, request.name(), request.phone());
+        OAuthProvider provider = userService.getOAuthProvider(userId);
+
+        return ResponseEntity.ok(UserMeRes.from(user, provider));
+    }
 }
