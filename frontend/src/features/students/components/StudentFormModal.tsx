@@ -91,6 +91,8 @@ export function StudentFormModal({
   const watchedGuardians = watch('guardians');
 
   useEffect(() => {
+    if (!isOpen) return;
+
     if (student) {
       reset({
         name: student.name,
@@ -111,7 +113,7 @@ export function StudentFormModal({
         guardians: [],
       });
     }
-  }, [student, reset]);
+  }, [isOpen, student, reset]);
 
   const handleAddGuardian = () => {
     const hasPrimary = watchedGuardians?.some((g) => g.isPrimary);
