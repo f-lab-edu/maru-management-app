@@ -1,5 +1,6 @@
 package com.maru.service.invoice;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.controller.guardian.dto.GuardianInfo;
 import com.maru.controller.invoice.dto.UnpaidListRes;
 import com.maru.repository.guardian.GuardianshipRepository;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@ValidateDojangAccess
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentQueryService {

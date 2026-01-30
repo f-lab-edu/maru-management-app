@@ -1,11 +1,12 @@
 package com.maru.service.tenant;
 
+import com.maru.common.aop.SkipDojangValidation;
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.tenant.dto.DojangMeRes;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.DojangSetting;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.domain.tenant.exception.DojangSettingErrorCode;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.DojangSettingRepository;
 import com.maru.security.TenantContextHolder;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@ValidateDojangAccess
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DojangQueryService {
@@ -28,6 +30,7 @@ public class DojangQueryService {
      * @return 도장 ID
      * @throws BusinessException NOT_FOUND - 해당 관장의 도장이 존재하지 않는 경우
      */
+    @SkipDojangValidation
     public String getDojangIdByOwnerId(String ownerId) {
         return dojangRepository.findIdByOwnerId(ownerId)
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
@@ -45,7 +48,7 @@ public class DojangQueryService {
                 .orElseThrow(() -> new BusinessException(DojangErrorCode.NOT_FOUND));
 
         DojangSetting setting = dojangSettingRepository.findByDojangId(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangSettingErrorCode.NOT_FOUND));
+                .orElseGet(() -> DojangSetting.create(dojangId));
 
         return DojangMeRes.from(dojang, setting);
     }

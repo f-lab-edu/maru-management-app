@@ -1,6 +1,7 @@
 package com.maru.common.aop;
 
 import com.maru.security.DojangAccessValidator;
+import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -39,11 +40,14 @@ public class DojangAccessAspect {
 
     @Before("hasValidateDojangAccess(validateDojangAccess) && isPublicMethod() && isNotSkipped()")
     public void validateAccess(JoinPoint joinPoint, ValidateDojangAccess validateDojangAccess) {
-        String paramName = validateDojangAccess.paramName();
-        String dojangId = extractDojangId(joinPoint, paramName);
+        String dojangId = extractDojangId(joinPoint, validateDojangAccess.paramName());
 
         if (dojangId == null) {
-            log.debug("dojangId 파라미터 없음, 검증 스킵: {}", joinPoint.getSignature().toShortString());
+            dojangId = TenantContextHolder.getDojangId();
+        }
+
+        if (dojangId == null) {
+            log.debug("dojangId를 확인할 수 없음, 검증 스킵: {}", joinPoint.getSignature().toShortString());
             return;
         }
 
@@ -55,12 +59,12 @@ public class DojangAccessAspect {
         Object[] args = joinPoint.getArgs();
         String[] parameterNames = signature.getParameterNames();
 
-        if (parameterNames == null) {
+        if (parameterNames == null || args == null) {
             return null;
         }
 
         for (int i = 0; i < parameterNames.length; i++) {
-            if (paramName.equals(parameterNames[i])) {
+            if (paramName.equals(parameterNames[i]) && args[i] != null) {
                 return (String) args[i];
             }
         }

@@ -5,6 +5,7 @@ import com.maru.domain.user.exception.OnboardingErrorCode;
 import com.maru.domain.employment.Employment;
 import com.maru.domain.permission.PermissionType;
 import com.maru.domain.tenant.Dojang;
+import com.maru.domain.tenant.DojangSetting;
 import com.maru.domain.tenant.Tenant;
 import com.maru.domain.user.OnboardingStep;
 import com.maru.domain.user.User;
@@ -12,6 +13,7 @@ import com.maru.domain.user.UserRole;
 import com.maru.domain.user.exception.UserErrorCode;
 import com.maru.repository.employment.EmploymentRepository;
 import com.maru.repository.tenant.DojangRepository;
+import com.maru.repository.tenant.DojangSettingRepository;
 import com.maru.domain.tenant.exception.TenantErrorCode;
 import com.maru.repository.tenant.TenantRepository;
 import com.maru.security.DojangAccessValidator;
@@ -30,6 +32,7 @@ public class TenantService {
     private final UserService userService;
     private final TenantRepository tenantRepository;
     private final DojangRepository dojangRepository;
+    private final DojangSettingRepository dojangSettingRepository;
     private final EmploymentRepository employmentRepository;
     private final DojangSearchService dojangSearchService;
     private final DojangAccessValidator dojangAccessValidator;
@@ -85,7 +88,9 @@ public class TenantService {
 
     private Dojang createDojang(Tenant tenant, User owner, String name, String address, String phone) {
         Dojang dojang = Dojang.create(tenant.getId(), owner.getId(), name, address, phone);
-        return dojangRepository.save(dojang);
+        dojangRepository.save(dojang);
+        dojangSettingRepository.save(DojangSetting.create(dojang.getId()));
+        return dojang;
     }
 
     private Employment createOwnerEmployment(User owner, Tenant tenant, Dojang dojang) {

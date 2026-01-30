@@ -1,11 +1,11 @@
 package com.maru.service.tenant;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.tenant.dto.DojangUpdateReq;
 import com.maru.domain.tenant.Dojang;
 import com.maru.domain.tenant.DojangSetting;
 import com.maru.domain.tenant.exception.DojangErrorCode;
-import com.maru.domain.tenant.exception.DojangSettingErrorCode;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.DojangSettingRepository;
 import com.maru.security.DojangAccessValidator;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@ValidateDojangAccess
 @RequiredArgsConstructor
 public class DojangService {
 
@@ -79,7 +80,7 @@ public class DojangService {
         dojang.updateInfo(request.name(), request.address(), request.phone());
 
         DojangSetting setting = dojangSettingRepository.findByDojangId(dojangId)
-                .orElseThrow(() -> new BusinessException(DojangSettingErrorCode.NOT_FOUND));
+                .orElseGet(() -> dojangSettingRepository.save(DojangSetting.create(dojangId)));
 
         setting.updateTuition(request.defaultTuition());
         setting.updateAutoInvoice(request.autoInvoiceEnabled(), request.autoInvoiceDay());

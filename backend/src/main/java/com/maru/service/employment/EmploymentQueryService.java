@@ -1,5 +1,7 @@
 package com.maru.service.employment;
 
+import com.maru.common.aop.SkipDojangValidation;
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.controller.employment.dto.EmploymentRes;
 import com.maru.controller.employment.dto.InstructorDetailRes;
@@ -26,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@ValidateDojangAccess
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EmploymentQueryService {
@@ -63,6 +66,7 @@ public class EmploymentQueryService {
      * @param userId 사용자 ID
      * @return 승인 요청 목록
      */
+    @SkipDojangValidation
     public List<EmploymentRes> getMyRequests(String userId) {
         return employmentRepository.findViewByUserId(userId)
                 .stream()
@@ -76,6 +80,7 @@ public class EmploymentQueryService {
      * @param userId 사용자 ID
      * @return 소속 도장 목록
      */
+    @SkipDojangValidation
     public List<MyDojangRes> getMyDojangs(String userId) {
         return employmentRepository.findMyDojangViewByUserIdAndStatus(userId, EmploymentStatus.ACTIVE)
                 .stream()
@@ -90,6 +95,7 @@ public class EmploymentQueryService {
      * @param dojangOwnerId 도장 관장 ID
      * @return 사용자 역할 (OWNER 또는 INSTRUCTOR)
      */
+    @SkipDojangValidation
     public static UserRole resolveRole(String userId, String dojangOwnerId) {
         return dojangOwnerId.equals(userId) ? UserRole.OWNER : UserRole.INSTRUCTOR;
     }
