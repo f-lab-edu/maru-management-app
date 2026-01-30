@@ -43,6 +43,11 @@ export interface OnboardingDojangRes {
   onboardingStep: OnboardingStep;
 }
 
+export interface UserProfileUpdateReq {
+  name: string;
+  phone?: string | null;
+}
+
 export const userService = {
   getMe: async (): Promise<User> => {
     const response = await apiClient.get<User>('/users/me');
@@ -71,6 +76,11 @@ export const userService = {
 
   rollbackOnboardingStep: async (): Promise<User> => {
     const response = await apiClient.post<User>('/users/onboarding/step/previous');
+    return response.data;
+  },
+
+  updateMyProfile: async (data: UserProfileUpdateReq): Promise<User> => {
+    const response = await apiClient.patch<User>('/users/me', data);
     return response.data;
   },
 };

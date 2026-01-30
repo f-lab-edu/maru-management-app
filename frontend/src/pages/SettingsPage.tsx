@@ -1,7 +1,9 @@
-import { Users, Shield, Bell, User, GraduationCap } from 'lucide-react';
+import { Users, Shield, User, GraduationCap, Building2 } from 'lucide-react';
 import { SettingsLayout } from '../features/settings/components/SettingsLayout';
 import { InstructorApproval } from '../features/settings/components/InstructorApproval';
 import { InstructorPermissions } from '../features/settings/components/InstructorPermissions';
+import { DojangSettings } from '../features/settings/components/DojangSettings';
+import { MyProfile } from '../features/settings/components/MyProfile';
 import { DivisionSettings } from '../features/divisions';
 import { SettingsTab } from '../features/settings/types';
 import { usePermissions } from '@/hooks';
@@ -32,24 +34,24 @@ export default function SettingsPage() {
       component: <InstructorPermissions />
     },
     {
-      id: 'notifications',
-      label: '알림 설정',
-      icon: Bell,
-      description: '푸시 알림 및 이메일 수신 설정을 관리합니다.',
-      component: <div className="p-4 text-slate-500">준비 중인 기능입니다.</div>
+      id: 'dojang-settings',
+      label: '도장 설정',
+      icon: Building2,
+      description: '도장 정보와 수납 설정을 관리합니다.',
+      component: <DojangSettings />
     },
     {
       id: 'profile',
       label: '내 정보',
       icon: User,
-      description: '계정 정보 및 비밀번호를 변경합니다.',
-      component: <div className="p-4 text-slate-500">준비 중인 기능입니다.</div>
+      description: '이름과 전화번호를 수정합니다.',
+      component: <MyProfile />
     },
   ];
 
-  // OWNER가 아니면 사범승인관리, 권한설정 탭 제외
+  // OWNER가 아니면 사범승인관리, 권한설정, 도장설정 탭 제외
   const tabs = allTabs.filter((tab) => {
-    if (!isOwner && (tab.id === 'approval' || tab.id === 'permissions')) {
+    if (!isOwner && (tab.id === 'approval' || tab.id === 'permissions' || tab.id === 'dojang-settings')) {
       return false;
     }
     return true;
