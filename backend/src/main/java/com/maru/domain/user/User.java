@@ -72,6 +72,12 @@ public class User extends SoftDeletableEntity {
         this.phone = phone;
     }
 
+    public void updateNameAndPhone(String name, String phone) {
+        DomainAssert.hasText(name, UserErrorCode.NAME_REQUIRED);
+        this.name = name;
+        this.phone = phone;
+    }
+
     public void updateRole(UserRole role) {
         this.role = role;
     }
