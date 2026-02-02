@@ -69,19 +69,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("dojangId") String dojangId,
             @Param("ids") List<String> ids);
 
-    @Query("""
-        SELECT a FROM Attendance a
-        WHERE a.tenantId = :tenantId
-          AND a.dojangId = :dojangId
-          AND a.studentId = :studentId
-          AND a.attendanceDate BETWEEN :startDate AND :endDate
-        """)
-    List<Attendance> findByTenantIdAndDojangIdAndStudentIdAndAttendanceDateBetween(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("studentId") String studentId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
 
     @Query("""
         SELECT a FROM Attendance a
@@ -107,17 +94,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("studentIds") List<String> studentIds,
             @Param("date") LocalDate date);
 
-    @Query("""
-        SELECT a FROM Attendance a
-        WHERE a.tenantId = :tenantId
-          AND a.dojangId = :dojangId
-          AND a.attendanceDate BETWEEN :startDate AND :endDate
-        """)
-    List<Attendance> findByTenantIdAndDojangIdAndAttendanceDateBetween(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
 
     @Query("""
         SELECT a FROM Attendance a
@@ -142,19 +118,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String> 
             @Param("dojangId") String dojangId,
             @Param("ids") List<String> ids);
 
-    @Query("""
-        SELECT a FROM Attendance a
-        WHERE a.tenantId = :tenantId
-          AND a.dojangId = :dojangId
-          AND a.studentId IN :studentIds
-          AND a.attendanceDate BETWEEN :startDate AND :endDate
-        """)
-    List<Attendance> findByDojangIdAndDateRangeAndStudentIds(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("studentIds") List<String> studentIds,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
 
     @Query("""
         SELECT s.id as studentId, s.name as studentName, s.photoUrl as studentPhotoUrl,

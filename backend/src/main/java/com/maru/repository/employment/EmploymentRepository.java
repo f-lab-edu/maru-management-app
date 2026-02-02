@@ -26,8 +26,6 @@ public interface EmploymentRepository extends JpaRepository<Employment, String> 
 
     List<Employment> findByDojangIdAndStatus(String dojangId, EmploymentStatus status);
 
-    List<Employment> findByUserId(String userId);
-
     List<Employment> findByUserIdAndStatus(String userId, EmploymentStatus status);
 
     Optional<Employment> findByUserIdAndDojangIdAndStatus(String userId, String dojangId, EmploymentStatus status);

@@ -52,18 +52,4 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
             @Param("studentId") String studentId);
 
     Optional<Payment> findByIdAndTenantIdAndDojangId(String id, String tenantId, String dojangId);
-
-    @Query("""
-        SELECT COUNT(p) FROM Payment p
-        WHERE p.tenantId = :tenantId
-          AND p.dojangId = :dojangId
-          AND p.status = 'PAID'
-          AND p.paidAt >= :startDateTime
-          AND p.paidAt < :endDateTime
-        """)
-    int countByTenantIdAndPeriod(
-            @Param("tenantId") String tenantId,
-            @Param("dojangId") String dojangId,
-            @Param("startDateTime") LocalDateTime startDateTime,
-            @Param("endDateTime") LocalDateTime endDateTime);
 }

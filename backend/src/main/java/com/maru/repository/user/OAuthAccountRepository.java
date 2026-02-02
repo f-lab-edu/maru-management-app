@@ -13,10 +13,5 @@ public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, Stri
         String providerAccountId
     );
 
-    boolean existsByProviderAndProviderAccountId(
-        OAuthProvider provider,
-        String providerAccountId
-    );
-
     Optional<OAuthAccount> findTopByUserIdOrderByCreatedAtDesc(String userId);
 }

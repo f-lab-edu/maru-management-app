@@ -1,6 +1,5 @@
 package com.maru.repository.guardian;
 
-import com.maru.domain.guardian.Guardian;
 import com.maru.domain.guardian.Guardianship;
 import com.maru.repository.guardian.view.GuardianshipView;
 import com.maru.repository.guardian.view.PrimaryGuardianView;
@@ -14,24 +13,7 @@ import java.util.Optional;
 
 public interface GuardianshipRepository extends JpaRepository<Guardianship, String> {
 
-    List<Guardianship> findByStudentIdAndDeletedAtIsNull(String studentId);
-
-    Optional<Guardianship> findByStudentIdAndIsPrimaryTrueAndDeletedAtIsNull(String studentId);
-
     Optional<Guardianship> findByStudentIdAndGuardianIdAndDeletedAtIsNull(String studentId, String guardianId);
-
-    @Query("""
-            SELECT g.guardian
-            FROM Guardianship g
-            WHERE g.studentId = :studentId
-              AND (:primaryOnly = false OR g.isPrimary = true)
-              AND g.deletedAt IS NULL
-              AND g.guardian.deletedAt IS NULL
-            """)
-    List<Guardian> findGuardiansByStudentId(
-            @Param("studentId") String studentId,
-            @Param("primaryOnly") boolean primaryOnly
-    );
 
     @Query("""
             SELECT g.studentId as studentId,
@@ -59,21 +41,6 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
             ORDER BY g.isPrimary DESC, g.createdAt ASC
             """)
     List<GuardianshipView> findGuardianshipsByStudentId(@Param("studentId") String studentId);
-
-    @Query("""
-            SELECT g.guardian.id as guardianId,
-                   g.guardian.name as guardianName,
-                   g.guardian.phone as guardianPhone,
-                   g.guardian.isVerified as isVerified,
-                   g.relation as relation,
-                   g.isPrimary as isPrimary
-            FROM Guardianship g
-            WHERE g.studentId = :studentId
-              AND g.isPrimary = true
-              AND g.deletedAt IS NULL
-              AND g.guardian.deletedAt IS NULL
-            """)
-    List<GuardianshipView> findPrimaryGuardianshipsByStudentId(@Param("studentId") String studentId);
 
     @Query("""
             SELECT g.guardian.id as guardianId,

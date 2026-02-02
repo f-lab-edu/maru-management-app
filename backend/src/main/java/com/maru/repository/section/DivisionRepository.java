@@ -1,7 +1,6 @@
 package com.maru.repository.section;
 
 import com.maru.domain.section.Division;
-import com.maru.repository.section.view.DivisionCountBySectionView;
 import com.maru.repository.section.view.DivisionView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,17 +17,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         ORDER BY d.displayOrder
         """)
     List<Division> findAllBySectionIdOrderByDisplayOrder(@Param("sectionId") String sectionId);
-
-    @Query("""
-        SELECT d FROM Division d
-        JOIN FETCH d.section s
-        WHERE s.dojangId = :dojangId
-          AND s.id = :sectionId
-        ORDER BY d.displayOrder
-        """)
-    List<Division> findAllWithSectionByDojangIdAndSectionId(
-            @Param("dojangId") String dojangId,
-            @Param("sectionId") String sectionId);
 
     @Query("""
         SELECT d FROM Division d
@@ -72,14 +60,6 @@ public interface DivisionRepository extends JpaRepository<Division, String> {
         WHERE d.section.id = :sectionId
         """)
     int findMaxDisplayOrderBySectionId(@Param("sectionId") String sectionId);
-
-    @Query("""
-        SELECT d.section.id AS sectionId, COUNT(d) AS divisionCount
-        FROM Division d
-        WHERE d.section.dojangId = :dojangId
-        GROUP BY d.section.id
-        """)
-    List<DivisionCountBySectionView> countDivisionsBySectionForDojang(@Param("dojangId") String dojangId);
 
     @Query("""
         SELECT d.id as id, d.name as name, d.displayOrder as displayOrder,

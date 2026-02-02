@@ -63,23 +63,6 @@ public class InvoiceQueryService {
                 .toList();
     }
 
-    /**
-     * 미수납 청구서 목록 조회
-     *
-     * @param tenantId 테넌트 ID
-     * @param dojangId 도장 ID
-     * @param sectionId 수련부 ID (선택)
-     * @param divisionId 수련반 ID (선택)
-     * @return 미수납 청구서 목록
-     */
-    public List<InvoiceListRes> getUnpaidInvoices(String tenantId, String dojangId,
-                                                   String sectionId, String divisionId) {
-        return invoiceRepository.findUnpaidWithStudent(tenantId, dojangId, sectionId, divisionId)
-                .stream()
-                .map(this::toInvoiceListRes)
-                .toList();
-    }
-
     private List<InvoiceStudentView> fetchInvoiceViews(String tenantId, String dojangId,
                                                         InvoiceStatus status, List<String> filteredStudentIds) {
         if (filteredStudentIds != null) {

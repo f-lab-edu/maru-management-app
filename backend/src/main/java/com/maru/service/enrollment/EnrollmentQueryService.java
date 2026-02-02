@@ -41,17 +41,6 @@ public class EnrollmentQueryService {
     }
 
     /**
-     * 특정 수련반의 등록 원생 수 조회
-     *
-     * @param dojangId 도장 ID
-     * @param divisionId 수련반 ID
-     * @return 등록 원생 수
-     */
-    public int countByDivisionId(String dojangId, String divisionId) {
-        return enrollmentRepository.countByDivisionId(dojangId, divisionId);
-    }
-
-    /**
      * 수련부/수련반 필터 조건에 해당하는 원생 ID 목록 조회
      *
      * @param dojangId 도장 ID
