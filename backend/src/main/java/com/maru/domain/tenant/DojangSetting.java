@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DojangSetting extends BaseEntity {
 
+    private static final int DEFAULT_SCHEDULER_HOUR = 9;
+
     @Column(name = "dojang_id", nullable = false, unique = true, length = 13)
     private String dojangId;
 
@@ -29,10 +31,10 @@ public class DojangSetting extends BaseEntity {
     private Integer autoInvoiceDay;
 
     @Column(name = "auto_invoice_hour", nullable = false)
-    private Integer autoInvoiceHour = 9;
+    private Integer autoInvoiceHour = DEFAULT_SCHEDULER_HOUR;
 
     @Column(name = "auto_absence_hour", nullable = false)
-    private Integer autoAbsenceHour = 9;
+    private Integer autoAbsenceHour = DEFAULT_SCHEDULER_HOUR;
 
     private DojangSetting(String dojangId) {
         DomainAssert.hasText(dojangId, DojangSettingErrorCode.DOJANG_REQUIRED);
@@ -49,12 +51,16 @@ public class DojangSetting extends BaseEntity {
     }
 
     public void updateAutoInvoice(Boolean autoInvoiceEnabled, Integer autoInvoiceDay, Integer autoInvoiceHour) {
-        this.autoInvoiceEnabled = autoInvoiceEnabled != null ? autoInvoiceEnabled : false;
+        boolean enabled = autoInvoiceEnabled != null ? autoInvoiceEnabled : false;
+        if (enabled) {
+            DomainAssert.notNull(autoInvoiceDay, DojangSettingErrorCode.INVOICE_DAY_REQUIRED);
+        }
+        this.autoInvoiceEnabled = enabled;
         this.autoInvoiceDay = autoInvoiceDay;
-        this.autoInvoiceHour = autoInvoiceHour != null ? autoInvoiceHour : 9;
+        this.autoInvoiceHour = autoInvoiceHour != null ? autoInvoiceHour : DEFAULT_SCHEDULER_HOUR;
     }
 
     public void updateAutoAbsenceHour(Integer autoAbsenceHour) {
-        this.autoAbsenceHour = autoAbsenceHour != null ? autoAbsenceHour : 9;
+        this.autoAbsenceHour = autoAbsenceHour != null ? autoAbsenceHour : DEFAULT_SCHEDULER_HOUR;
     }
 }
