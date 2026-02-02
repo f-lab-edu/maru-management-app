@@ -352,6 +352,29 @@ public class AttendanceService {
         return absences.size();
     }
 
+    /**
+     * 특정 도장의 자동 결석 처리
+     *
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
+     * @param date 처리할 날짜
+     * @return 처리된 결석 건수
+     */
+    @Transactional
+    @SkipDojangValidation
+    public int processAutoAbsenceForDojang(String tenantId, String dojangId, LocalDate date) {
+        List<StudentMinimalView> students = studentRepository
+                .findActiveStudentsWithoutAttendanceByDojang(tenantId, dojangId, date);
+
+        if (students.isEmpty()) {
+            return 0;
+        }
+
+        List<Attendance> absences = createAbsenceRecords(students, date);
+        attendanceRepository.saveAll(absences);
+        return absences.size();
+    }
+
     private void validateStudentInDojang(String studentId, String dojangId, String tenantId) {
         if (!studentRepository.existsActiveByIdAndDojangId(studentId, tenantId, dojangId, StudentStatus.WITHDRAWN)) {
             throw new BusinessException(StudentErrorCode.NOT_FOUND);
