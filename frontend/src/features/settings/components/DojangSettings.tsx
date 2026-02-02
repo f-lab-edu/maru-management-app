@@ -12,13 +12,17 @@ import { Label } from '@/shared/components/ui/label';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 
+const DEFAULT_HOUR = 9;
+
 const dojangSettingsSchema = z.object({
   name: z.string().min(2, '도장 이름은 2자 이상이어야 합니다').max(100, '도장 이름은 100자 이하여야 합니다'),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   defaultTuition: z.number().int().min(0, '수련비는 0 이상이어야 합니다').optional().nullable(),
   autoInvoiceEnabled: z.boolean(),
-  autoInvoiceDay: z.number().int().min(1, '1일 이상이어야 합니다').max(28, '28일 이하여야 합니다').optional().nullable(),
+  autoInvoiceDay: z.number().int().min(1, '1일 이상이어야 합니다').max(31, '31일 이하여야 합니다').optional().nullable(),
+  autoInvoiceHour: z.number().int().min(0, '0시 이상이어야 합니다').max(23, '23시 이하여야 합니다'),
+  autoAbsenceHour: z.number().int().min(0, '0시 이상이어야 합니다').max(23, '23시 이하여야 합니다'),
 });
 
 type DojangSettingsFormData = z.infer<typeof dojangSettingsSchema>;
@@ -60,6 +64,8 @@ export const DojangSettings = () => {
       defaultTuition: null,
       autoInvoiceEnabled: false,
       autoInvoiceDay: null,
+      autoInvoiceHour: DEFAULT_HOUR,
+      autoAbsenceHour: DEFAULT_HOUR,
     },
   });
 
@@ -72,6 +78,8 @@ export const DojangSettings = () => {
         defaultTuition: dojang.defaultTuition,
         autoInvoiceEnabled: dojang.autoInvoiceEnabled,
         autoInvoiceDay: dojang.autoInvoiceDay,
+        autoInvoiceHour: dojang.autoInvoiceHour,
+        autoAbsenceHour: dojang.autoAbsenceHour,
       });
     }
   }, [dojang, reset]);
@@ -87,6 +95,8 @@ export const DojangSettings = () => {
         defaultTuition: data.defaultTuition,
         autoInvoiceEnabled: data.autoInvoiceEnabled,
         autoInvoiceDay: data.autoInvoiceEnabled ? data.autoInvoiceDay : null,
+        autoInvoiceHour: data.autoInvoiceHour,
+        autoAbsenceHour: data.autoAbsenceHour,
       });
       showSuccess('도장 설정이 저장되었습니다');
     } catch (error) {
@@ -154,24 +164,67 @@ export const DojangSettings = () => {
         </div>
 
         {autoInvoiceEnabled && (
-          <div className="ml-7 space-y-2">
-            <Label htmlFor="autoInvoiceDay">매월 발행일</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="autoInvoiceDay"
-                type="number"
-                className="w-24"
-                {...register('autoInvoiceDay', { valueAsNumber: true })}
-                min={1}
-                max={28}
-              />
-              <span className="text-sm text-slate-500">일</span>
+          <div className="ml-7 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="autoInvoiceDay">매월 발행일</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="autoInvoiceDay"
+                  type="number"
+                  className="w-24"
+                  {...register('autoInvoiceDay', { valueAsNumber: true })}
+                  min={1}
+                  max={31}
+                />
+                <span className="text-sm text-slate-500">일</span>
+              </div>
+              {errors.autoInvoiceDay && (
+                <p className="text-sm text-red-500">{errors.autoInvoiceDay.message}</p>
+              )}
             </div>
-            {errors.autoInvoiceDay && (
-              <p className="text-sm text-red-500">{errors.autoInvoiceDay.message}</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="autoInvoiceHour">발행 시각</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="autoInvoiceHour"
+                  type="number"
+                  className="w-24"
+                  {...register('autoInvoiceHour', { valueAsNumber: true })}
+                  min={0}
+                  max={23}
+                />
+                <span className="text-sm text-slate-500">시</span>
+              </div>
+              {errors.autoInvoiceHour && (
+                <p className="text-sm text-red-500">{errors.autoInvoiceHour.message}</p>
+              )}
+            </div>
           </div>
         )}
+      </section>
+
+      <div className="border-t border-slate-200" />
+
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold text-slate-900">출결 설정</h3>
+        <div className="space-y-2">
+          <Label htmlFor="autoAbsenceHour">자동 결석 처리 시각</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="autoAbsenceHour"
+              type="number"
+              className="w-24"
+              {...register('autoAbsenceHour', { valueAsNumber: true })}
+              min={0}
+              max={23}
+            />
+            <span className="text-sm text-slate-500">시</span>
+          </div>
+          {errors.autoAbsenceHour && (
+            <p className="text-sm text-red-500">{errors.autoAbsenceHour.message}</p>
+          )}
+          <p className="text-sm text-slate-500">매일(주중) 지정 시각에 전날 출석 기록이 없는 원생을 결석 처리합니다</p>
+        </div>
       </section>
 
       <div className="flex justify-end pt-4">
