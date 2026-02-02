@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
+import { dojangService } from '@/services/dojangService';
 import {
   Sheet,
   SheetContent,
@@ -74,8 +76,16 @@ export function InvoiceCreateSheet({
   onClose,
   preSelectedStudentId,
 }: InvoiceCreateSheetProps) {
+  const DEFAULT_TUITION_FALLBACK = 100000;
+
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? null;
+
+  const { data: dojangInfo } = useQuery({
+    queryKey: ['dojang', 'me'],
+    queryFn: dojangService.getMyDojang,
+  });
+  const defaultTuition = dojangInfo?.defaultTuition ?? DEFAULT_TUITION_FALLBACK;
 
   const [activeTab, setActiveTab] = useState<'single' | 'bulk'>(
     preSelectedStudentId ? 'single' : 'single'
@@ -120,7 +130,7 @@ export function InvoiceCreateSheet({
     resolver: zodResolver(singleCreateSchema),
     defaultValues: {
       studentId: preSelectedStudentId ?? '',
-      amount: 100000,
+      amount: defaultTuition,
       dueDate: defaultDueDate,
       note: '',
       billingYearMonth: defaultBillingYearMonth,
@@ -131,12 +141,25 @@ export function InvoiceCreateSheet({
     resolver: zodResolver(bulkCreateSchema),
     defaultValues: {
       studentIds: [],
-      defaultAmount: 100000,
+      defaultAmount: defaultTuition,
       dueDate: defaultDueDate,
       note: '',
       billingYearMonth: defaultBillingYearMonth,
     },
   });
+
+  useEffect(() => {
+    if (isOpen && dojangInfo) {
+      singleForm.reset({
+        ...singleForm.formState.defaultValues,
+        amount: defaultTuition,
+      } as SingleCreateData);
+      bulkForm.reset({
+        ...bulkForm.formState.defaultValues,
+        defaultAmount: defaultTuition,
+      } as BulkCreateData);
+    }
+  }, [isOpen, defaultTuition]);
 
   const selectedStudentIds = bulkForm.watch('studentIds') ?? [];
 
@@ -170,7 +193,7 @@ export function InvoiceCreateSheet({
       singleForm.reset();
       bulkForm.reset({
         studentIds: [],
-        defaultAmount: 100000,
+        defaultAmount: defaultTuition,
         dueDate: defaultDueDate,
         note: '',
         billingYearMonth: defaultBillingYearMonth,
