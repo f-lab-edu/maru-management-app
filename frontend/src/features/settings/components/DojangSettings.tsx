@@ -10,6 +10,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Checkbox } from '@/shared/components/ui/checkbox';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
 const DEFAULT_HOUR = 9;
@@ -113,101 +114,107 @@ export const DojangSettings = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900">도장 정보</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">도장명</Label>
-            <Input id="name" {...register('name')} />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">도장 정보</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">도장명</Label>
+              <Input id="name" {...register('name')} />
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">전화번호</Label>
+              <Input id="phone" {...register('phone')} placeholder="010-0000-0000" />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">전화번호</Label>
-            <Input id="phone" {...register('phone')} placeholder="010-0000-0000" />
+            <Label htmlFor="address">주소</Label>
+            <Input id="address" {...register('address')} placeholder="도장 주소를 입력하세요" />
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="address">주소</Label>
-          <Input id="address" {...register('address')} placeholder="도장 주소를 입력하세요" />
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <div className="border-t border-slate-200" />
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">수납 설정</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="defaultTuition">기본 수련비 (원)</Label>
+              <Input
+                id="defaultTuition"
+                type="number"
+                {...register('defaultTuition', { valueAsNumber: true })}
+                placeholder="0"
+              />
+              {errors.defaultTuition && (
+                <p className="text-sm text-red-500">{errors.defaultTuition.message}</p>
+              )}
+            </div>
+          </div>
 
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900">수납 설정</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="defaultTuition">기본 수련비 (원)</Label>
-            <Input
-              id="defaultTuition"
-              type="number"
-              {...register('defaultTuition', { valueAsNumber: true })}
-              placeholder="0"
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="autoInvoiceEnabled"
+              checked={autoInvoiceEnabled}
+              onCheckedChange={(checked) => setValue('autoInvoiceEnabled', checked === true, { shouldDirty: true })}
             />
-            {errors.defaultTuition && (
-              <p className="text-sm text-red-500">{errors.defaultTuition.message}</p>
-            )}
+            <Label htmlFor="autoInvoiceEnabled" className="cursor-pointer">
+              자동 청구서 발행
+            </Label>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id="autoInvoiceEnabled"
-            checked={autoInvoiceEnabled}
-            onCheckedChange={(checked) => setValue('autoInvoiceEnabled', checked === true, { shouldDirty: true })}
-          />
-          <Label htmlFor="autoInvoiceEnabled" className="cursor-pointer">
-            자동 청구서 발행
-          </Label>
-        </div>
-
-        {autoInvoiceEnabled && (
-          <div className="ml-7 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="autoInvoiceDay">매월 발행일</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="autoInvoiceDay"
-                  type="number"
-                  className="w-24"
-                  {...register('autoInvoiceDay', { valueAsNumber: true })}
-                  min={1}
-                  max={31}
-                />
-                <span className="text-sm text-slate-500">일</span>
+          {autoInvoiceEnabled && (
+            <div className="ml-7 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="autoInvoiceDay">매월 발행일</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="autoInvoiceDay"
+                    type="number"
+                    className="w-24"
+                    {...register('autoInvoiceDay', { valueAsNumber: true })}
+                    min={1}
+                    max={31}
+                  />
+                  <span className="text-sm text-slate-500">일</span>
+                </div>
+                {errors.autoInvoiceDay && (
+                  <p className="text-sm text-red-500">{errors.autoInvoiceDay.message}</p>
+                )}
               </div>
-              {errors.autoInvoiceDay && (
-                <p className="text-sm text-red-500">{errors.autoInvoiceDay.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="autoInvoiceHour">발행 시각</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="autoInvoiceHour"
-                  type="number"
-                  className="w-24"
-                  {...register('autoInvoiceHour', { valueAsNumber: true })}
-                  min={0}
-                  max={23}
-                />
-                <span className="text-sm text-slate-500">시</span>
+              <div className="space-y-2">
+                <Label htmlFor="autoInvoiceHour">발행 시각</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="autoInvoiceHour"
+                    type="number"
+                    className="w-24"
+                    {...register('autoInvoiceHour', { valueAsNumber: true })}
+                    min={0}
+                    max={23}
+                  />
+                  <span className="text-sm text-slate-500">시</span>
+                </div>
+                {errors.autoInvoiceHour && (
+                  <p className="text-sm text-red-500">{errors.autoInvoiceHour.message}</p>
+                )}
               </div>
-              {errors.autoInvoiceHour && (
-                <p className="text-sm text-red-500">{errors.autoInvoiceHour.message}</p>
-              )}
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="border-t border-slate-200" />
-
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-900">출결 설정</h3>
-        <div className="space-y-2">
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">출결 설정</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
           <Label htmlFor="autoAbsenceHour">자동 결석 처리 시각</Label>
           <div className="flex items-center gap-2">
             <Input
@@ -224,10 +231,10 @@ export const DojangSettings = () => {
             <p className="text-sm text-red-500">{errors.autoAbsenceHour.message}</p>
           )}
           <p className="text-sm text-slate-500">매일(주중) 지정 시각에 전날 출석 기록이 없는 원생을 결석 처리합니다</p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end">
         <Button type="submit" disabled={!isDirty || isPending}>
           {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           저장
