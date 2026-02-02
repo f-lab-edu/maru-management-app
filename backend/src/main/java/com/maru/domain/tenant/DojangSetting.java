@@ -28,6 +28,12 @@ public class DojangSetting extends BaseEntity {
     @Column(name = "auto_invoice_day")
     private Integer autoInvoiceDay;
 
+    @Column(name = "auto_invoice_hour", nullable = false)
+    private Integer autoInvoiceHour = 9;
+
+    @Column(name = "auto_absence_hour", nullable = false)
+    private Integer autoAbsenceHour = 9;
+
     private DojangSetting(String dojangId) {
         DomainAssert.hasText(dojangId, DojangSettingErrorCode.DOJANG_REQUIRED);
         this.dojangId = dojangId;
@@ -42,8 +48,13 @@ public class DojangSetting extends BaseEntity {
         this.defaultTuition = defaultTuition;
     }
 
-    public void updateAutoInvoice(Boolean autoInvoiceEnabled, Integer autoInvoiceDay) {
+    public void updateAutoInvoice(Boolean autoInvoiceEnabled, Integer autoInvoiceDay, Integer autoInvoiceHour) {
         this.autoInvoiceEnabled = autoInvoiceEnabled != null ? autoInvoiceEnabled : false;
         this.autoInvoiceDay = autoInvoiceDay;
+        this.autoInvoiceHour = autoInvoiceHour != null ? autoInvoiceHour : 9;
+    }
+
+    public void updateAutoAbsenceHour(Integer autoAbsenceHour) {
+        this.autoAbsenceHour = autoAbsenceHour != null ? autoAbsenceHour : 9;
     }
 }

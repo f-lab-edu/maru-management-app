@@ -11,5 +11,7 @@ public record DojangUpdateReq(
         String address,
         Integer defaultTuition,
         Boolean autoInvoiceEnabled,
-        Integer autoInvoiceDay
+        Integer autoInvoiceDay,
+        Integer autoInvoiceHour,
+        Integer autoAbsenceHour
 ) {}
