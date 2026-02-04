@@ -49,6 +49,7 @@ public class PaymentService {
     private final StudentRepository studentRepository;
     private final InvoiceQueryService invoiceQueryService;
     private final PaymentQueryService paymentQueryService;
+    private final RefundService refundService;
 
     /**
      * 수납 기록
@@ -88,14 +89,13 @@ public class PaymentService {
     @RequirePermission(PermissionType.PAYMENT_UPDATE)
     @Transactional
     public InvoiceDetailRes cancelPayment(String dojangId, String invoiceId, String paymentId, String userId) {
+        refundService.refundFull(dojangId, paymentId);
+
         String tenantId = TenantContextHolder.getTenantId();
         Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
-        Payment payment = findPaymentAndValidate(paymentId, invoiceId, tenantId, dojangId);
 
-        processRefund(payment, invoice);
-
-        log.info("수납 취소 완료: paymentId={}, invoiceId={}, amount={}, userId={}",
-                paymentId, invoiceId, payment.getAmount(), userId);
+        log.info("수납 취소 완료: paymentId={}, invoiceId={}, userId={}",
+                paymentId, invoiceId, userId);
 
         return buildInvoiceDetailRes(invoice);
     }
@@ -265,26 +265,6 @@ public class PaymentService {
     private Payment createAndSavePayment(Invoice invoice, PaymentRecordReq request, String userId) {
         Payment payment = Payment.create(invoice, request.amount(), request.method(), userId);
         return paymentRepository.save(payment);
-    }
-
-    private Payment findPaymentAndValidate(String paymentId, String invoiceId, String tenantId, String dojangId) {
-        Payment payment = paymentRepository.findByIdAndTenantIdAndDojangId(paymentId, tenantId, dojangId)
-                .orElseThrow(() -> new BusinessException(PaymentErrorCode.NOT_FOUND));
-
-        if (!payment.getInvoice().getId().equals(invoiceId)) {
-            throw new BusinessException(PaymentErrorCode.NOT_FOUND);
-        }
-
-        if (payment.getStatus() == PaymentStatus.REFUNDED) {
-            throw new BusinessException(PaymentErrorCode.ALREADY_REFUNDED);
-        }
-
-        return payment;
-    }
-
-    private void processRefund(Payment payment, Invoice invoice) {
-        payment.refund();
-        invoice.subtractPayment(payment.getAmount());
     }
 
     private InvoiceDetailRes buildInvoiceDetailRes(Invoice invoice) {

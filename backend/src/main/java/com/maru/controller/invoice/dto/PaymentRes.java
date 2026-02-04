@@ -1,6 +1,7 @@
 package com.maru.controller.invoice.dto;
 
 import com.maru.domain.invoice.Payment;
+import com.maru.domain.invoice.PaymentChannel;
 import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
 import lombok.Builder;
@@ -13,6 +14,7 @@ public record PaymentRes(
         String id,
         BigDecimal amount,
         PaymentMethod method,
+        PaymentChannel channel,
         PaymentStatus status,
         LocalDateTime paidAt,
         LocalDateTime refundedAt
@@ -23,6 +25,7 @@ public record PaymentRes(
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .method(payment.getMethod())
+                .channel(payment.getChannel())
                 .status(payment.getStatus())
                 .paidAt(payment.getPaidAt())
                 .refundedAt(payment.getRefundedAt())
