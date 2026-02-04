@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/api/v1/auth/**",
                         "/api/v1/sms/**",
+                        "/api/v1/pay/**",
                         "/api/v1/dev/**",  // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
                         "/api/v1/dojangs/**", // TODO: 테스트용. 프로덕션에서는 반드시 삭제할 것.
                         "/internal/healthz",

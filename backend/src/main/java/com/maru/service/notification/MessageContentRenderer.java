@@ -8,6 +8,8 @@ import com.maru.service.notification.exception.RenderingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.Map;
 
 @Component
@@ -47,6 +49,26 @@ public class MessageContentRenderer {
             );
             default -> throw new RenderingException("지원하지 않는 메시지 타입: " + messageType);
         };
+    }
+
+    /**
+     * 결제 링크 SMS 메시지 렌더링
+     *
+     * @param dojangName 도장 이름
+     * @param billingYearMonth 청구 연월
+     * @param remainingAmount 잔액
+     * @param paymentUrl 결제 페이지 URL
+     * @return 렌더링된 컨텐츠
+     */
+    public RenderedContent renderPaymentLink(String dojangName, YearMonth billingYearMonth,
+                                             BigDecimal remainingAmount, String paymentUrl) {
+        String body = String.format("%s %s 수업료 %,d원 결제: %s",
+                dojangName,
+                billingYearMonth.toString(),
+                remainingAmount.intValue(),
+                paymentUrl);
+
+        return new RenderedContent("[" + dojangName + "] 수업료 결제 안내", body, null);
     }
 
     private String serializeDataPayload(NotificationTargetView target) {
