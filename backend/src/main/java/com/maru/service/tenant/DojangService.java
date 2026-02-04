@@ -83,7 +83,8 @@ public class DojangService {
                 .orElseGet(() -> dojangSettingRepository.save(DojangSetting.create(dojangId)));
 
         setting.updateTuition(request.defaultTuition());
-        setting.updateAutoInvoice(request.autoInvoiceEnabled(), request.autoInvoiceDay());
+        setting.updateAutoInvoice(request.autoInvoiceEnabled(), request.autoInvoiceDay(), request.autoInvoiceHour());
+        setting.updateAutoAbsenceHour(request.autoAbsenceHour());
 
         log.info("도장 설정 수정: dojangId={}", dojangId);
     }

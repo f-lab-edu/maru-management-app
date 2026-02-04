@@ -175,18 +175,20 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     @Query("""
         SELECT s.id as id, s.tenantId as tenantId, s.dojangId as dojangId, s.name as name
-        FROM Student s, Dojang d
-        WHERE s.dojangId = d.id
+        FROM Student s
+        WHERE s.tenantId = :tenantId
+          AND s.dojangId = :dojangId
           AND s.status = 'ACTIVE'
           AND s.deletedAt IS NULL
-          AND d.deletedAt IS NULL
-          AND d.isActive = true
           AND NOT EXISTS (
               SELECT 1 FROM Attendance a
               WHERE a.studentId = s.id AND a.attendanceDate = :date
           )
         """)
-    List<StudentMinimalView> findAllActiveStudentsWithoutAttendanceMinimal(@Param("date") LocalDate date);
+    List<StudentMinimalView> findActiveStudentsWithoutAttendanceByDojang(
+            @Param("tenantId") String tenantId,
+            @Param("dojangId") String dojangId,
+            @Param("date") LocalDate date);
 
     @Query("""
         SELECT s.id as id, s.tenantId as tenantId, s.dojangId as dojangId, s.name as name

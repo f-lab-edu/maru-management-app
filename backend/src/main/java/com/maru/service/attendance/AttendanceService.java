@@ -330,25 +330,25 @@ public class AttendanceService {
     }
 
     /**
-     * 자동 결석 처리
+     * 특정 도장의 자동 결석 처리
      *
+     * @param tenantId 테넌트 ID
+     * @param dojangId 도장 ID
      * @param date 처리할 날짜
      * @return 처리된 결석 건수
      */
     @Transactional
     @SkipDojangValidation
-    public int processAutoAbsence(LocalDate date) {
-        List<StudentMinimalView> students = studentRepository.findAllActiveStudentsWithoutAttendanceMinimal(date);
+    public int processAutoAbsenceForDojang(String tenantId, String dojangId, LocalDate date) {
+        List<StudentMinimalView> students = studentRepository
+                .findActiveStudentsWithoutAttendanceByDojang(tenantId, dojangId, date);
 
         if (students.isEmpty()) {
-            log.info("자동 결석 처리 대상 없음: date={}", date);
             return 0;
         }
 
         List<Attendance> absences = createAbsenceRecords(students, date);
         attendanceRepository.saveAll(absences);
-
-        log.info("자동 결석 처리 완료: date={}, count={}", date, absences.size());
         return absences.size();
     }
 

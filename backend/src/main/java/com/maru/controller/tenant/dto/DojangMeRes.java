@@ -12,7 +12,9 @@ public record DojangMeRes(
         String address,
         Integer defaultTuition,
         Boolean autoInvoiceEnabled,
-        Integer autoInvoiceDay
+        Integer autoInvoiceDay,
+        Integer autoInvoiceHour,
+        Integer autoAbsenceHour
 ) {
     public static DojangMeRes from(Dojang dojang, DojangSetting setting) {
         return DojangMeRes.builder()
@@ -23,6 +25,8 @@ public record DojangMeRes(
                 .defaultTuition(setting.getDefaultTuition())
                 .autoInvoiceEnabled(setting.getAutoInvoiceEnabled())
                 .autoInvoiceDay(setting.getAutoInvoiceDay())
+                .autoInvoiceHour(setting.getAutoInvoiceHour())
+                .autoAbsenceHour(setting.getAutoAbsenceHour())
                 .build();
     }
 }

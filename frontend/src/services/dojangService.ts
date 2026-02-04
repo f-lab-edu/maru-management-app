@@ -8,6 +8,8 @@ export interface DojangMe {
   defaultTuition: number | null;
   autoInvoiceEnabled: boolean;
   autoInvoiceDay: number | null;
+  autoInvoiceHour: number;
+  autoAbsenceHour: number;
 }
 
 export interface DojangUpdateReq {
@@ -17,6 +19,8 @@ export interface DojangUpdateReq {
   defaultTuition?: number | null;
   autoInvoiceEnabled?: boolean;
   autoInvoiceDay?: number | null;
+  autoInvoiceHour?: number;
+  autoAbsenceHour?: number;
 }
 
 export const dojangService = {
