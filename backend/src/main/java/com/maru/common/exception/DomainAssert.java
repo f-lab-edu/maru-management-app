@@ -15,4 +15,16 @@ public final class DomainAssert {
             throw new BusinessException(errorCode);
         }
     }
+
+    public static void isTrue(boolean condition, BaseErrorCode errorCode) {
+        if (!condition) {
+            throw new BusinessException(errorCode);
+        }
+    }
+
+    public static void isFalse(boolean condition, BaseErrorCode errorCode) {
+        if (condition) {
+            throw new BusinessException(errorCode);
+        }
+    }
 }
