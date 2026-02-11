@@ -9,6 +9,7 @@ import {
   useDeleteInvoice,
   useUpdateInvoice,
   useCancelPayment,
+  useSendPaymentLink,
 } from './index';
 import type { InvoiceDetailRes } from '../types';
 
@@ -42,6 +43,7 @@ export function useInvoiceActions({
   const { mutateAsync: deleteInvoice, isPending: isDeleting } = useDeleteInvoice(dojangId);
   const { mutateAsync: updateInvoice, isPending: isUpdating } = useUpdateInvoice(dojangId);
   const { mutateAsync: cancelPayment } = useCancelPayment(dojangId);
+  const { mutateAsync: sendPaymentLink, isPending: isSendingLink } = useSendPaymentLink(dojangId);
 
   const editForm = useForm<UpdateData>({
     resolver: zodResolver(updateSchema),
@@ -165,6 +167,34 @@ export function useInvoiceActions({
     }
   };
 
+  const handleSendPaymentLink = async () => {
+    if (!invoiceId) return;
+
+    const { isConfirmed } = await confirm({
+      title: '결제 문자 발송',
+      text: '보호자에게 결제 링크를 SMS로 발송하시겠습니까?',
+      confirmText: '발송',
+      type: 'info',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await sendPaymentLink(invoiceId);
+      showSuccess('결제 문자가 발송되었습니다');
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { code?: string } } };
+      const errorCode = axiosError.response?.data?.code;
+      if (errorCode === 'SUB_MERCHANT_001') {
+        showError('서브몰이 등록되지 않았습니다');
+      } else if (errorCode === 'SUB_MERCHANT_303') {
+        showError('서브몰이 활성화되지 않았습니다');
+      } else {
+        showError('결제 문자 발송에 실패했습니다');
+      }
+    }
+  };
+
   const startEditing = (setIsEditing: (v: boolean) => void) => {
     if (invoice) {
       editForm.reset({
@@ -191,12 +221,14 @@ export function useInvoiceActions({
     isRestoring,
     isDeleting,
     isUpdating,
+    isSendingLink,
     handleUpdate,
     handleIssue,
     handleVoid,
     handleRestore,
     handleDelete,
     handleCancelPayment,
+    handleSendPaymentLink,
     startEditing,
     cancelEditing,
   };

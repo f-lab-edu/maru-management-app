@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -5,10 +6,11 @@ import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Separator } from '@/shared/components/ui/separator';
 import { DatePicker } from '@/shared/components/ui/date-picker';
-import { Send, XCircle, RotateCcw, Trash2, CreditCard, Pencil, X, AlertTriangle } from 'lucide-react';
+import { Send, XCircle, RotateCcw, Trash2, CreditCard, Pencil, X, AlertTriangle, MessageSquare } from 'lucide-react';
 import { PaymentRecordForm } from './PaymentRecordForm';
 import { PaymentList } from './PaymentList';
-import type { InvoiceDetailRes, InvoiceStatus } from '../types';
+import { RefundSheet } from './RefundSheet';
+import type { InvoiceDetailRes, InvoiceStatus, PaymentRes } from '../types';
 import type { UpdateData } from '../hooks/useInvoiceActions';
 import { formatBillingYearMonth } from '../utils';
 
@@ -26,12 +28,13 @@ interface InvoiceCurrentTabProps {
   isRestoring: boolean;
   isDeleting: boolean;
   isUpdating: boolean;
+  isSendingLink: boolean;
   onUpdate: (data: UpdateData) => void;
   onIssue: () => void;
+  onSendPaymentLink: () => void;
   onVoid: () => void;
   onRestore: () => void;
   onDelete: () => void;
-  onCancelPayment: (paymentId: string) => void;
   onStartEditing: () => void;
   onCancelEditing: () => void;
   formatAmount: (amount: number) => string;
@@ -51,16 +54,18 @@ export function InvoiceCurrentTab({
   isRestoring,
   isDeleting,
   isUpdating,
+  isSendingLink,
   onUpdate,
   onIssue,
+  onSendPaymentLink,
   onVoid,
   onRestore,
   onDelete,
-  onCancelPayment,
   onStartEditing,
   onCancelEditing,
   formatAmount,
 }: InvoiceCurrentTabProps) {
+  const [refundTarget, setRefundTarget] = useState<PaymentRes | null>(null);
   const isStudentDeleted = invoice.studentDeleted ?? false;
 
   const renderActionButtons = (status: InvoiceStatus) => {
@@ -96,6 +101,10 @@ export function InvoiceCurrentTab({
               <CreditCard className="mr-2 h-4 w-4" />
               수납 기록
             </Button>
+            <Button variant="outline" onClick={onSendPaymentLink} disabled={!canUpdate || isStudentDeleted || isSendingLink}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {isSendingLink ? '발송 중...' : '결제 문자'}
+            </Button>
             <Button variant="outline" onClick={onVoid} disabled={!canUpdate || isStudentDeleted || isVoiding}>
               <XCircle className="mr-2 h-4 w-4" />
               무효화
@@ -104,10 +113,16 @@ export function InvoiceCurrentTab({
         );
       case 'PARTIAL':
         return (
-          <Button onClick={() => setShowPaymentForm(true)} disabled={!canUpdate || isStudentDeleted} className="flex-1">
-            <CreditCard className="mr-2 h-4 w-4" />
-            수납 기록
-          </Button>
+          <>
+            <Button onClick={() => setShowPaymentForm(true)} disabled={!canUpdate || isStudentDeleted} className="flex-1">
+              <CreditCard className="mr-2 h-4 w-4" />
+              수납 기록
+            </Button>
+            <Button variant="outline" onClick={onSendPaymentLink} disabled={!canUpdate || isStudentDeleted || isSendingLink}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {isSendingLink ? '발송 중...' : '결제 문자'}
+            </Button>
+          </>
         );
       case 'VOID':
         return (
@@ -234,7 +249,7 @@ export function InvoiceCurrentTab({
             <h4 className="font-medium mb-3">수납 내역</h4>
             <PaymentList
               payments={invoice.payments}
-              onCancelPayment={onCancelPayment}
+              onRefundPayment={setRefundTarget}
               canCancel={invoice.status !== 'VOID'}
               canUpdate={canUpdate}
             />
@@ -250,6 +265,15 @@ export function InvoiceCurrentTab({
               remainingAmount={invoice.remainingAmount}
               onClose={() => setShowPaymentForm(false)}
               onSuccess={() => setShowPaymentForm(false)}
+            />
+          )}
+
+          {refundTarget && (
+            <RefundSheet
+              open={!!refundTarget}
+              onOpenChange={(open) => { if (!open) setRefundTarget(null); }}
+              payment={refundTarget}
+              onSuccess={() => setRefundTarget(null)}
             />
           )}
         </>

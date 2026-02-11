@@ -18,6 +18,10 @@ import type {
   PrepaidPaymentReq,
   PrepaidPaymentRes,
   YearlyStatistics,
+  PaymentLinkRes,
+  BatchPaymentLinkReq,
+  RefundReq,
+  RefundRes,
 } from '../types';
 
 export const invoiceKeys = {
@@ -273,6 +277,49 @@ export function useYearlyStatistics(dojangId: string | null, year: number) {
 
 export { useInvoiceActions } from './useInvoiceActions';
 export type { UpdateData } from './useInvoiceActions';
+
+export function useSendPaymentLink(dojangId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<PaymentLinkRes, Error, string>({
+    mutationFn: (invoiceId) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return invoiceApi.sendPaymentLink(dojangId, invoiceId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+export function useSendBatchPaymentLinks(dojangId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<PaymentLinkRes[], Error, BatchPaymentLinkReq>({
+    mutationFn: (request) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return invoiceApi.sendBatchPaymentLinks(dojangId, request);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+export function useRefundPayment(dojangId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation<RefundRes, Error, { paymentId: string; request: RefundReq }>({
+    mutationFn: ({ paymentId, request }) => {
+      if (!dojangId) throw new Error('도장 ID가 필요합니다');
+      return invoiceApi.refundPayment(dojangId, paymentId, request);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
+    },
+  });
+}
 
 export function usePrepaidPayment(dojangId: string | null) {
   const queryClient = useQueryClient();
