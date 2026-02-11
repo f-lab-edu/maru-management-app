@@ -1,8 +1,10 @@
 package com.maru.service.invoice;
 
 import com.maru.domain.invoice.Invoice;
+import com.maru.domain.invoice.SubMerchantStatus;
 import com.maru.domain.student.StudentStatus;
 import com.maru.repository.invoice.InvoiceRepository;
+import com.maru.repository.invoice.SubMerchantRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangSettingRepository;
 import com.maru.repository.tenant.view.AutoInvoiceTargetView;
@@ -30,6 +32,8 @@ public class AutoInvoiceService {
     private final DojangSettingRepository dojangSettingRepository;
     private final StudentRepository studentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final SubMerchantRepository subMerchantRepository;
+    private final PaymentLinkService paymentLinkService;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -79,7 +83,17 @@ public class AutoInvoiceService {
 
                 List<Invoice> invoices = createInvoices(
                         target, eligibleStudentIds, billingMonth, amount, dueDate);
+
+                invoices.forEach(invoice -> invoice.issue(null));
                 invoiceRepository.saveAll(invoices);
+
+                boolean subMerchantActive = isSubMerchantActive(target.getDojangId());
+
+                if (subMerchantActive) {
+                    trySendPaymentLinks(target, invoices);
+                } else {
+                    trySendInvoiceNotifications(target, invoices);
+                }
 
                 int skipped = eligibleStudentIds.size() - invoices.size();
                 return new DojangInvoiceResult(invoices.size(), skipped);
@@ -108,5 +122,30 @@ public class AutoInvoiceService {
                         target.getTenantId(), target.getDojangId(), studentId,
                         billingMonth, amount, dueDate, null))
                 .toList();
+    }
+
+    private boolean isSubMerchantActive(String dojangId) {
+        return subMerchantRepository.findByDojangId(dojangId)
+                .map(sm -> sm.getStatus() == SubMerchantStatus.ACTIVE)
+                .orElse(false);
+    }
+
+    private void trySendPaymentLinks(AutoInvoiceTargetView target, List<Invoice> invoices) {
+        try {
+            List<String> invoiceIds = invoices.stream().map(Invoice::getId).toList();
+            paymentLinkService.createAndSendBatchInternal(target.getDojangId(), invoiceIds);
+        } catch (Exception e) {
+            log.warn("자동 결제 링크 발송 실패: dojangId={}, 청구서는 정상 생성됨",
+                    target.getDojangId(), e);
+        }
+    }
+
+    private void trySendInvoiceNotifications(AutoInvoiceTargetView target, List<Invoice> invoices) {
+        try {
+            paymentLinkService.sendInvoiceNotificationBatch(target.getDojangId(), invoices);
+        } catch (Exception e) {
+            log.warn("자동 청구 알림 발송 실패: dojangId={}, 청구서는 정상 생성됨",
+                    target.getDojangId(), e);
+        }
     }
 }

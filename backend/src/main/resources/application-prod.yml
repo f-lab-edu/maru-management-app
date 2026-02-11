@@ -98,6 +98,14 @@ springdoc:
   packages-to-scan: com.maru.controller
   use-javadoc: true
 
+toss:
+  payments:
+    secret-key: ${TOSS_SECRET_KEY}
+    client-key: ${TOSS_CLIENT_KEY}
+    base-url: https://api.tosspayments.com/v1
+    encryption-key: ${TOSS_ENCRYPTION_KEY}
+    payment-page-base-url: https://maru.app/pay/
+
 maru:
   demo:
     user-id: ${DEMO_USER_ID}

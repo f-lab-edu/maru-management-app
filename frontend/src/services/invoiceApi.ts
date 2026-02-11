@@ -18,6 +18,10 @@ import type {
   PrepaidPaymentReq,
   PrepaidPaymentRes,
   YearlyStatistics,
+  PaymentLinkRes,
+  BatchPaymentLinkReq,
+  RefundReq,
+  RefundRes,
 } from '@/features/payments/types';
 
 const INVOICE_BASE = '/invoices';
@@ -203,6 +207,40 @@ export const invoiceApi = {
   ): Promise<PrepaidPaymentRes> => {
     const response = await apiClient.post<PrepaidPaymentRes>(
       `${INVOICE_BASE}/prepaid-payment`,
+      request,
+      { params: { dojangId } }
+    );
+    return response.data;
+  },
+
+  sendPaymentLink: async (dojangId: string, invoiceId: string): Promise<PaymentLinkRes> => {
+    const response = await apiClient.post<PaymentLinkRes>(
+      `${INVOICE_BASE}/${invoiceId}/payment-links`,
+      null,
+      { params: { dojangId } }
+    );
+    return response.data;
+  },
+
+  sendBatchPaymentLinks: async (
+    dojangId: string,
+    request: BatchPaymentLinkReq
+  ): Promise<PaymentLinkRes[]> => {
+    const response = await apiClient.post<PaymentLinkRes[]>(
+      `${INVOICE_BASE}/payment-links/batch`,
+      request,
+      { params: { dojangId } }
+    );
+    return response.data;
+  },
+
+  refundPayment: async (
+    dojangId: string,
+    paymentId: string,
+    request: RefundReq
+  ): Promise<RefundRes> => {
+    const response = await apiClient.post<RefundRes>(
+      `${PAYMENT_BASE}/${paymentId}/refunds`,
       request,
       { params: { dojangId } }
     );

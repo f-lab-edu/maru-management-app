@@ -20,14 +20,14 @@ import {
 } from '@/shared/components/ui/table';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Badge } from '@/shared/components/ui/badge';
-import { FileText, CheckCircle, AlertCircle, Send, Plus, Pencil } from 'lucide-react';
-import { useInvoices, useBulkIssueInvoices } from '../hooks';
+import { FileText, CheckCircle, AlertCircle, Send, Plus, Pencil, MessageSquare } from 'lucide-react';
+import { useInvoices, useBulkIssueInvoices, useSendBatchPaymentLinks } from '../hooks';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { InvoiceDetailSheet } from './InvoiceDetailSheet';
 import { InvoiceCreateSheet } from './InvoiceCreateSheet';
 import { InvoiceBulkUpdateSheet } from './InvoiceBulkUpdateSheet';
 import { PAYMENT_COLORS } from '../constants/chartColors';
-import { useAlert, usePermissions } from '@/hooks';
+import { useAlert, useConfirm, usePermissions } from '@/hooks';
 import type { InvoiceStatus, InvoiceListRes } from '../types';
 import { formatBillingYearMonth, extractYear, extractMonth } from '../utils';
 import { SectionDivisionFilter } from '@/features/divisions';
@@ -78,6 +78,7 @@ export function InvoiceTab() {
   const [divisionId, setDivisionId] = useState<string | null>(null);
 
   const { showSuccess, showError } = useAlert();
+  const { confirm } = useConfirm();
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('PAYMENT_UPDATE');
 
@@ -88,6 +89,7 @@ export function InvoiceTab() {
   });
 
   const { mutateAsync: bulkIssue, isPending: isIssuing } = useBulkIssueInvoices(dojangId);
+  const { mutateAsync: sendBatchLinks, isPending: isSendingLinks } = useSendBatchPaymentLinks(dojangId);
 
   const yearOptions = useMemo(() => {
     const currentYear = now.getFullYear();
@@ -139,13 +141,18 @@ export function InvoiceTab() {
     [filteredInvoices]
   );
 
+  const selectableInvoices = useMemo(
+    () => filteredInvoices.filter((inv) => ['DRAFT', 'OPEN', 'PARTIAL'].includes(inv.status)),
+    [filteredInvoices]
+  );
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(draftInvoices.map((inv) => inv.id));
+      setSelectedIds(selectableInvoices.map((inv) => inv.id));
     } else {
       setSelectedIds([]);
     }
@@ -160,14 +167,46 @@ export function InvoiceTab() {
   };
 
   const handleBulkIssue = async () => {
-    if (selectedIds.length === 0) return;
+    const draftIds = draftInvoices
+      .filter((inv) => selectedIds.includes(inv.id))
+      .map((inv) => inv.id);
+
+    if (draftIds.length === 0) return;
 
     try {
-      const result = await bulkIssue({ invoiceIds: selectedIds });
+      const result = await bulkIssue({ invoiceIds: draftIds });
       showSuccess(`${result.issuedCount}건 발행 완료 (${result.failedCount}건 실패)`);
       setSelectedIds([]);
     } catch {
       showError('일괄 발행에 실패했습니다');
+    }
+  };
+
+  const handleBulkSendLinks = async () => {
+    const linkTargetIds = filteredInvoices
+      .filter((inv) => selectedIds.includes(inv.id) && (inv.status === 'OPEN' || inv.status === 'PARTIAL'))
+      .map((inv) => inv.id);
+
+    if (linkTargetIds.length === 0) {
+      showError('발송 가능한 청구서가 없습니다 (OPEN/PARTIAL 상태만 발송 가능)');
+      return;
+    }
+
+    const { isConfirmed } = await confirm({
+      title: '결제 문자 일괄 보내기',
+      text: `${linkTargetIds.length}건의 청구서에 대해 결제 안내 문자를 보내시겠습니까?\n\n* PAID, VOID 상태는 제외됩니다`,
+      confirmText: '보내기',
+      type: 'info',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      await sendBatchLinks({ invoiceIds: linkTargetIds });
+      showSuccess(`${linkTargetIds.length}건의 결제 문자가 발송되었습니다`);
+      setSelectedIds([]);
+    } catch {
+      showError('결제 문자 일괄 발송에 실패했습니다');
     }
   };
 
@@ -341,10 +380,18 @@ export function InvoiceTab() {
                 <Pencil className="mr-2 h-4 w-4" />
                 {selectedIds.length}건 일괄 수정
               </Button>
-              <Button onClick={handleBulkIssue} disabled={!canUpdate || isIssuing}>
-                <Send className="mr-2 h-4 w-4" />
-                {isIssuing ? '발행 중...' : `${selectedIds.length}건 일괄 발행`}
-              </Button>
+              {filteredInvoices.some((inv) => selectedIds.includes(inv.id) && inv.status === 'DRAFT') && (
+                <Button onClick={handleBulkIssue} disabled={!canUpdate || isIssuing}>
+                  <Send className="mr-2 h-4 w-4" />
+                  {isIssuing ? '발행 중...' : '일괄 발행'}
+                </Button>
+              )}
+              {filteredInvoices.some((inv) => selectedIds.includes(inv.id) && (inv.status === 'OPEN' || inv.status === 'PARTIAL')) && (
+                <Button variant="outline" onClick={handleBulkSendLinks} disabled={!canUpdate || isSendingLinks}>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  {isSendingLinks ? '발송 중...' : '결제 문자 보내기'}
+                </Button>
+              )}
             </>
           )}
           <Button onClick={() => setShowCreateSheet(true)} disabled={!canUpdate}>
@@ -361,11 +408,11 @@ export function InvoiceTab() {
               <TableHead className="w-[50px]">
                 <Checkbox
                   checked={
-                    draftInvoices.length > 0 &&
-                    selectedIds.length === draftInvoices.length
+                    selectableInvoices.length > 0 &&
+                    selectedIds.length === selectableInvoices.length
                   }
                   onCheckedChange={handleSelectAll}
-                  disabled={draftInvoices.length === 0}
+                  disabled={selectableInvoices.length === 0}
                 />
               </TableHead>
               <TableHead>원생명</TableHead>
@@ -407,7 +454,7 @@ export function InvoiceTab() {
               </TableRow>
             ) : (
               filteredInvoices.map((invoice) => {
-                const isDraft = invoice.status === 'DRAFT';
+                const isSelectable = ['DRAFT', 'OPEN', 'PARTIAL'].includes(invoice.status);
                 const isSelected = selectedIds.includes(invoice.id);
                 const isDeleted = invoice.studentDeleted;
                 return (
@@ -419,13 +466,13 @@ export function InvoiceTab() {
                     style={{ borderLeft: `3px solid ${getStatusBorderColor(invoice.status)}` }}
                   >
                     <TableCell
-                      className={`${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
+                      className={`${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isSelectable ? 'cursor-pointer hover:bg-muted' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (isDraft) handleSelectOne(invoice.id, !isSelected);
+                        if (isSelectable) handleSelectOne(invoice.id, !isSelected);
                       }}
                     >
-                      {isDraft && (
+                      {isSelectable && (
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={(checked) =>
@@ -435,9 +482,9 @@ export function InvoiceTab() {
                       )}
                     </TableCell>
                     <TableCell
-                      className={`font-medium ${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isDraft ? 'cursor-pointer hover:bg-muted' : ''}`}
+                      className={`font-medium ${isDeleted ? 'bg-gray-100/70' : 'bg-muted/50'} ${isSelectable ? 'cursor-pointer hover:bg-muted' : ''}`}
                       onClick={(e) => {
-                        if (isDraft) {
+                        if (isSelectable) {
                           e.stopPropagation();
                           handleSelectOne(invoice.id, !isSelected);
                         }

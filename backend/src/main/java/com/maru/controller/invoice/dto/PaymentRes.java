@@ -1,8 +1,10 @@
 package com.maru.controller.invoice.dto;
 
 import com.maru.domain.invoice.Payment;
+import com.maru.domain.invoice.PaymentChannel;
 import com.maru.domain.invoice.PaymentMethod;
 import com.maru.domain.invoice.PaymentStatus;
+import com.maru.domain.invoice.PgPaymentDetail;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -13,9 +15,11 @@ public record PaymentRes(
         String id,
         BigDecimal amount,
         PaymentMethod method,
+        PaymentChannel channel,
         PaymentStatus status,
         LocalDateTime paidAt,
-        LocalDateTime refundedAt
+        LocalDateTime refundedAt,
+        String receiptUrl
 ) {
 
     public static PaymentRes from(Payment payment) {
@@ -23,9 +27,23 @@ public record PaymentRes(
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .method(payment.getMethod())
+                .channel(payment.getChannel())
                 .status(payment.getStatus())
                 .paidAt(payment.getPaidAt())
                 .refundedAt(payment.getRefundedAt())
+                .build();
+    }
+
+    public static PaymentRes from(Payment payment, PgPaymentDetail pgDetail) {
+        return PaymentRes.builder()
+                .id(payment.getId())
+                .amount(payment.getAmount())
+                .method(payment.getMethod())
+                .channel(payment.getChannel())
+                .status(payment.getStatus())
+                .paidAt(payment.getPaidAt())
+                .refundedAt(payment.getRefundedAt())
+                .receiptUrl(pgDetail != null ? pgDetail.getReceiptUrl() : null)
                 .build();
     }
 }

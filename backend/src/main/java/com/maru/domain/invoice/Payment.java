@@ -46,7 +46,12 @@ public class Payment extends BaseTimeEntity {
     @Column(length = 13)
     private String receivedBy;
 
-    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method, String receivedBy) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PaymentChannel channel;
+
+    private Payment(Invoice invoice, BigDecimal amount, PaymentMethod method,
+                    PaymentChannel channel, String receivedBy) {
         validatePayment(invoice, amount);
 
         this.tenantId = invoice.getTenantId();
@@ -54,13 +59,18 @@ public class Payment extends BaseTimeEntity {
         this.invoice = invoice;
         this.amount = amount;
         this.method = method;
+        this.channel = channel;
         this.status = PaymentStatus.PAID;
         this.paidAt = LocalDateTime.now();
         this.receivedBy = receivedBy;
     }
 
     public static Payment create(Invoice invoice, BigDecimal amount, PaymentMethod method, String receivedBy) {
-        return new Payment(invoice, amount, method, receivedBy);
+        return new Payment(invoice, amount, method, PaymentChannel.ONSITE, receivedBy);
+    }
+
+    public static Payment createPg(Invoice invoice, BigDecimal amount) {
+        return new Payment(invoice, amount, PaymentMethod.PG, PaymentChannel.PG, null);
     }
 
     private void validatePayment(Invoice invoice, BigDecimal amount) {

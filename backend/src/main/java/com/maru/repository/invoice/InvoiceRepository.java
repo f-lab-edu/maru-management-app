@@ -9,7 +9,9 @@ import com.maru.repository.invoice.view.RecentPaymentView;
 import com.maru.repository.invoice.view.UnpaidInvoiceView;
 
 import java.time.LocalDateTime;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,17 @@ import java.util.Optional;
 public interface InvoiceRepository extends JpaRepository<Invoice, String> {
 
     Optional<Invoice> findByIdAndTenantIdAndDojangId(String id, String tenantId, String dojangId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT i FROM Invoice i
+        WHERE i.id = :id
+          AND i.tenantId = :tenantId
+          AND i.dojangId = :dojangId
+        """)
+    Optional<Invoice> findByIdForUpdate(@Param("id") String id,
+                                         @Param("tenantId") String tenantId,
+                                         @Param("dojangId") String dojangId);
 
     @Query("""
         SELECT i.id as id, i.studentId as studentId, s.name as studentName,

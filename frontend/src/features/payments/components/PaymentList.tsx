@@ -1,17 +1,17 @@
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, ExternalLink } from 'lucide-react';
 import type { PaymentRes } from '../types';
 import { PAYMENT_METHOD_LABEL } from '../types';
 
 interface PaymentListProps {
   payments: PaymentRes[];
-  onCancelPayment: (paymentId: string) => void;
+  onRefundPayment: (payment: PaymentRes) => void;
   canCancel: boolean;
   canUpdate?: boolean;
 }
 
-export function PaymentList({ payments, onCancelPayment, canCancel, canUpdate = true }: PaymentListProps) {
+export function PaymentList({ payments, onRefundPayment, canCancel, canUpdate = true }: PaymentListProps) {
   if (payments.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-4">
@@ -47,13 +47,31 @@ export function PaymentList({ payments, onCancelPayment, canCancel, canUpdate = 
               <Badge variant="outline">
                 {PAYMENT_METHOD_LABEL[payment.method] ?? payment.method}
               </Badge>
+              {payment.channel === 'PG' && (
+                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                  PG결제
+                </Badge>
+              )}
               {payment.status === 'REFUNDED' && (
                 <Badge variant="destructive">환불됨</Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {formatDate(payment.paidAt)}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                {formatDate(payment.paidAt)}
+              </p>
+              {payment.receiptUrl && (
+                <a
+                  href={payment.receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-0.5"
+                >
+                  영수증
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
             {payment.status === 'REFUNDED' && payment.refundedAt && (
               <p className="text-xs text-destructive">
                 환불: {formatDate(payment.refundedAt)}
@@ -65,7 +83,7 @@ export function PaymentList({ payments, onCancelPayment, canCancel, canUpdate = 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onCancelPayment(payment.id)}
+              onClick={() => onRefundPayment(payment)}
               className="text-muted-foreground hover:text-destructive"
               disabled={!canUpdate}
             >

@@ -1,6 +1,8 @@
 export type InvoiceStatus = 'DRAFT' | 'OPEN' | 'PARTIAL' | 'PAID' | 'VOID';
 export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER' | 'PG' | 'OTHER';
+export type PaymentChannel = 'ONSITE' | 'PG';
 export type PaymentStatus = 'COMPLETED' | 'REFUNDED';
+export type RefundStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 
 export interface InvoiceListRes {
   id: string;
@@ -19,9 +21,11 @@ export interface PaymentRes {
   id: string;
   amount: number;
   method: PaymentMethod;
+  channel: PaymentChannel;
   status: PaymentStatus;
   paidAt: string;
   refundedAt: string | null;
+  receiptUrl: string | null;
 }
 
 export interface InvoiceDetailRes {
@@ -167,6 +171,11 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   OTHER: '기타',
 };
 
+export const PAYMENT_CHANNEL_LABEL: Record<PaymentChannel, string> = {
+  ONSITE: '현장',
+  PG: 'PG결제',
+};
+
 export interface PrepaidPaymentReq {
   studentId: string;
   startYearMonth: string;
@@ -203,4 +212,26 @@ export interface YearlyStatistics {
   unpaidInvoiceCount: number;
   partialInvoiceCount: number;
   monthlyData: MonthlyStatisticsData[];
+}
+
+export interface PaymentLinkRes {
+  token: string;
+  expiresAt: string;
+}
+
+export interface BatchPaymentLinkReq {
+  invoiceIds: string[];
+}
+
+export interface RefundReq {
+  amount: number;
+  reason: string;
+}
+
+export interface RefundRes {
+  id: string;
+  amount: number;
+  reason: string;
+  status: RefundStatus;
+  completedAt: string | null;
 }

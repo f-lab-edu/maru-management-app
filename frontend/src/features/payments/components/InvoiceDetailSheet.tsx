@@ -53,7 +53,8 @@ export function InvoiceDetailSheet({ invoiceId, isOpen, onClose }: InvoiceDetail
     handleVoid,
     handleRestore,
     handleDelete,
-    handleCancelPayment,
+    handleSendPaymentLink,
+    isSendingLink,
     startEditing,
     cancelEditing,
   } = useInvoiceActions({
@@ -168,12 +169,13 @@ export function InvoiceDetailSheet({ invoiceId, isOpen, onClose }: InvoiceDetail
                   isRestoring={isRestoring}
                   isDeleting={isDeleting}
                   isUpdating={isUpdating}
+                  isSendingLink={isSendingLink}
                   onUpdate={(data) => handleUpdate(data, setIsEditing)}
                   onIssue={handleIssue}
+                  onSendPaymentLink={handleSendPaymentLink}
                   onVoid={handleVoid}
                   onRestore={handleRestore}
                   onDelete={handleDelete}
-                  onCancelPayment={handleCancelPayment}
                   onStartEditing={() => startEditing(setIsEditing)}
                   onCancelEditing={() => cancelEditing(setIsEditing)}
                   formatAmount={formatAmount}
