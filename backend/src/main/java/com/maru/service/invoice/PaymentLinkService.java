@@ -1,5 +1,6 @@
 package com.maru.service.invoice;
 
+import com.maru.common.aop.SkipDojangValidation;
 import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.common.exception.BusinessException;
 import com.maru.config.properties.TossPaymentsProperties;
@@ -44,7 +45,6 @@ import java.util.stream.Collectors;
 @ValidateDojangAccess
 public class PaymentLinkService {
 
-    private static final String PAYMENT_PAGE_BASE_URL = "https://maru.app/pay/";
     private static final String ORDER_ID_PREFIX = "MARU-";
 
     private final PaymentLinkRepository paymentLinkRepository;
@@ -79,7 +79,7 @@ public class PaymentLinkService {
 
         sendSms(invoice, paymentLink);
 
-        log.info("결제 링크 생성: invoiceId={}, token={}", invoiceId, paymentLink.getToken());
+        log.info("결제 링크 생성: invoiceId={}", invoiceId);
         return PaymentLinkRes.from(paymentLink);
     }
 
@@ -108,6 +108,29 @@ public class PaymentLinkService {
 
         log.info("결제 링크 일괄 생성: dojangId={}, count={}", dojangId, paymentLinks.size());
         return paymentLinks.stream().map(PaymentLinkRes::from).toList();
+    }
+
+    /**
+     * 결제 링크 일괄 생성 및 SMS 발송 (시스템 내부 호출용, 권한 체크 없음)
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceIds 청구서 ID 목록
+     */
+    @SkipDojangValidation
+    @Transactional
+    public void createAndSendBatchInternal(String dojangId, List<String> invoiceIds) {
+        String tenantId = TenantContextHolder.getTenantId();
+
+        List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, invoiceIds);
+
+        List<PaymentLink> paymentLinks = invoices.stream()
+                .map(invoice -> PaymentLink.create(tenantId, dojangId, invoice.getId()))
+                .toList();
+        paymentLinkRepository.saveAll(paymentLinks);
+
+        sendSmsBatch(invoices, paymentLinks, dojangId);
+
+        log.info("결제 링크 일괄 생성 (자동): dojangId={}, count={}", dojangId, paymentLinks.size());
     }
 
     /**
@@ -174,7 +197,7 @@ public class PaymentLinkService {
 
         Dojang dojang = dojangRepository.findById(paymentLink.getDojangId()).orElse(null);
         String dojangName = dojang != null ? dojang.getName() : "";
-        String paymentUrl = PAYMENT_PAGE_BASE_URL + paymentLink.getToken();
+        String paymentUrl = tossPaymentsProperties.paymentPageBaseUrl() + paymentLink.getToken();
 
         RenderedContent content = contentRenderer.renderPaymentLink(
                 dojangName, invoice.getBillingYearMonth(),
@@ -216,10 +239,47 @@ public class PaymentLinkService {
                 continue;
             }
 
-            String paymentUrl = PAYMENT_PAGE_BASE_URL + paymentLink.getToken();
+            String paymentUrl = tossPaymentsProperties.paymentPageBaseUrl() + paymentLink.getToken();
             RenderedContent content = contentRenderer.renderPaymentLink(
                     dojangName, invoice.getBillingYearMonth(),
                     invoice.getRemainingAmount(), paymentUrl);
+
+            for (PrimaryGuardianView guardian : guardians) {
+                if (guardian.getGuardianPhone() == null) continue;
+                smsService.send(guardian.getGuardianPhone(), content.body());
+            }
+        }
+    }
+
+    /**
+     * 청구서 발행 알림 SMS 일괄 발송 (결제 링크 미포함, 시스템 내부 호출용)
+     *
+     * @param dojangId 도장 ID
+     * @param invoices 청구서 목록
+     */
+    @SkipDojangValidation
+    public void sendInvoiceNotificationBatch(String dojangId, List<Invoice> invoices) {
+        List<String> studentIds = invoices.stream().map(Invoice::getStudentId).toList();
+
+        List<PrimaryGuardianView> allGuardians = guardianshipRepository
+                .findPrimaryGuardianViewsByStudentIds(studentIds);
+
+        Map<String, List<PrimaryGuardianView>> guardiansByStudentId = allGuardians.stream()
+                .collect(Collectors.groupingBy(PrimaryGuardianView::getStudentId));
+
+        Dojang dojang = dojangRepository.findById(dojangId).orElse(null);
+        String dojangName = dojang != null ? dojang.getName() : "";
+
+        for (Invoice invoice : invoices) {
+            List<PrimaryGuardianView> guardians = guardiansByStudentId
+                    .getOrDefault(invoice.getStudentId(), List.of());
+            if (guardians.isEmpty()) {
+                log.warn("SMS 발송 스킵: 주 보호자 없음 - invoiceId={}", invoice.getId());
+                continue;
+            }
+
+            RenderedContent content = contentRenderer.renderInvoiceNotification(
+                    dojangName, invoice.getBillingYearMonth(), invoice.getAmount());
 
             for (PrimaryGuardianView guardian : guardians) {
                 if (guardian.getGuardianPhone() == null) continue;

@@ -1,5 +1,6 @@
 package com.maru.service.sms;
 
+import com.maru.common.util.MaskingUtil;
 import com.maru.security.JwtClaims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,7 +34,7 @@ public class DemoAwareSmsService implements SmsService {
     @Override
     public void send(String phone, String message) {
         if (isDemoUser()) {
-            log.info("데모 사용자 SMS 발송 스킵: to={}", phone);
+            log.info("데모 사용자 SMS 발송 스킵: to={}", MaskingUtil.phone(phone));
             return;
         }
         delegate.send(phone, message);

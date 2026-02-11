@@ -71,6 +71,24 @@ public class MessageContentRenderer {
         return new RenderedContent("[" + dojangName + "] 수업료 결제 안내", body, null);
     }
 
+    /**
+     * 청구서 발행 알림 SMS 메시지 렌더링 (결제 링크 미포함)
+     *
+     * @param dojangName 도장 이름
+     * @param billingYearMonth 청구 연월
+     * @param amount 청구 금액
+     * @return 렌더링된 컨텐츠
+     */
+    public RenderedContent renderInvoiceNotification(String dojangName, YearMonth billingYearMonth,
+                                                     BigDecimal amount) {
+        String body = String.format("%s %s 수업료 %,d원이 청구되었습니다.",
+                dojangName,
+                billingYearMonth.toString(),
+                amount.intValue());
+
+        return new RenderedContent("[" + dojangName + "] 수업료 청구 안내", body, null);
+    }
+
     private String serializeDataPayload(NotificationTargetView target) {
         try {
             return objectMapper.writeValueAsString(Map.of(

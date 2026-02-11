@@ -7,6 +7,7 @@ public record TossPaymentsProperties(
         String secretKey,
         String clientKey,
         String baseUrl,
-        String encryptionKey
+        String encryptionKey,
+        String paymentPageBaseUrl
 ) {
 }

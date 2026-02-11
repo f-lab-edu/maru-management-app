@@ -104,6 +104,7 @@ toss:
     client-key: ${TOSS_CLIENT_KEY}
     base-url: https://api.tosspayments.com/v1
     encryption-key: ${TOSS_ENCRYPTION_KEY}
+    payment-page-base-url: https://maru.app/pay/
 
 maru:
   demo:
