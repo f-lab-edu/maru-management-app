@@ -13,7 +13,13 @@ import com.maru.domain.permission.PermissionType;
 import com.maru.domain.student.Student;
 import com.maru.domain.tenant.Dojang;
 import com.maru.repository.invoice.InvoiceRepository;
+import com.maru.domain.invoice.SubMerchant;
+import com.maru.domain.invoice.SubMerchantStatus;
+import com.maru.domain.invoice.exception.SubMerchantErrorCode;
 import com.maru.repository.invoice.PaymentLinkRepository;
+import com.maru.repository.invoice.SubMerchantRepository;
+import com.maru.repository.guardian.GuardianshipRepository;
+import com.maru.repository.guardian.view.PrimaryGuardianView;
 import com.maru.repository.student.StudentRepository;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.security.RequirePermission;
@@ -26,7 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,6 +51,8 @@ public class PaymentLinkService {
     private final InvoiceRepository invoiceRepository;
     private final StudentRepository studentRepository;
     private final DojangRepository dojangRepository;
+    private final SubMerchantRepository subMerchantRepository;
+    private final GuardianshipRepository guardianshipRepository;
     private final SmsService smsService;
     private final MessageContentRenderer contentRenderer;
     private final TossPaymentsProperties tossPaymentsProperties;
@@ -57,6 +69,9 @@ public class PaymentLinkService {
     @Transactional
     public PaymentLinkRes createAndSend(String dojangId, String invoiceId) {
         String tenantId = TenantContextHolder.getTenantId();
+
+        validateSubMerchantActive(dojangId);
+
         Invoice invoice = findInvoice(invoiceId, tenantId, dojangId);
 
         PaymentLink paymentLink = PaymentLink.create(tenantId, dojangId, invoiceId);
@@ -66,6 +81,33 @@ public class PaymentLinkService {
 
         log.info("결제 링크 생성: invoiceId={}, token={}", invoiceId, paymentLink.getToken());
         return PaymentLinkRes.from(paymentLink);
+    }
+
+    /**
+     * 결제 링크 일괄 생성 및 SMS 발송
+     *
+     * @param dojangId 도장 ID
+     * @param invoiceIds 청구서 ID 목록
+     * @return 생성된 결제 링크 정보 목록
+     */
+    @RequirePermission(PermissionType.PAYMENT_UPDATE)
+    @Transactional
+    public List<PaymentLinkRes> createAndSendBatch(String dojangId, List<String> invoiceIds) {
+        String tenantId = TenantContextHolder.getTenantId();
+
+        validateSubMerchantActive(dojangId);
+
+        List<Invoice> invoices = invoiceRepository.findAllByDojangIdAndIdIn(tenantId, dojangId, invoiceIds);
+
+        List<PaymentLink> paymentLinks = invoices.stream()
+                .map(invoice -> PaymentLink.create(tenantId, dojangId, invoice.getId()))
+                .toList();
+        paymentLinkRepository.saveAll(paymentLinks);
+
+        sendSmsBatch(invoices, paymentLinks, dojangId);
+
+        log.info("결제 링크 일괄 생성: dojangId={}, count={}", dojangId, paymentLinks.size());
+        return paymentLinks.stream().map(PaymentLinkRes::from).toList();
     }
 
     /**
@@ -107,15 +149,26 @@ public class PaymentLinkService {
                 .build();
     }
 
+    private void validateSubMerchantActive(String dojangId) {
+        SubMerchant subMerchant = subMerchantRepository.findByDojangId(dojangId)
+                .orElseThrow(() -> new BusinessException(SubMerchantErrorCode.NOT_FOUND));
+
+        if (subMerchant.getStatus() != SubMerchantStatus.ACTIVE) {
+            throw new BusinessException(SubMerchantErrorCode.NOT_ACTIVE);
+        }
+    }
+
     private Invoice findInvoice(String invoiceId, String tenantId, String dojangId) {
         return invoiceRepository.findByIdAndTenantIdAndDojangId(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
     }
 
     private void sendSms(Invoice invoice, PaymentLink paymentLink) {
-        Student student = studentRepository.findById(invoice.getStudentId()).orElse(null);
-        if (student == null || student.getPhone() == null) {
-            log.warn("SMS 발송 실패: 원생 또는 전화번호 없음 - invoiceId={}", invoice.getId());
+        List<PrimaryGuardianView> guardians = guardianshipRepository
+                .findPrimaryGuardianViewsByStudentIds(List.of(invoice.getStudentId()));
+
+        if (guardians.isEmpty()) {
+            log.warn("SMS 발송 실패: 주 보호자 없음 - invoiceId={}", invoice.getId());
             return;
         }
 
@@ -127,7 +180,52 @@ public class PaymentLinkService {
                 dojangName, invoice.getBillingYearMonth(),
                 invoice.getRemainingAmount(), paymentUrl);
 
-        smsService.send(student.getPhone(), content.body());
+        for (PrimaryGuardianView guardian : guardians) {
+            if (guardian.getGuardianPhone() == null) {
+                log.warn("SMS 발송 스킵: 보호자 전화번호 없음 - invoiceId={}, guardian={}",
+                        invoice.getId(), guardian.getGuardianName());
+                continue;
+            }
+            smsService.send(guardian.getGuardianPhone(), content.body());
+        }
+    }
+
+    private void sendSmsBatch(List<Invoice> invoices, List<PaymentLink> paymentLinks, String dojangId) {
+        List<String> studentIds = invoices.stream().map(Invoice::getStudentId).toList();
+
+        List<PrimaryGuardianView> allGuardians = guardianshipRepository
+                .findPrimaryGuardianViewsByStudentIds(studentIds);
+
+        Map<String, List<PrimaryGuardianView>> guardiansByStudentId = allGuardians.stream()
+                .collect(Collectors.groupingBy(PrimaryGuardianView::getStudentId));
+
+        Dojang dojang = dojangRepository.findById(dojangId).orElse(null);
+        String dojangName = dojang != null ? dojang.getName() : "";
+
+        Map<String, PaymentLink> linkByInvoiceId = paymentLinks.stream()
+                .collect(Collectors.toMap(PaymentLink::getInvoiceId, Function.identity()));
+
+        for (Invoice invoice : invoices) {
+            PaymentLink paymentLink = linkByInvoiceId.get(invoice.getId());
+            if (paymentLink == null) continue;
+
+            List<PrimaryGuardianView> guardians = guardiansByStudentId
+                    .getOrDefault(invoice.getStudentId(), List.of());
+            if (guardians.isEmpty()) {
+                log.warn("SMS 발송 스킵: 주 보호자 없음 - invoiceId={}", invoice.getId());
+                continue;
+            }
+
+            String paymentUrl = PAYMENT_PAGE_BASE_URL + paymentLink.getToken();
+            RenderedContent content = contentRenderer.renderPaymentLink(
+                    dojangName, invoice.getBillingYearMonth(),
+                    invoice.getRemainingAmount(), paymentUrl);
+
+            for (PrimaryGuardianView guardian : guardians) {
+                if (guardian.getGuardianPhone() == null) continue;
+                smsService.send(guardian.getGuardianPhone(), content.body());
+            }
+        }
     }
 
     private String generateOrderId(String invoiceId) {
