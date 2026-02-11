@@ -13,6 +13,9 @@ import SettingsPage from '../pages/SettingsPage';
 import StudentListPage from '../pages/students/StudentListPage';
 import AttendanceListPage from '../pages/attendance/AttendanceListPage';
 import BillingPage from '../pages/billing/BillingPage';
+import PaymentPage from '../pages/payment/PaymentPage';
+import PaymentSuccessPage from '../pages/payment/PaymentSuccessPage';
+import PaymentFailPage from '../pages/payment/PaymentFailPage';
 import { OnboardingRoute, CompletedOnboardingRoute } from './AuthGuard';
 import AuthLayout from '../layouts/AuthLayout';
 import { DojangGuard } from '../components/auth/DojangGuard';
@@ -23,6 +26,9 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <LandingPage /> },
       { path: '/oauth/callback/:provider', element: <OAuthCallbackPage /> },
+      { path: '/pay/:token', element: <PaymentPage /> },
+      { path: '/pay/:token/success', element: <PaymentSuccessPage /> },
+      { path: '/pay/:token/fail', element: <PaymentFailPage /> },
       {
         element: <AuthLayout />,
         children: [
