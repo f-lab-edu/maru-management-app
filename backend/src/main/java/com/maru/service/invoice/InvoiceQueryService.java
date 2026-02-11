@@ -5,16 +5,22 @@ import com.maru.common.exception.BusinessException;
 import com.maru.controller.invoice.dto.InvoiceDetailRes;
 import com.maru.controller.invoice.dto.InvoiceListRes;
 import com.maru.controller.invoice.dto.PaymentRes;
+import com.maru.domain.invoice.Payment;
+import com.maru.domain.invoice.PaymentChannel;
 import com.maru.domain.invoice.InvoiceStatus;
+import com.maru.domain.invoice.PgPaymentDetail;
 import com.maru.domain.invoice.exception.InvoiceErrorCode;
 import com.maru.repository.invoice.InvoiceRepository;
 import com.maru.repository.invoice.PaymentRepository;
+import com.maru.repository.invoice.PgPaymentDetailRepository;
 import com.maru.repository.invoice.view.InvoiceStudentView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,7 @@ public class InvoiceQueryService {
 
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
+    private final PgPaymentDetailRepository pgPaymentDetailRepository;
 
     /**
      * 청구서 단건 조회
@@ -38,12 +45,10 @@ public class InvoiceQueryService {
         InvoiceStudentView view = invoiceRepository.findDetailById(invoiceId, tenantId, dojangId)
                 .orElseThrow(() -> new BusinessException(InvoiceErrorCode.NOT_FOUND));
 
-        List<PaymentRes> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(tenantId, dojangId, invoiceId)
-                .stream()
-                .map(PaymentRes::from)
-                .toList();
+        List<Payment> payments = paymentRepository.findByInvoiceIdOrderByPaidAtDesc(tenantId, dojangId, invoiceId);
+        List<PaymentRes> paymentResList = toPaymentResList(payments);
 
-        return toInvoiceDetailRes(view, payments);
+        return toInvoiceDetailRes(view, paymentResList);
     }
 
     /**
@@ -60,6 +65,26 @@ public class InvoiceQueryService {
         List<InvoiceStudentView> views = fetchInvoiceViews(tenantId, dojangId, status, filteredStudentIds);
         return views.stream()
                 .map(this::toInvoiceListRes)
+                .toList();
+    }
+
+    private List<PaymentRes> toPaymentResList(List<Payment> payments) {
+        List<String> pgPaymentIds = payments.stream()
+                .filter(p -> p.getChannel() == PaymentChannel.PG)
+                .map(Payment::getId)
+                .toList();
+
+        if (pgPaymentIds.isEmpty()) {
+            return payments.stream().map(PaymentRes::from).toList();
+        }
+
+        Map<String, PgPaymentDetail> pgDetailMap = pgPaymentDetailRepository
+                .findAllByPaymentIdIn(pgPaymentIds)
+                .stream()
+                .collect(Collectors.toMap(d -> d.getPayment().getId(), d -> d));
+
+        return payments.stream()
+                .map(payment -> PaymentRes.from(payment, pgDetailMap.get(payment.getId())))
                 .toList();
     }
 

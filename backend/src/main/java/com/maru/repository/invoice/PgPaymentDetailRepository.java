@@ -16,4 +16,6 @@ public interface PgPaymentDetailRepository extends JpaRepository<PgPaymentDetail
     Optional<PgPaymentDetail> findByPaymentId(String paymentId);
 
     List<PgPaymentDetail> findByStatus(PgPaymentStatus status);
+
+    List<PgPaymentDetail> findAllByPaymentIdIn(List<String> paymentIds);
 }
