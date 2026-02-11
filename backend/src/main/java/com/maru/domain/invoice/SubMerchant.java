@@ -1,6 +1,8 @@
 package com.maru.domain.invoice;
 
+import com.maru.common.exception.BusinessException;
 import com.maru.domain.common.BaseEntity;
+import com.maru.domain.invoice.exception.SubMerchantErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -40,4 +42,49 @@ public class SubMerchant extends BaseEntity {
 
     @Column(length = 50)
     private String accountHolder;
+
+    private SubMerchant(String tenantId, String dojangId, BigDecimal feeRate,
+                        String bankCode, String accountNumberEnc, String accountHolder) {
+        this.tenantId = tenantId;
+        this.dojangId = dojangId;
+        this.status = SubMerchantStatus.PENDING;
+        this.feeRate = feeRate;
+        this.bankCode = bankCode;
+        this.accountNumberEnc = accountNumberEnc;
+        this.accountHolder = accountHolder;
+    }
+
+    public static SubMerchant create(String tenantId, String dojangId, BigDecimal feeRate,
+                                     String bankCode, String accountNumber, String accountHolder) {
+        return new SubMerchant(tenantId, dojangId, feeRate, bankCode, accountNumber, accountHolder);
+    }
+
+    public void activate(String tossSellerId) {
+        validateStatusTransition(SubMerchantStatus.ACTIVE);
+        this.status = SubMerchantStatus.ACTIVE;
+        this.tossSellerId = tossSellerId;
+    }
+
+    public void reject() {
+        validateStatusTransition(SubMerchantStatus.REJECTED);
+        this.status = SubMerchantStatus.REJECTED;
+    }
+
+    public void suspend() {
+        validateStatusTransition(SubMerchantStatus.SUSPENDED);
+        this.status = SubMerchantStatus.SUSPENDED;
+    }
+
+    private void validateStatusTransition(SubMerchantStatus targetStatus) {
+        boolean valid = switch (targetStatus) {
+            case ACTIVE -> this.status == SubMerchantStatus.PENDING;
+            case REJECTED -> this.status == SubMerchantStatus.PENDING;
+            case SUSPENDED -> this.status == SubMerchantStatus.ACTIVE;
+            case PENDING -> false;
+        };
+
+        if (!valid) {
+            throw new BusinessException(SubMerchantErrorCode.INVALID_STATUS_TRANSITION);
+        }
+    }
 }
