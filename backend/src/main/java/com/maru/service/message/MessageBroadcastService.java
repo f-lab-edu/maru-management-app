@@ -30,11 +30,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.maru.common.aop.ValidateDojangAccess;
 import com.maru.security.TenantContextHolder;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ValidateDojangAccess
 public class MessageBroadcastService {
 
     private static final String REF_TYPE_BROADCAST = "BROADCAST";

@@ -28,6 +28,8 @@ import com.maru.repository.message.MessageDispatchRepository;
 import com.maru.repository.message.view.BroadcastStatusCountView;
 import com.maru.repository.message.view.NotificationSummaryView;
 import com.maru.repository.message.view.StatusCountView;
+import com.maru.common.aop.SkipDojangValidation;
+import com.maru.common.aop.ValidateDojangAccess;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@ValidateDojangAccess
 public class MessageQueryService {
 
     private static final Map<String, String> MESSAGE_TYPE_LABELS = Map.of(
@@ -66,6 +69,7 @@ public class MessageQueryService {
      * @param pageable 페이징
      * @return 메시지 목록
      */
+    @SkipDojangValidation
     public Page<MessageSummaryRes> findByGuardian(String guardianId, MessageStatus status, Pageable pageable) {
         Page<MessageDispatch> messages = status != null
                 ? messageDispatchRepository.findByGuardianIdAndStatus(guardianId, status, pageable)
@@ -82,6 +86,7 @@ public class MessageQueryService {
      * @return 메시지 상세
      * @throws BusinessException 메시지를 찾을 수 없거나 권한이 없는 경우
      */
+    @SkipDojangValidation
     public MessageDetailRes findDetail(String guardianId, String messageId) {
         MessageDispatch message = messageDispatchRepository.findById(messageId)
                 .orElseThrow(() -> new BusinessException(MessageDispatchErrorCode.NOT_FOUND));
@@ -101,6 +106,7 @@ public class MessageQueryService {
      * @return 발송 시도 목록
      * @throws BusinessException 메시지를 찾을 수 없거나 권한이 없는 경우
      */
+    @SkipDojangValidation
     public List<AttemptRes> findAttempts(String guardianId, String messageId) {
         MessageDispatch message = messageDispatchRepository.findById(messageId)
                 .orElseThrow(() -> new BusinessException(MessageDispatchErrorCode.NOT_FOUND));
