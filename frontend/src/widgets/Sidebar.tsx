@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, CalendarCheck, CreditCard, Settings, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarCheck, CreditCard, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '../shared/utils';
 import { Button } from '../shared/components/ui/button';
 import { usePermissions } from '../hooks/usePermissions';
@@ -19,6 +19,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: Users, label: '원생 관리', path: '/students' },
     { icon: CalendarCheck, label: '출석 관리', path: '/attendance' },
     { icon: CreditCard, label: '수납 관리', path: '/billing' },
+    { icon: MessageSquare, label: '메시지', path: '/messages' },
     { icon: Settings, label: '설정', path: '/settings' },
   ];
 
@@ -45,7 +46,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             to={item.path}
             className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-              location.pathname === item.path
+              location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                 ? "bg-primary text-primary-foreground"
                 : "text-slate-400 hover:text-white hover:bg-slate-800"
             )}
@@ -64,12 +65,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <MessageSquare className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Support 24/7</p>
-              <p className="text-xs text-slate-400">Contact us anytime</p>
+              <p className="text-sm font-medium text-white">24시간 지원</p>
+              <p className="text-xs text-slate-400">언제든 문의하세요</p>
             </div>
           </div>
           <Button className="w-full text-xs h-8 bg-primary hover:bg-primary/90" size="sm">
-            Chat Now
+            문의하기
           </Button>
         </div>
       </div>
