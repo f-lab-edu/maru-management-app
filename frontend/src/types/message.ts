@@ -50,6 +50,10 @@ export interface BroadcastDetail {
   createdAt: string;
 }
 
+export interface ResendFailedResponse {
+  resendCount: number;
+}
+
 export interface RecipientPreviewRequest {
   recipientType: RecipientType;
   sectionIds?: string[];

@@ -21,8 +21,19 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from '@/shared/components/ui/pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/components/ui/alert-dialog';
+import { Button } from '@/shared/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
-import { useBroadcastDetail, useBroadcastRecipients } from '../hooks/useBroadcasts';
+import { useBroadcastDetail, useBroadcastRecipients, useResendFailed } from '../hooks/useBroadcasts';
 import { BroadcastStatusBadge } from './BroadcastStatusBadge';
 import { MessageStatusBadge } from './MessageStatusBadge';
 import { CHANNEL_LABEL, RECIPIENT_TYPE_LABEL } from '@/types/message';
@@ -47,6 +58,8 @@ export const BroadcastDetailSheet = ({ broadcastId, isOpen, onClose }: Broadcast
   const [statusFilter, setStatusFilter] = useState('');
   const [recipientsPage, setRecipientsPage] = useState(0);
 
+  const [resendConfirmOpen, setResendConfirmOpen] = useState(false);
+
   const { data: detail, isLoading: detailLoading } = useBroadcastDetail(dojangId, broadcastId ?? '');
   const { data: recipientsData, isLoading: recipientsLoading } = useBroadcastRecipients(
     dojangId,
@@ -54,6 +67,20 @@ export const BroadcastDetailSheet = ({ broadcastId, isOpen, onClose }: Broadcast
     recipientsPage,
     statusFilter,
   );
+  const resendMutation = useResendFailed(dojangId);
+
+  const handleResend = () => {
+    if (!broadcastId) return;
+    resendMutation.mutate(broadcastId, {
+      onSuccess: (data) => {
+        setResendConfirmOpen(false);
+        alert(`${data.resendCount}건의 메시지를 재발송합니다.`);
+      },
+      onError: () => {
+        setResendConfirmOpen(false);
+      },
+    });
+  };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -79,6 +106,7 @@ export const BroadcastDetailSheet = ({ broadcastId, isOpen, onClose }: Broadcast
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={handleOpenChange} modal={false}>
       <SheetContent
         side="right"
@@ -99,6 +127,18 @@ export const BroadcastDetailSheet = ({ broadcastId, isOpen, onClose }: Broadcast
         ) : detail ? (
           <div className="mt-6 space-y-6">
             <BroadcastInfoSection detail={detail} />
+
+            {detail.failedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                onClick={() => setResendConfirmOpen(true)}
+                disabled={resendMutation.isPending}
+              >
+                {resendMutation.isPending ? '재발송 중...' : `실패 메시지 재발송 (${detail.failedCount}건)`}
+              </Button>
+            )}
 
             {/* 본문 */}
             <div className="space-y-2">
@@ -185,6 +225,24 @@ export const BroadcastDetailSheet = ({ broadcastId, isOpen, onClose }: Broadcast
         ) : null}
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={resendConfirmOpen} onOpenChange={setResendConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>실패 메시지 재발송</AlertDialogTitle>
+          <AlertDialogDescription>
+            {detail?.failedCount ?? 0}건의 실패 메시지를 재발송합니다. 계속하시겠습니까?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={handleResend} disabled={resendMutation.isPending}>
+            재발송
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 

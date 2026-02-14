@@ -8,6 +8,7 @@ import type {
   RecipientPreviewRequest,
   RecipientPreview,
   RecipientStatus,
+  ResendFailedResponse,
   PagedResult,
 } from '../types/message';
 
@@ -53,6 +54,15 @@ export const broadcastApi = {
     const response = await apiClient.post<RecipientPreview>(`${BASE_PATH}/preview-recipients`, data, {
       params: { dojangId },
     });
+    return response.data;
+  },
+
+  resendFailed: async (dojangId: string, broadcastId: string): Promise<ResendFailedResponse> => {
+    const response = await apiClient.post<ResendFailedResponse>(
+      `${BASE_PATH}/${broadcastId}/resend-failed`,
+      null,
+      { params: { dojangId } },
+    );
     return response.data;
   },
 };

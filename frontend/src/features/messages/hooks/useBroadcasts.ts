@@ -51,3 +51,15 @@ export const usePreviewRecipients = (dojangId: string) => {
     mutationFn: (data: RecipientPreviewRequest) => broadcastApi.previewRecipients(dojangId, data),
   });
 };
+
+export const useResendFailed = (dojangId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (broadcastId: string) => broadcastApi.resendFailed(dojangId, broadcastId),
+    onSuccess: (_data, broadcastId) => {
+      queryClient.invalidateQueries({ queryKey: broadcastKeys.detail(dojangId, broadcastId) });
+      queryClient.invalidateQueries({ queryKey: broadcastKeys.all(dojangId) });
+    },
+  });
+};
