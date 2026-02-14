@@ -7,6 +7,7 @@ import com.maru.controller.message.dto.BroadcastSummaryRes;
 import com.maru.controller.message.dto.RecipientPreviewReq;
 import com.maru.controller.message.dto.RecipientPreviewRes;
 import com.maru.controller.message.dto.RecipientStatusRes;
+import com.maru.controller.message.dto.ResendFailedRes;
 import com.maru.domain.message.MessageStatus;
 import com.maru.security.CurrentUserId;
 import com.maru.service.message.MessageBroadcastService;
@@ -120,5 +121,21 @@ public class BroadcastController {
             @CurrentUserId String userId,
             @Valid @RequestBody RecipientPreviewReq req) {
         return ResponseEntity.ok(broadcastService.previewRecipients(dojangId, req));
+    }
+
+    /**
+     * 실패 메시지 재발송
+     *
+     * @param dojangId 도장 ID
+     * @param userId 사용자 ID
+     * @param broadcastId 발송 ID
+     * @return 재발송 대상 건수
+     */
+    @PostMapping("/{broadcastId}/resend-failed")
+    public ResponseEntity<ResendFailedRes> resendFailed(
+            @RequestParam String dojangId,
+            @CurrentUserId String userId,
+            @PathVariable String broadcastId) {
+        return ResponseEntity.ok(broadcastService.resendFailed(dojangId, broadcastId));
     }
 }

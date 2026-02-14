@@ -144,6 +144,16 @@ public interface MessageDispatchRepository extends JpaRepository<MessageDispatch
             @Param("status") MessageStatus status,
             Pageable pageable);
 
+    @Query("""
+            SELECT m
+            FROM MessageDispatch m
+            WHERE m.refType = 'BROADCAST' AND m.refId = :broadcastId
+              AND m.status = :status
+            """)
+    List<MessageDispatch> findAllByBroadcastIdAndStatus(
+            @Param("broadcastId") String broadcastId,
+            @Param("status") MessageStatus status);
+
     @Query(value = """
             SELECT DATE(md.created_at) AS sendDate,
                    md.message_type AS messageType,

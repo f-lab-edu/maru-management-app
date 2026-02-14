@@ -7,9 +7,11 @@ import com.maru.controller.message.dto.BroadcastCreateReq;
 import com.maru.controller.message.dto.BroadcastCreateRes;
 import com.maru.controller.message.dto.RecipientPreviewReq;
 import com.maru.controller.message.dto.RecipientPreviewRes;
+import com.maru.controller.message.dto.ResendFailedRes;
 import com.maru.domain.message.MessageBroadcast;
 import com.maru.domain.message.MessageChannel;
 import com.maru.domain.message.MessageDispatch;
+import com.maru.domain.message.MessageStatus;
 import com.maru.domain.message.MessageType;
 import com.maru.domain.message.RecipientType;
 import com.maru.domain.message.exception.MessageBroadcastErrorCode;
@@ -120,6 +122,38 @@ public class MessageBroadcastService {
                 resolution.recipients().size(),
                 resolution.skippedNoGuardian(),
                 resolution.skippedNoPhone());
+    }
+
+    /**
+     * 실패(DEAD) 메시지 재발송
+     *
+     * @param dojangId 도장 ID
+     * @param broadcastId 발송 ID
+     * @return 재발송 대상 건수
+     * @throws BusinessException NOT_FOUND - 발송을 찾을 수 없거나 도장이 다른 경우
+     * @throws BusinessException NO_FAILED_MESSAGES - 재발송 대상이 없는 경우
+     */
+    @Transactional
+    public ResendFailedRes resendFailed(String dojangId, String broadcastId) {
+        MessageBroadcast broadcast = broadcastRepository.findById(broadcastId)
+                .orElseThrow(() -> new BusinessException(MessageBroadcastErrorCode.NOT_FOUND));
+
+        if (!broadcast.getDojangId().equals(dojangId)) {
+            throw new BusinessException(MessageBroadcastErrorCode.NOT_FOUND);
+        }
+
+        List<MessageDispatch> deadMessages =
+                dispatchRepository.findAllByBroadcastIdAndStatus(broadcastId, MessageStatus.DEAD);
+
+        if (deadMessages.isEmpty()) {
+            throw new BusinessException(MessageBroadcastErrorCode.NO_FAILED_MESSAGES);
+        }
+
+        deadMessages.forEach(MessageDispatch::resetForResend);
+
+        log.info("실패 메시지 재발송: broadcastId={}, 대상={}건", broadcastId, deadMessages.size());
+
+        return new ResendFailedRes(deadMessages.size());
     }
 
     private RecipientResolution resolveRecipients(
