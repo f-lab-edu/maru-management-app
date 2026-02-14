@@ -1,6 +1,7 @@
 package com.maru.repository.guardian;
 
 import com.maru.domain.guardian.Guardian;
+import com.maru.repository.guardian.view.GuardianBasicView;
 import com.maru.repository.guardian.view.GuardianPhoneView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,11 @@ public interface GuardianRepository extends JpaRepository<Guardian, String> {
             WHERE g.id IN :ids
             """)
     List<GuardianPhoneView> findPhonesByIds(@Param("ids") List<String> ids);
+
+    @Query("""
+            SELECT g.id as id, g.name as name, g.phone as phone
+            FROM Guardian g
+            WHERE g.id IN :ids
+            """)
+    List<GuardianBasicView> findBasicInfoByIds(@Param("ids") List<String> ids);
 }
