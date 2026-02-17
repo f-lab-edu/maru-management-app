@@ -139,7 +139,7 @@ public class RefundService {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("JSON 직렬화 실패", e);
+            log.warn("JSON 직렬화 실패", e);
             return null;
         }
     }
