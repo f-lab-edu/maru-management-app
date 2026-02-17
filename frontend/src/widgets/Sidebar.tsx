@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CalendarCheck, CreditCard, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '../shared/utils';
-import { Button } from '../shared/components/ui/button';
 import { usePermissions } from '../hooks/usePermissions';
 import { getMenuRequiredPermissions } from '../constants/menuPermissions';
 
@@ -58,22 +57,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         ))}
       </div>
 
-      <div className="p-4 border-t border-slate-800">
-        <div className="bg-slate-800 rounded-xl p-4 cursor-pointer hover:bg-slate-700 transition-colors group">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">24시간 지원</p>
-              <p className="text-xs text-slate-400">언제든 문의하세요</p>
-            </div>
-          </div>
-          <Button className="w-full text-xs h-8 bg-primary hover:bg-primary/90" size="sm">
-            문의하기
-          </Button>
-        </div>
-      </div>
     </aside>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, Check, Search } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -10,8 +10,14 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Label } from '@/shared/components/ui/label';
-import { Checkbox } from '@/shared/components/ui/checkbox';
 import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +63,7 @@ export const MessageCreateSheet = ({ isOpen, onClose }: MessageCreateSheetProps)
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [previewSectionId, setPreviewSectionId] = useState<string | null>(null);
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
   const { data: sectionsData } = useSections(dojangId);
   const { data: divisionsData } = useDivisions(dojangId, previewSectionId);
@@ -68,6 +75,12 @@ export const MessageCreateSheet = ({ isOpen, onClose }: MessageCreateSheetProps)
   const sections = sectionsData?.sections ?? [];
   const divisions = divisionsData?.divisions ?? [];
   const students = studentsData?.students ?? [];
+
+  const filteredStudents = useMemo(() => {
+    if (!studentSearchQuery) return students;
+    const query = studentSearchQuery.toLowerCase();
+    return students.filter((s) => s.name.toLowerCase().includes(query));
+  }, [students, studentSearchQuery]);
 
   const bodyBytes = getByteLength(body);
   const isOverLimit = bodyBytes > MAX_BODY_BYTES;
@@ -81,6 +94,7 @@ export const MessageCreateSheet = ({ isOpen, onClose }: MessageCreateSheetProps)
     setSelectedDivisionIds([]);
     setSelectedStudentIds([]);
     setPreviewSectionId(null);
+    setStudentSearchQuery('');
     previewMutation.reset();
     createMutation.reset();
   };
@@ -193,7 +207,7 @@ export const MessageCreateSheet = ({ isOpen, onClose }: MessageCreateSheetProps)
       <Sheet open={isOpen} onOpenChange={handleOpenChange} modal={false}>
         <SheetContent
           side="right"
-          className="w-[90vw] overflow-y-auto sm:w-[640px] sm:max-w-[640px] z-50"
+          className="w-[90vw] overflow-y-auto sm:w-[480px] sm:max-w-[480px] z-50"
           hideOverlay
           onInteractOutside={handleInteractOutside}
           onPointerDownOutside={handleInteractOutside}
@@ -215,149 +229,203 @@ export const MessageCreateSheet = ({ isOpen, onClose }: MessageCreateSheetProps)
               />
             </div>
 
-            {/* 발송 채널 */}
-            <div className="space-y-2">
-              <Label>발송 채널</Label>
-              <ToggleGroup
-                type="single"
-                value={channel}
-                onValueChange={(v) => v && setChannel(v as MessageChannel)}
-              >
-                {CHANNELS.map((ch) => (
-                  <ToggleGroupItem key={ch} value={ch}>
-                    {CHANNEL_LABEL[ch]}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
+            {/* 발송 설정 */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">발송 채널</Label>
+                <ToggleGroup
+                  type="single"
+                  value={channel}
+                  onValueChange={(v) => v && setChannel(v as MessageChannel)}
+                  className="justify-start"
+                >
+                  {CHANNELS.map((ch) => (
+                    <ToggleGroupItem
+                      key={ch}
+                      value={ch}
+                      className="text-xs px-3 py-1 h-7 data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:font-semibold"
+                    >
+                      {CHANNEL_LABEL[ch]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
 
-            {/* 수신 대상 */}
-            <div className="space-y-3">
-              <Label>수신 대상</Label>
-              <ToggleGroup
-                type="single"
-                value={recipientType}
-                onValueChange={(v) => v && handleRecipientTypeChange(v as RecipientType)}
-              >
-                {RECIPIENT_TYPES.map((type) => (
-                  <ToggleGroupItem key={type} value={type}>
-                    {RECIPIENT_TYPE_LABEL[type]}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
+              <div className="border-t pt-4 space-y-3">
+                <Label className="text-xs text-muted-foreground">수신 대상</Label>
+                <ToggleGroup
+                  type="single"
+                  value={recipientType}
+                  onValueChange={(v) => v && handleRecipientTypeChange(v as RecipientType)}
+                  className="justify-start"
+                >
+                  {RECIPIENT_TYPES.map((type) => (
+                    <ToggleGroupItem
+                      key={type}
+                      value={type}
+                      className="text-xs px-3 py-1 h-7 data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:font-semibold"
+                    >
+                      {RECIPIENT_TYPE_LABEL[type]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
 
-              {/* 반별 선택 */}
-              {recipientType === 'SECTION' && (
-                <div className="border rounded-lg p-4 space-y-2">
-                  <p className="text-sm font-medium">수련부 선택</p>
-                  {sections.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">등록된 수련부가 없습니다</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-3">
-                      {sections.map((section) => (
-                        <label key={section.id} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
-                            checked={selectedSectionIds.includes(section.id)}
-                            onCheckedChange={() => toggleSectionId(section.id)}
-                          />
-                          <span className="text-sm">{section.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 부별 선택 */}
-              {recipientType === 'DIVISION' && (
-                <div className="border rounded-lg p-4 space-y-3">
+                {/* 수련부 선택 — 토글 칩 */}
+                {recipientType === 'SECTION' && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">수련부 선택</p>
-                    <div className="flex flex-wrap gap-2">
-                      {sections.map((section) => (
-                        <button
-                          key={section.id}
-                          onClick={() => setPreviewSectionId(section.id)}
-                          className={cn(
-                            'px-3 py-1.5 text-sm rounded border transition-colors',
-                            previewSectionId === section.id
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background hover:bg-accent',
-                          )}
-                        >
-                          {section.name}
-                        </button>
-                      ))}
-                    </div>
+                    {sections.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">등록된 수련부가 없습니다</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {sections.map((section) => {
+                          const selected = selectedSectionIds.includes(section.id);
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() => toggleSectionId(section.id)}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors',
+                                selected
+                                  ? 'bg-foreground text-background border-foreground font-semibold'
+                                  : 'bg-background hover:bg-accent',
+                              )}
+                            >
+                              {selected && <Check className="h-3 w-3" />}
+                              {section.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  {previewSectionId && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">수련반 선택</p>
-                      {divisions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">등록된 수련반이 없습니다</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-3">
-                          {divisions.map((division) => (
-                            <label key={division.id} className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox
-                                checked={selectedDivisionIds.includes(division.id)}
-                                onCheckedChange={() => toggleDivisionId(division.id)}
-                              />
-                              <span className="text-sm">{division.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
 
-              {/* 개별 선택 */}
-              {recipientType === 'INDIVIDUAL' && (
-                <div className="border rounded-lg p-4 space-y-2">
-                  <p className="text-sm font-medium">원생 선택</p>
-                  {students.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">등록된 원생이 없습니다</p>
-                  ) : (
-                    <div className="max-h-48 overflow-y-auto space-y-1">
-                      {students.map((student) => (
-                        <label key={student.id} className="flex items-center gap-2 cursor-pointer py-1">
-                          <Checkbox
-                            checked={selectedStudentIds.includes(student.id)}
-                            onCheckedChange={() => toggleStudentId(student.id)}
+                {/* 수련반 선택 — 수련부 Select + 토글 칩 */}
+                {recipientType === 'DIVISION' && (
+                  <div className="space-y-3">
+                    <Select
+                      value={previewSectionId ?? ''}
+                      onValueChange={(v) => setPreviewSectionId(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="수련부를 먼저 선택해주세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sections.map((section) => (
+                          <SelectItem key={section.id} value={section.id}>
+                            {section.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {previewSectionId && (
+                      <div className="space-y-2">
+                        {divisions.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">등록된 수련반이 없습니다</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {divisions.map((division) => {
+                              const selected = selectedDivisionIds.includes(division.id);
+                              return (
+                                <button
+                                  key={division.id}
+                                  type="button"
+                                  onClick={() => toggleDivisionId(division.id)}
+                                  className={cn(
+                                    'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors',
+                                    selected
+                                      ? 'bg-foreground text-background border-foreground font-semibold'
+                                      : 'bg-background hover:bg-accent',
+                                  )}
+                                >
+                                  {selected && <Check className="h-3 w-3" />}
+                                  {division.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 개별 선택 — 인라인 검색 리스트 */}
+                {recipientType === 'INDIVIDUAL' && (
+                  <div className="space-y-2">
+                    {students.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">등록된 원생이 없습니다</p>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="이름으로 검색..."
+                            value={studentSearchQuery}
+                            onChange={(e) => setStudentSearchQuery(e.target.value)}
+                            className="pl-9"
                           />
-                          <span className="text-sm">{student.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {selectedStudentIds.length > 0 && (
-                    <p className="text-xs text-muted-foreground">{selectedStudentIds.length}명 선택됨</p>
-                  )}
-                </div>
-              )}
+                        </div>
+                        <div className="max-h-48 overflow-y-auto rounded-md border">
+                          {filteredStudents.length === 0 ? (
+                            <p className="py-4 text-center text-sm text-muted-foreground">
+                              검색 결과가 없습니다
+                            </p>
+                          ) : (
+                            filteredStudents.map((student) => {
+                              const selected = selectedStudentIds.includes(student.id);
+                              return (
+                                <button
+                                  key={student.id}
+                                  type="button"
+                                  onClick={() => toggleStudentId(student.id)}
+                                  className={cn(
+                                    'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent',
+                                    selected && 'bg-accent/50',
+                                  )}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'h-4 w-4 shrink-0',
+                                      selected ? 'opacity-100' : 'opacity-0',
+                                    )}
+                                  />
+                                  {student.name}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                        {selectedStudentIds.length > 0 && (
+                          <p className="text-xs text-muted-foreground">{selectedStudentIds.length}명 선택됨</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
-              {(previewMutation.isPending || previewMutation.data) && (
-                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  {previewMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {previewMutation.data && (
-                    <span>
-                      수신 예상: {previewMutation.data.estimatedMessageCount}명
-                      {previewMutation.data.skippedNoGuardian > 0 && (
-                        <span className="text-yellow-600 ml-2">
-                          (보호자 미등록 {previewMutation.data.skippedNoGuardian}명 제외)
-                        </span>
-                      )}
-                      {previewMutation.data.skippedNoPhone > 0 && (
-                        <span className="text-yellow-600 ml-2">
-                          (연락처 없음 {previewMutation.data.skippedNoPhone}명 제외)
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              )}
+                {(previewMutation.isPending || previewMutation.data) && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 border-t pt-3">
+                    {previewMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {previewMutation.data && (
+                      <span>
+                        수신 예상: {previewMutation.data.estimatedMessageCount}명
+                        {previewMutation.data.skippedNoGuardian > 0 && (
+                          <span className="text-yellow-600 ml-2">
+                            (보호자 미등록 {previewMutation.data.skippedNoGuardian}명 제외)
+                          </span>
+                        )}
+                        {previewMutation.data.skippedNoPhone > 0 && (
+                          <span className="text-yellow-600 ml-2">
+                            (연락처 없음 {previewMutation.data.skippedNoPhone}명 제외)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 본문 */}
