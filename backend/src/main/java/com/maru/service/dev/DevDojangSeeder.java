@@ -118,7 +118,6 @@ public class DevDojangSeeder {
                 }
             }
         } catch (Exception e) {
-            log.error("CSV 파싱 실패", e);
             throw new RuntimeException("CSV 파싱 실패", e);
         }
 

@@ -90,7 +90,7 @@ public class SolapiSmsService implements SmsService {
             messageService.send(smsMessage);
             log.info("SMS 발송 완료: to={}", MaskingUtil.phone(phone));
         } catch (Exception e) {
-            log.error("SMS 발송 실패: to={}, error={}", MaskingUtil.phone(phone), e.getMessage());
+            log.warn("SMS 발송 실패: to={}, error={}", MaskingUtil.phone(phone), e.getMessage());
             throw new BusinessException(SmsErrorCode.SEND_FAILED);
         }
     }
@@ -102,7 +102,7 @@ public class SolapiSmsService implements SmsService {
             log.info("SMS 배치 발송 완료: {}건, groupId={}", messages.size(), groupId);
             return mapDispatchIdsToGroupId(recipients, groupId);
         } catch (Exception e) {
-            log.error("SMS 배치 발송 실패: {}건, error={}", messages.size(), e.getMessage());
+            log.warn("SMS 배치 발송 실패: {}건, error={}", messages.size(), e.getMessage());
             throw new BusinessException(SmsErrorCode.SEND_FAILED);
         }
     }

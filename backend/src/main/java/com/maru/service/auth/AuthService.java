@@ -97,7 +97,6 @@ public class AuthService {
     private OAuthService getOAuthService(OAuthProvider provider) {
         OAuthService service = oauthServices.get(provider);
         if (service == null) {
-            log.error("지원하지 않는 OAuth Provider: {}", provider);
             throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
         return service;
