@@ -3,6 +3,7 @@ export const MENU_PERMISSIONS: Record<string, string[]> = {
   '/students': ['STUDENT_VIEW'],
   '/attendance': ['ATTENDANCE_VIEW'],
   '/billing': ['PAYMENT_VIEW'],
+  '/messages': ['MESSAGE_SEND'],
   '/settings': [],
 };
 

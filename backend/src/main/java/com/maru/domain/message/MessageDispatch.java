@@ -195,6 +195,24 @@ public class MessageDispatch extends BaseEntity {
     }
 
     /**
+     * DEAD 상태 메시지를 재발송 가능 상태로 초기화
+     *
+     * @throws IllegalStateException DEAD 상태가 아닌 경우
+     */
+    public void resetForResend() {
+        if (this.status != MessageStatus.DEAD) {
+            throw new IllegalStateException("DEAD 상태에서만 재발송 가능: " + getId());
+        }
+
+        this.status = MessageStatus.PENDING;
+        this.failedCount = 0;
+        this.nextRetryAt = null;
+        this.errorMessage = null;
+        this.processingOwner = null;
+        this.processingStartedAt = null;
+    }
+
+    /**
      * 발송 실패 시 재시도 스케줄링 (backoff 적용)
      *
      * @param errorMessage 에러 메시지

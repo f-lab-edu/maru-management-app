@@ -1,6 +1,8 @@
 package com.maru.repository.guardian;
 
 import com.maru.domain.guardian.Guardianship;
+import com.maru.repository.guardian.view.BroadcastRecipientView;
+import com.maru.repository.guardian.view.GuardianStudentNameView;
 import com.maru.repository.guardian.view.GuardianshipView;
 import com.maru.repository.guardian.view.PrimaryGuardianView;
 import com.maru.repository.guardian.view.StudentGuardianIdView;
@@ -79,4 +81,29 @@ public interface GuardianshipRepository extends JpaRepository<Guardianship, Stri
             """)
     List<StudentGuardianIdView> findPrimaryGuardianIdsByStudentIds(
             @Param("studentIds") List<String> studentIds);
+
+    @Query("""
+            SELECT g.studentId as studentId,
+                   g.guardian.id as guardianId,
+                   g.guardian.name as guardianName,
+                   g.guardian.phone as guardianPhone
+            FROM Guardianship g
+            WHERE g.studentId IN :studentIds
+              AND g.deletedAt IS NULL
+              AND g.guardian.deletedAt IS NULL
+            """)
+    List<BroadcastRecipientView> findGuardiansByStudentIds(@Param("studentIds") List<String> studentIds);
+
+    @Query("""
+            SELECT g.guardian.id as guardianId,
+                   s.name as studentName
+            FROM Guardianship g
+            JOIN Student s ON s.id = g.studentId
+            WHERE g.guardian.id IN :guardianIds
+              AND g.deletedAt IS NULL
+              AND g.guardian.deletedAt IS NULL
+              AND s.deletedAt IS NULL
+            ORDER BY g.isPrimary DESC
+            """)
+    List<GuardianStudentNameView> findStudentNamesByGuardianIds(@Param("guardianIds") List<String> guardianIds);
 }
