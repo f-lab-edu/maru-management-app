@@ -107,6 +107,7 @@ public class PgPaymentService {
         updatePgDetailToConfirmed(pendingDetail, payment, tossResponse);
         paymentLink.markUsed();
 
+        log.info("PG 결제 승인 완료: paymentKey={}, amount={}", request.paymentKey(), request.amount());
         return PgPaymentConfirmRes.from(pendingDetail);
     }
 

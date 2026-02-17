@@ -12,6 +12,7 @@ import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.section.SectionRepository;
 import com.maru.repository.tenant.DojangRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,6 +53,7 @@ public class SectionService {
         Section section = Section.create(dojangId, request.name(), nextDisplayOrder);
         sectionRepository.save(section);
 
+        log.info("수련부 생성: sectionId={}, dojangId={}", section.getId(), dojangId);
         return sectionQueryService.getSection(dojangId, section.getId());
     }
 
@@ -87,6 +90,7 @@ public class SectionService {
         Section section = findSectionByIdAndDojangId(sectionId, dojangId);
         validateNoDivisions(sectionId);
         sectionRepository.delete(section);
+        log.info("수련부 삭제: sectionId={}, dojangId={}", sectionId, dojangId);
     }
 
     private void validateNoDivisions(String sectionId) {

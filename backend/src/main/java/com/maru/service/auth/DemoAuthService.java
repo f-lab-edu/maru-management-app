@@ -7,10 +7,12 @@ import com.maru.domain.employment.Employment;
 import com.maru.domain.employment.EmploymentStatus;
 import com.maru.repository.employment.EmploymentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DemoAuthService {
@@ -31,6 +33,7 @@ public class DemoAuthService {
         validateDemoConfigured();
 
         Employment employment = findFirstActiveEmployment();
+        log.info("데모 로그인: userId={}, dojangId={}", demoUserId, employment.getDojangId());
         return authService.selectDojang(demoUserId, employment.getDojangId());
     }
 

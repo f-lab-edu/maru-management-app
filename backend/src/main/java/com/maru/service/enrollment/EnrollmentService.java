@@ -15,6 +15,7 @@ import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.student.StudentRepository;
 import com.maru.security.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,6 +52,7 @@ public class EnrollmentService {
 
         Enrollment enrollment = Enrollment.create(dojangId, divisionId, studentId);
         enrollmentRepository.save(enrollment);
+        log.info("수련반 등록: divisionId={}, studentId={}, dojangId={}", divisionId, studentId, dojangId);
     }
 
     /**
@@ -68,6 +71,7 @@ public class EnrollmentService {
                 .orElseThrow(() -> new BusinessException(EnrollmentErrorCode.NOT_ENROLLED));
 
         enrollmentRepository.delete(enrollment);
+        log.info("수련반 등록 해제: divisionId={}, studentId={}, dojangId={}", divisionId, studentId, dojangId);
     }
 
     /**
@@ -101,6 +105,7 @@ public class EnrollmentService {
 
         List<String> skippedStudentIds = new ArrayList<>(alreadyEnrolledIds);
 
+        log.info("수련반 일괄 등록: divisionId={}, 등록={}명, 스킵={}명, dojangId={}", divisionId, enrollments.size(), skippedStudentIds.size(), dojangId);
         return BulkEnrollmentRes.of(enrollments.size(), skippedStudentIds);
     }
 
