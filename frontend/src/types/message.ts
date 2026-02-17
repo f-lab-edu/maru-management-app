@@ -78,22 +78,22 @@ export interface RecipientStatus {
   sentAt: string | null;
 }
 
-export interface NotificationDailySummary {
-  sendDate: string;
-  messageType: string;
-  messageTypeLabel: string;
-  totalCount: number;
-  acceptedCount: number;
-  failedCount: number;
-}
-
 export interface NotificationDetail {
   id: string;
   guardianName: string | null;
+  studentName: string | null;
   title: string;
+  messageType: string;
+  messageTypeLabel: string;
   status: string;
   createdAt: string;
   sentAt: string | null;
+}
+
+export interface MonthlyUsage {
+  totalCount: number;
+  autoCount: number;
+  broadcastCount: number;
 }
 
 export interface PagedResult<T> {

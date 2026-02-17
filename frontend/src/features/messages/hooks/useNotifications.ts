@@ -3,23 +3,28 @@ import { notificationApi } from '../../../services/notificationApi';
 
 export const notificationKeys = {
   all: (dojangId: string) => ['notifications', dojangId] as const,
-  summary: (dojangId: string, page: number) => [...notificationKeys.all(dojangId), 'summary', page] as const,
-  details: (dojangId: string, date: string, type: string, page: number) =>
-    [...notificationKeys.all(dojangId), 'details', date, type, page] as const,
+  timeline: (dojangId: string, date: string, messageType?: string, page?: number) =>
+    [...notificationKeys.all(dojangId), 'timeline', date, messageType, page] as const,
+  monthlyUsage: (dojangId: string, yearMonth: string) =>
+    [...notificationKeys.all(dojangId), 'monthly-usage', yearMonth] as const,
 };
 
-export const useNotificationSummary = (dojangId: string, page = 0) => {
+export const useMonthlyUsage = (dojangId: string, yearMonth: string) => {
   return useQuery({
-    queryKey: notificationKeys.summary(dojangId, page),
-    queryFn: () => notificationApi.getSummary(dojangId, page),
-    enabled: !!dojangId,
+    queryKey: notificationKeys.monthlyUsage(dojangId, yearMonth),
+    queryFn: () => notificationApi.getMonthlyUsage(dojangId, yearMonth),
+    enabled: !!dojangId && !!yearMonth,
+    staleTime: 60_000,
   });
 };
 
-export const useNotificationDetails = (dojangId: string, date: string, messageType: string, page = 0) => {
+export const useNotificationTimeline = (
+  dojangId: string, date: string, messageType?: string, page = 0,
+) => {
   return useQuery({
-    queryKey: notificationKeys.details(dojangId, date, messageType, page),
-    queryFn: () => notificationApi.getDetails(dojangId, date, messageType, page),
-    enabled: !!dojangId && !!date && !!messageType,
+    queryKey: notificationKeys.timeline(dojangId, date, messageType, page),
+    queryFn: () => notificationApi.getTimeline(dojangId, date, messageType, page),
+    enabled: !!dojangId && !!date,
+    staleTime: 30_000,
   });
 };

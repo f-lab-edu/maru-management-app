@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { Bell, CheckCircle, XCircle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon } from 'lucide-react';
+import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { Skeleton } from '@/shared/components/ui/skeleton';
+import { Calendar } from '@/shared/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover';
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group';
 import {
   Table,
   TableHeader,
@@ -9,305 +14,251 @@ import {
   TableHead,
   TableCell,
 } from '@/shared/components/ui/table';
-import { Button } from '@/shared/components/ui/button';
-import { Spinner } from '@/shared/components/ui/spinner';
 import { cn } from '@/shared/utils';
 import { useAuthStore } from '@/stores/authStore';
-import { useNotificationSummary, useNotificationDetails } from '../hooks/useNotifications';
-import { MessageStatusBadge } from './MessageStatusBadge';
-import type { NotificationDailySummary, MessageStatus } from '@/types/message';
+import { useNotificationTimeline } from '../hooks/useNotifications';
 
-const getTodayString = () => new Date().toISOString().split('T')[0];
+const getTodayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
-const formatDateLabel = (dateStr: string) => {
+const toLocalDateString = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const formatDateNavLabel = (dateStr: string) => {
   const today = getTodayString();
-  if (dateStr === today) return '오늘';
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-  });
+  const date = new Date(dateStr + 'T00:00:00');
+  const label = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  return dateStr === today ? `${label} (오늘)` : label;
+};
+
+const addDays = (dateStr: string, days: number) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return toLocalDateString(d);
+};
+
+const parseLocalDate = (dateStr: string) => new Date(dateStr + 'T00:00:00');
+
+const MESSAGE_TYPE_TAG: Record<string, { label: string; className: string }> = {
+  ATTENDANCE_CHECKIN: { label: '입관', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  ATTENDANCE_CHECKOUT: { label: '퇴관', className: 'bg-amber-100 text-amber-700 border-amber-200' },
+  PAYMENT: { label: '결제', className: 'bg-purple-100 text-purple-700 border-purple-200' },
+};
+
+const TYPE_FILTER_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'ATTENDANCE_CHECKIN', label: '입관' },
+  { value: 'ATTENDANCE_CHECKOUT', label: '퇴관' },
+  { value: 'PAYMENT', label: '결제' },
+];
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  ACCEPTED: { label: '성공', className: 'text-green-600' },
+  DEAD: { label: '실패', className: 'text-red-600' },
+};
+
+const formatTime = (dateStr: string) => {
+  return new Date(dateStr).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 };
 
 export const NotificationSummaryList = () => {
+  const [selectedDate, setSelectedDate] = useState(getTodayString);
+  const [selectedType, setSelectedType] = useState('');
   const [page, setPage] = useState(0);
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { selectedDojang } = useAuthStore();
   const dojangId = selectedDojang?.dojangId ?? '';
-  const { data, isLoading } = useNotificationSummary(dojangId, page);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner className="h-6 w-6" />
-      </div>
-    );
-  }
+  const { data: timelineData, isLoading } = useNotificationTimeline(
+    dojangId, selectedDate, selectedType || undefined, page,
+  );
 
-  if (!data || data.content.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <Bell className="h-12 w-12 mb-4 opacity-50" />
-        <p className="font-medium">자동 알림 내역이 없습니다</p>
-        <p className="text-sm mt-1">출결 및 결제 알림이 자동으로 기록됩니다</p>
-      </div>
-    );
-  }
-
-  const today = getTodayString();
-  const todaySummaries = data.content.filter((s) => s.sendDate === today);
-  const stats = {
-    total: todaySummaries.reduce((sum, s) => sum + s.totalCount, 0),
-    accepted: todaySummaries.reduce((sum, s) => sum + s.acceptedCount, 0),
-    failed: todaySummaries.reduce((sum, s) => sum + s.failedCount, 0),
+  const handlePrevDate = () => {
+    setSelectedDate((d) => addDays(d, -1));
+    setPage(0);
   };
 
-  const toggleExpand = (key: string) => {
-    setExpandedKey((prev) => (prev === key ? null : key));
+  const handleNextDate = () => {
+    setSelectedDate((d) => addDays(d, 1));
+    setPage(0);
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(toLocalDateString(date));
+      setPage(0);
+    }
+    setCalendarOpen(false);
+  };
+
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value);
+    setPage(0);
   };
 
   return (
     <div className="space-y-4">
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-4 pt-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground">오늘 발송</CardTitle>
-            <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 pb-3 pt-0">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">건</p>
-          </CardContent>
-        </Card>
-        <Card className="border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-4 pt-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground">성공</CardTitle>
-            <CheckCircle className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 pb-3 pt-0">
-            <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">건</p>
-          </CardContent>
-        </Card>
-        <Card className="border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-4 pt-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground">실패</CardTitle>
-            <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="px-4 pb-3 pt-0">
-            <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">건</p>
-          </CardContent>
-        </Card>
+      {/* 날짜 네비게이션 */}
+      <div className="flex items-center justify-center gap-3">
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrevDate}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" className="text-sm font-medium min-w-[160px] gap-1.5">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {formatDateNavLabel(selectedDate)}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center">
+            <Calendar
+              mode="single"
+              selected={parseLocalDate(selectedDate)}
+              onSelect={handleCalendarSelect}
+              defaultMonth={parseLocalDate(selectedDate)}
+            />
+          </PopoverContent>
+        </Popover>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextDate}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Summary Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-8" />
-            <TableHead>날짜</TableHead>
-            <TableHead>유형</TableHead>
-            <TableHead className="text-right">전체</TableHead>
-            <TableHead className="text-right">성공</TableHead>
-            <TableHead className="text-right">실패</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.content.map((summary) => {
-            const key = `${summary.sendDate}-${summary.messageType}`;
-            const isExpanded = expandedKey === key;
-            return (
-              <SummaryRowGroup
-                key={key}
-                summary={summary}
-                isExpanded={isExpanded}
-                onToggle={() => toggleExpand(key)}
-                dojangId={dojangId}
-              />
-            );
-          })}
-        </TableBody>
-      </Table>
+      {/* 유형 칩 필터 */}
+      <ToggleGroup
+        type="single"
+        value={selectedType}
+        onValueChange={handleTypeChange}
+        className="justify-start"
+      >
+        {TYPE_FILTER_OPTIONS.map((opt) => (
+          <ToggleGroupItem
+            key={opt.value}
+            value={opt.value}
+            className="text-xs px-3 py-1 h-7 data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:font-semibold"
+          >
+            {opt.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
 
-      {/* 페이징 */}
-      {data.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setPage(0)}
-            disabled={page === 0}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground px-2">
-            {page + 1} / {data.totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page >= data.totalPages - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setPage(data.totalPages - 1)}
-            disabled={page >= data.totalPages - 1}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* 테이블 */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <Table>
+          <TableHeader className="bg-muted">
+            <TableRow>
+              <TableHead className="w-[70px]">유형</TableHead>
+              <TableHead>원생</TableHead>
+              <TableHead className="w-[60px]">상태</TableHead>
+              <TableHead className="w-[100px]">시간</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableSkeleton />
+            ) : !timelineData || timelineData.content.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-32 text-center">
+                  <div className="flex flex-col items-center text-muted-foreground">
+                    <Bell className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">자동 알림 내역이 없습니다</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              timelineData.content.map((item) => {
+                const tag = MESSAGE_TYPE_TAG[item.messageType];
+                const status = STATUS_CONFIG[item.status];
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      {tag ? (
+                        <Badge variant="outline" className={cn('text-[11px] px-1.5 py-0 font-medium', tag.className)}>
+                          {tag.label}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px] px-1.5 py-0 font-medium">
+                          {item.messageTypeLabel}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{item.studentName ?? '-'}</TableCell>
+                    <TableCell>
+                      {status ? (
+                        <span className={cn('text-sm font-medium', status.className)}>{status.label}</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">{item.status}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{formatTime(item.createdAt)}</TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+
+        {/* 페이징 */}
+        {timelineData && timelineData.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 border-t px-4 py-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPage(0)}
+              disabled={page === 0}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground px-2">
+              {page + 1} / {timelineData.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= timelineData.totalPages - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setPage(timelineData.totalPages - 1)}
+              disabled={page >= timelineData.totalPages - 1}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-interface SummaryRowGroupProps {
-  summary: NotificationDailySummary;
-  isExpanded: boolean;
-  onToggle: () => void;
-  dojangId: string;
-}
-
-const SummaryRowGroup = ({ summary, isExpanded, onToggle, dojangId }: SummaryRowGroupProps) => {
-  return (
-    <>
-      <TableRow
-        className="cursor-pointer hover:bg-muted/50"
-        onClick={onToggle}
-      >
-        <TableCell className="w-8 px-2">
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform',
-              isExpanded && 'rotate-180',
-            )}
-          />
-        </TableCell>
-        <TableCell>{formatDateLabel(summary.sendDate)}</TableCell>
-        <TableCell>{summary.messageTypeLabel}</TableCell>
-        <TableCell className="text-right">{summary.totalCount}</TableCell>
-        <TableCell className="text-right text-green-600">{summary.acceptedCount}</TableCell>
-        <TableCell className="text-right text-red-600">
-          {summary.failedCount > 0 ? summary.failedCount : '-'}
-        </TableCell>
-      </TableRow>
-      {isExpanded && (
-        <NotificationDetailRows
-          dojangId={dojangId}
-          sendDate={summary.sendDate}
-          messageType={summary.messageType}
-        />
-      )}
-    </>
-  );
-};
-
-interface NotificationDetailRowsProps {
-  dojangId: string;
-  sendDate: string;
-  messageType: string;
-}
-
-const NotificationDetailRows = ({ dojangId, sendDate, messageType }: NotificationDetailRowsProps) => {
-  const [detailPage, setDetailPage] = useState(0);
-  const { data, isLoading } = useNotificationDetails(dojangId, sendDate, messageType, detailPage);
-
-  if (isLoading) {
-    return (
-      <TableRow>
-        <TableCell colSpan={6}>
-          <div className="flex items-center justify-center py-4">
-            <Spinner className="h-4 w-4" />
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  }
-
-  if (!data || data.content.length === 0) {
-    return (
-      <TableRow>
-        <TableCell colSpan={6}>
-          <div className="text-center text-sm text-muted-foreground py-4">상세 내역이 없습니다</div>
-        </TableCell>
-      </TableRow>
-    );
-  }
-
-  return (
-    <>
-      {/* 상세 헤더 */}
-      <TableRow className="bg-muted/30">
-        <TableCell />
-        <TableCell className="text-xs font-medium text-muted-foreground">보호자명</TableCell>
-        <TableCell className="text-xs font-medium text-muted-foreground">제목</TableCell>
-        <TableCell className="text-xs font-medium text-muted-foreground text-right">상태</TableCell>
-        <TableCell className="text-xs font-medium text-muted-foreground text-right" colSpan={2}>발송 시각</TableCell>
-      </TableRow>
-      {data.content.map((detail) => {
-        const sentTime = detail.sentAt
-          ? new Date(detail.sentAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-          : '-';
-        return (
-          <TableRow key={detail.id} className="bg-muted/10">
-            <TableCell />
-            <TableCell className="text-sm">{detail.guardianName ?? '-'}</TableCell>
-            <TableCell className="text-sm text-muted-foreground">{detail.title}</TableCell>
-            <TableCell className="text-right">
-              <MessageStatusBadge status={detail.status as MessageStatus} />
-            </TableCell>
-            <TableCell className="text-right text-sm text-muted-foreground" colSpan={2}>
-              {sentTime}
-            </TableCell>
-          </TableRow>
-        );
-      })}
-      {data.totalPages > 1 && (
-        <TableRow className="bg-muted/10">
-          <TableCell colSpan={6}>
-            <div className="flex items-center justify-center gap-2 py-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={(e) => { e.stopPropagation(); setDetailPage((p) => Math.max(0, p - 1)); }}
-                disabled={detailPage === 0}
-              >
-                이전
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {detailPage + 1} / {data.totalPages}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={(e) => { e.stopPropagation(); setDetailPage((p) => Math.min(data.totalPages - 1, p + 1)); }}
-                disabled={detailPage >= data.totalPages - 1}
-              >
-                다음
-              </Button>
-            </div>
+const TableSkeleton = () => (
+  <>
+    {Array.from({ length: 5 }).map((_, i) => (
+      <TableRow key={i}>
+        {Array.from({ length: 4 }).map((_, j) => (
+          <TableCell key={j}>
+            <Skeleton className="h-4 w-full" />
           </TableCell>
-        </TableRow>
-      )}
-    </>
-  );
-};
+        ))}
+      </TableRow>
+    ))}
+  </>
+);

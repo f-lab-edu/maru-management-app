@@ -1,7 +1,6 @@
 import apiClient from './api';
-import { NOTIFICATION_PAGE_SIZE } from '../features/messages/constants';
 import type {
-  NotificationDailySummary,
+  MonthlyUsage,
   NotificationDetail,
   PagedResult,
 } from '../types/message';
@@ -9,24 +8,27 @@ import type {
 const BASE_PATH = '/notifications';
 
 export const notificationApi = {
-  getSummary: async (dojangId: string, page = 0, size = NOTIFICATION_PAGE_SIZE): Promise<PagedResult<NotificationDailySummary>> => {
-    const response = await apiClient.get<PagedResult<NotificationDailySummary>>(
-      `${BASE_PATH}/summary`,
-      { params: { dojangId, page, size } },
+  getMonthlyUsage: async (dojangId: string, yearMonth: string): Promise<MonthlyUsage> => {
+    const response = await apiClient.get<MonthlyUsage>(
+      `${BASE_PATH}/monthly-usage`,
+      { params: { dojangId, yearMonth } },
     );
     return response.data;
   },
 
-  getDetails: async (
+  getTimeline: async (
     dojangId: string,
     date: string,
-    messageType: string,
+    messageType?: string,
     page = 0,
-    size = NOTIFICATION_PAGE_SIZE,
+    size = 30,
   ): Promise<PagedResult<NotificationDetail>> => {
-    const response = await apiClient.get<PagedResult<NotificationDetail>>(BASE_PATH, {
-      params: { dojangId, date, messageType, page, size },
-    });
+    const params: Record<string, unknown> = { dojangId, date, page, size };
+    if (messageType) params.messageType = messageType;
+    const response = await apiClient.get<PagedResult<NotificationDetail>>(
+      `${BASE_PATH}/timeline`,
+      { params },
+    );
     return response.data;
   },
 };
