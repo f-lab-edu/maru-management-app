@@ -1,6 +1,6 @@
 package com.maru.controller.message;
 
-import com.maru.controller.message.dto.NotificationDailySummaryRes;
+import com.maru.controller.message.dto.MonthlyUsageRes;
 import com.maru.controller.message.dto.NotificationDetailRes;
 import com.maru.security.CurrentUserId;
 import com.maru.service.message.MessageQueryService;
@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 @Tag(name = "자동 알림 조회")
 @RestController
@@ -27,38 +29,38 @@ public class NotificationController {
     private final MessageQueryService queryService;
 
     /**
-     * 자동 발송 일별 요약 조회
+     * 자동 발송 타임라인 조회 (날짜 네비게이션 + 유형 필터)
      *
      * @param dojangId 도장 ID
      * @param userId 사용자 ID
+     * @param date 조회 날짜 (null이면 오늘)
+     * @param messageType 메시지 유형 필터 (null이면 전체)
      * @param pageable 페이징
-     * @return 일별 발송 요약 목록
+     * @return 발송 타임라인 목록
      */
-    @GetMapping("/summary")
-    public ResponseEntity<Page<NotificationDailySummaryRes>> getSummary(
+    @GetMapping("/timeline")
+    public ResponseEntity<Page<NotificationDetailRes>> getTimeline(
             @RequestParam String dojangId,
             @CurrentUserId String userId,
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(queryService.findNotificationSummary(dojangId, pageable));
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) String messageType,
+            @PageableDefault(size = 30, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(queryService.findNotificationTimeline(dojangId, date, messageType, pageable));
     }
 
     /**
-     * 자동 발송 상세 목록 조회
+     * 월별 메시지 사용량 조회 (자동알림 + 단체문자 합산)
      *
      * @param dojangId 도장 ID
      * @param userId 사용자 ID
-     * @param date 발송 날짜
-     * @param messageType 메시지 타입
-     * @param pageable 페이징
-     * @return 발송 상세 목록
+     * @param yearMonth 조회 월 (yyyy-MM, null이면 현재 월)
+     * @return 월별 사용량 통계
      */
-    @GetMapping
-    public ResponseEntity<Page<NotificationDetailRes>> getDetails(
+    @GetMapping("/monthly-usage")
+    public ResponseEntity<MonthlyUsageRes> getMonthlyUsage(
             @RequestParam String dojangId,
             @CurrentUserId String userId,
-            @RequestParam LocalDate date,
-            @RequestParam String messageType,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(queryService.findNotificationDetails(dojangId, date, messageType, pageable));
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth) {
+        return ResponseEntity.ok(queryService.findMonthlyUsage(dojangId, yearMonth));
     }
 }

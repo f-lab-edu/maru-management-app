@@ -8,7 +8,10 @@ import java.time.LocalDateTime;
 public record NotificationDetailRes(
         String id,
         String guardianName,
+        String studentName,
         String title,
+        String messageType,
+        String messageTypeLabel,
         String status,
         LocalDateTime createdAt,
         LocalDateTime sentAt

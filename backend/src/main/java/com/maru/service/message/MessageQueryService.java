@@ -6,7 +6,7 @@ import com.maru.controller.message.dto.BroadcastDetailRes;
 import com.maru.controller.message.dto.BroadcastSummaryRes;
 import com.maru.controller.message.dto.MessageDetailRes;
 import com.maru.controller.message.dto.MessageSummaryRes;
-import com.maru.controller.message.dto.NotificationDailySummaryRes;
+import com.maru.controller.message.dto.MonthlyUsageRes;
 import com.maru.controller.message.dto.NotificationDetailRes;
 import com.maru.controller.message.dto.RecipientStatusRes;
 import com.maru.domain.message.MessageBroadcast;
@@ -26,10 +26,13 @@ import com.maru.repository.user.UserRepository;
 import com.maru.repository.message.MessageDispatchAttemptRepository;
 import com.maru.repository.message.MessageDispatchRepository;
 import com.maru.repository.message.view.BroadcastStatusCountView;
-import com.maru.repository.message.view.NotificationSummaryView;
+import com.maru.repository.message.view.MonthlySummaryView;
 import com.maru.repository.message.view.StatusCountView;
 import com.maru.common.aop.SkipDojangValidation;
 import com.maru.common.aop.ValidateDojangAccess;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +40,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +65,7 @@ public class MessageQueryService {
     private final GuardianRepository guardianRepository;
     private final GuardianshipRepository guardianshipRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 보호자별 메시지 목록 조회
@@ -191,36 +197,60 @@ public class MessageQueryService {
     }
 
     /**
-     * 자동 발송 일별 요약 조회
+     * 자동 발송 타임라인 조회 (날짜 네비게이션 + 유형 필터)
      *
      * @param dojangId 도장 ID
+     * @param date 조회 날짜 (null이면 오늘)
+     * @param messageType 메시지 유형 필터 (null이면 전체)
      * @param pageable 페이징
-     * @return 일별 발송 요약 목록
+     * @return 발송 타임라인 목록
      */
-    public Page<NotificationDailySummaryRes> findNotificationSummary(String dojangId, Pageable pageable) {
-        Page<NotificationSummaryView> views = messageDispatchRepository.findNotificationSummary(dojangId, pageable);
-        return views.map(this::toNotificationDailySummary);
-    }
-
-    /**
-     * 자동 발송 상세 목록 조회
-     *
-     * @param dojangId 도장 ID
-     * @param date 발송 날짜
-     * @param messageType 메시지 타입
-     * @param pageable 페이징
-     * @return 발송 상세 목록
-     */
-    public Page<NotificationDetailRes> findNotificationDetails(
+    public Page<NotificationDetailRes> findNotificationTimeline(
             String dojangId, LocalDate date, String messageType, Pageable pageable) {
 
-        Page<MessageDispatch> dispatches = messageDispatchRepository.findNotificationDetails(
-                dojangId, messageType, date.atStartOfDay(), date.plusDays(1).atStartOfDay(), pageable);
+        LocalDate targetDate = (date != null) ? date : LocalDate.now();
+
+        Page<MessageDispatch> dispatches;
+        if (messageType != null && !messageType.isEmpty()) {
+            dispatches = messageDispatchRepository.findNotificationDetails(
+                    dojangId, MessageType.valueOf(messageType),
+                    targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay(), pageable);
+        } else {
+            dispatches = messageDispatchRepository.findNotificationsByDate(
+                    dojangId, targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay(), pageable);
+        }
 
         List<String> guardianIds = extractGuardianIds(dispatches);
         Map<String, GuardianBasicView> guardianMap = buildGuardianMap(guardianIds);
 
-        return dispatches.map(dispatch -> toNotificationDetail(dispatch, guardianMap));
+        return dispatches.map(dispatch -> toTimelineDetail(dispatch, guardianMap));
+    }
+
+    /**
+     * 월별 메시지 사용량 조회 (자동알림 + 단체문자 합산)
+     *
+     * @param dojangId 도장 ID
+     * @param yearMonth 조회 월 (null이면 현재 월)
+     * @return 월별 사용량 통계
+     */
+    public MonthlyUsageRes findMonthlyUsage(String dojangId, YearMonth yearMonth) {
+        YearMonth target = (yearMonth != null) ? yearMonth : YearMonth.now();
+        LocalDateTime start = target.atDay(1).atStartOfDay();
+        LocalDateTime end = target.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<MonthlySummaryView> views = messageDispatchRepository.findMonthlyUsage(dojangId, start, end);
+
+        long autoCount = 0;
+        long broadcastCount = 0;
+        for (MonthlySummaryView v : views) {
+            if ("AUTO".equals(v.getCategory())) autoCount = v.getTotalCount();
+            else if ("BROADCAST".equals(v.getCategory())) broadcastCount = v.getTotalCount();
+        }
+        return MonthlyUsageRes.builder()
+                .totalCount(autoCount + broadcastCount)
+                .autoCount(autoCount)
+                .broadcastCount(broadcastCount)
+                .build();
     }
 
     private BroadcastSummaryRes toBroadcastSummary(MessageBroadcast broadcast, StatusCounts counts) {
@@ -273,24 +303,17 @@ public class MessageQueryService {
                 .build();
     }
 
-    private NotificationDailySummaryRes toNotificationDailySummary(NotificationSummaryView view) {
-        return NotificationDailySummaryRes.builder()
-                .sendDate(view.getSendDate())
-                .messageType(view.getMessageType())
-                .messageTypeLabel(MESSAGE_TYPE_LABELS.getOrDefault(view.getMessageType(), view.getMessageType()))
-                .totalCount(view.getTotalCount())
-                .acceptedCount(view.getAcceptedCount())
-                .failedCount(view.getFailedCount())
-                .build();
-    }
-
-    private NotificationDetailRes toNotificationDetail(
+    private NotificationDetailRes toTimelineDetail(
             MessageDispatch dispatch, Map<String, GuardianBasicView> guardianMap) {
         GuardianBasicView guardian = guardianMap.get(dispatch.getGuardianId());
+        String messageTypeName = dispatch.getMessageType().name();
         return NotificationDetailRes.builder()
                 .id(dispatch.getId())
                 .guardianName(guardian != null ? guardian.getName() : null)
+                .studentName(extractStudentName(dispatch.getDataPayload()))
                 .title(dispatch.getTitle())
+                .messageType(messageTypeName)
+                .messageTypeLabel(MESSAGE_TYPE_LABELS.getOrDefault(messageTypeName, messageTypeName))
                 .status(dispatch.getStatus().name())
                 .createdAt(dispatch.getCreatedAt())
                 .sentAt(dispatch.getSentAt())
@@ -359,6 +382,19 @@ public class MessageQueryService {
         Map<String, StatusCounts> result = new HashMap<>();
         tempMap.forEach((id, arr) -> result.put(id, new StatusCounts(arr[0], arr[1], arr[2], arr[3])));
         return result;
+    }
+
+    private String extractStudentName(String dataPayload) {
+        if (dataPayload == null || dataPayload.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(dataPayload);
+            JsonNode nameNode = node.get("studentName");
+            return (nameNode != null && !nameNode.isNull()) ? nameNode.asText() : null;
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 
     private Map<String, String> buildGuardianStudentNameMap(List<String> guardianIds) {
