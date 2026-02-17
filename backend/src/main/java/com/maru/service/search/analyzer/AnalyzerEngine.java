@@ -44,6 +44,33 @@ public class AnalyzerEngine implements Analyzer {
         return context.getTokens();
     }
 
+    /**
+     * @param text 분석할 텍스트
+     * @return MatchType이 태깅된 토큰 집합
+     */
+    @Override
+    public Set<AnalyzedToken> analyzeDetailed(String text) {
+        if (text == null || text.isBlank()) {
+            return Set.of();
+        }
+
+        AnalyzeContext context = AnalyzeContext.of(text);
+
+        for (AnalyzeRule rule : normalizeRules) {
+            rule.apply(context);
+        }
+
+        for (AnalyzeRule rule : segmentRules) {
+            rule.apply(context);
+        }
+
+        for (AnalyzeRule rule : tokenizeRules) {
+            rule.apply(context);
+        }
+
+        return context.getAnalyzedTokens();
+    }
+
     private List<AnalyzeRule> sortByOrder(List<AnalyzeRule> rules) {
         List<AnalyzeRule> sorted = new ArrayList<>(rules);
         sorted.sort(Comparator.comparingInt(AnalyzeRule::getOrder));
