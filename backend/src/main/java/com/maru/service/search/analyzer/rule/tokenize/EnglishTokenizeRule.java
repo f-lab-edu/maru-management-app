@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.tokenize;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +23,7 @@ public class EnglishTokenizeRule implements AnalyzeRule {
         for (String segment : context.getSegments()) {
             Matcher matcher = ENGLISH_PATTERN.matcher(segment);
             while (matcher.find()) {
-                context.addToken(matcher.group().toLowerCase());
+                context.addAnalyzedToken(matcher.group().toLowerCase(), MatchType.ENGLISH);
             }
         }
     }

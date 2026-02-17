@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.segment;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 import java.util.Comparator;
 import java.util.List;
@@ -35,7 +36,7 @@ public class PrefixSegmentRule implements AnalyzeRule {
         for (String prefix : PREFIXES) {
             if (startsWithIgnoreCase(text, prefix)) {
                 String lowerPrefix = prefix.toLowerCase();
-                context.addToken(lowerPrefix);
+                context.addAnalyzedToken(lowerPrefix, MatchType.FULLWORD);
                 context.addSegment(lowerPrefix);
                 context.setRemainingText(text.substring(prefix.length()));
                 return;

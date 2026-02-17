@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.tokenize;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +24,7 @@ public class NumberTokenizeRule implements AnalyzeRule {
             while (matcher.find()) {
                 String token = matcher.group();
                 if (!token.isBlank()) {
-                    context.addToken(token);
+                    context.addAnalyzedToken(token, MatchType.NUMBER);
                 }
             }
         }

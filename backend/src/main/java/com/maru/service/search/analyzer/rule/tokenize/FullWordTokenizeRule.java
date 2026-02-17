@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.tokenize;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 /**
  * 각 segment 전체를 토큰으로 추가하는 룰
@@ -15,7 +16,7 @@ public class FullWordTokenizeRule implements AnalyzeRule {
     public void apply(AnalyzeContext context) {
         for (String segment : context.getSegments()) {
             if (!segment.isBlank()) {
-                context.addToken(segment.toLowerCase());
+                context.addAnalyzedToken(segment.toLowerCase(), MatchType.FULLWORD);
             }
         }
     }

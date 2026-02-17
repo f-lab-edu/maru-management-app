@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.tokenize;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 /**
  * 한글 Bi-gram 토큰을 생성하는 룰
@@ -38,7 +39,7 @@ public class BiGramTokenizeRule implements AnalyzeRule {
 
     private void generateBiGrams(String text, AnalyzeContext context) {
         for (int i = 0; i <= text.length() - MIN_LENGTH; i++) {
-            context.addToken(text.substring(i, i + MIN_LENGTH));
+            context.addAnalyzedToken(text.substring(i, i + MIN_LENGTH), MatchType.BIGRAM);
         }
     }
 
