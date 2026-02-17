@@ -3,6 +3,8 @@ package com.maru.service.search.dojang;
 import com.maru.domain.tenant.Dojang;
 import com.maru.repository.tenant.DojangRepository;
 import com.maru.repository.tenant.view.DojangSearchView;
+import com.maru.service.search.analyzer.AnalyzedToken;
+import com.maru.service.search.analyzer.MatchType;
 import com.maru.service.search.dojang.analyzer.DojangAddressAnalyzer;
 import com.maru.service.search.dojang.analyzer.DojangNameAnalyzer;
 import com.maru.service.search.dojang.analyzer.DojangQueryAnalyzer;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +31,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DojangSearchIndexer {
 
+    private static final Map<MatchType, Double> MATCH_TYPE_SCORES = Map.of(
+            MatchType.FULLWORD, 5.0,
+            MatchType.ENGLISH, 5.0,
+            MatchType.NUMBER, 3.0,
+            MatchType.CHOSUNG, 2.0,
+            MatchType.BIGRAM, 1.0
+    );
+
     private final DojangRepository dojangRepository;
     private final DojangNameAnalyzer nameAnalyzer;
     private final DojangAddressAnalyzer addressAnalyzer;
     private final DojangQueryAnalyzer queryAnalyzer;
 
-    private final Map<String, Set<String>> invertedIndex = new ConcurrentHashMap<>();
+    private final Map<String, Set<TokenEntry>> invertedIndex = new ConcurrentHashMap<>();
     private final Map<String, DojangSearchDto> dataCache = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -56,28 +67,16 @@ public class DojangSearchIndexer {
             return Page.empty(pageable);
         }
 
-        Set<String> resultIds = null;
-
-        for (String token : queryTokens) {
-            Set<String> matchedIds = invertedIndex.get(token);
-
-            if (matchedIds == null || matchedIds.isEmpty()) {
-                return Page.empty(pageable);
-            }
-
-            if (resultIds == null) {
-                resultIds = new HashSet<>(matchedIds);
-            } else {
-                resultIds.retainAll(matchedIds);
-            }
-
-            if (resultIds.isEmpty()) {
-                return Page.empty(pageable);
-            }
+        Set<String> candidateIds = findCandidateIds(queryTokens);
+        if (candidateIds.isEmpty()) {
+            return Page.empty(pageable);
         }
 
-        List<String> sortedIds = resultIds.stream()
-                .sorted()
+        Map<String, Double> scores = calculateScores(candidateIds, queryTokens);
+
+        List<String> sortedIds = scores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
                 .toList();
 
         int start = (int) pageable.getOffset();
@@ -90,7 +89,7 @@ public class DojangSearchIndexer {
         List<DojangSearchDto> content = sortedIds.subList(start, end).stream()
                 .map(dataCache::get)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         return new PageImpl<>(content, pageable, sortedIds.size());
     }
@@ -131,26 +130,84 @@ public class DojangSearchIndexer {
             return;
         }
 
-        invertedIndex.values().forEach(ids -> ids.remove(dojangId));
+        invertedIndex.values().forEach(entries -> entries.removeIf(e -> e.dojangId().equals(dojangId)));
         log.debug("도장 인덱스 제거: {}", removed.name());
     }
 
     private void indexDojangDto(String id, DojangSearchDto dto) {
         dataCache.put(id, dto);
 
-        Set<String> tokens = new HashSet<>();
-
-        tokens.addAll(nameAnalyzer.analyze(dto.name()));
-        tokens.addAll(addressAnalyzer.analyze(dto.address()));
+        indexTokens(id, nameAnalyzer.analyzeDetailed(dto.name()), IndexField.NAME);
+        indexTokens(id, addressAnalyzer.analyzeDetailed(dto.address()), IndexField.ADDRESS);
 
         if (dto.ownerName() != null && !dto.ownerName().isBlank()) {
-            tokens.addAll(queryAnalyzer.analyze(dto.ownerName()));
+            for (String token : queryAnalyzer.analyze(dto.ownerName())) {
+                if (token != null && !token.isBlank()) {
+                    addToIndex(token, new TokenEntry(id, IndexField.OWNER, MatchType.FULLWORD));
+                }
+            }
+        }
+    }
+
+    private void indexTokens(String id, Set<AnalyzedToken> analyzedTokens, IndexField field) {
+        for (AnalyzedToken at : analyzedTokens) {
+            addToIndex(at.token(), new TokenEntry(id, field, at.matchType()));
+        }
+    }
+
+    private void addToIndex(String token, TokenEntry entry) {
+        invertedIndex.computeIfAbsent(token, k -> ConcurrentHashMap.newKeySet())
+                .add(entry);
+    }
+
+    private Set<String> findCandidateIds(Set<String> queryTokens) {
+        Set<String> resultIds = null;
+
+        for (String token : queryTokens) {
+            Set<TokenEntry> entries = invertedIndex.get(token);
+            if (entries == null || entries.isEmpty()) {
+                return Set.of();
+            }
+
+            Set<String> tokenDojangIds = entries.stream()
+                    .map(TokenEntry::dojangId)
+                    .collect(Collectors.toSet());
+
+            if (resultIds == null) {
+                resultIds = new HashSet<>(tokenDojangIds);
+            } else {
+                resultIds.retainAll(tokenDojangIds);
+            }
+
+            if (resultIds.isEmpty()) {
+                return Set.of();
+            }
         }
 
-        for (String token : tokens) {
-            if (token == null || token.isBlank()) continue;
-            invertedIndex.computeIfAbsent(token, k -> ConcurrentHashMap.newKeySet())
-                    .add(id);
+        return resultIds != null ? resultIds : Set.of();
+    }
+
+    private Map<String, Double> calculateScores(Set<String> candidateIds, Set<String> queryTokens) {
+        int totalDojangs = dataCache.size();
+        Map<String, Double> scores = new HashMap<>();
+
+        for (String token : queryTokens) {
+            Set<TokenEntry> entries = invertedIndex.get(token);
+            if (entries == null) continue;
+
+            long df = entries.stream().map(TokenEntry::dojangId).distinct().count();
+            double idf = Math.log((double) totalDojangs / Math.max(df, 1));
+
+            for (TokenEntry entry : entries) {
+                if (!candidateIds.contains(entry.dojangId())) continue;
+
+                double fieldBoost = entry.field().getBoost();
+                double matchScore = MATCH_TYPE_SCORES.getOrDefault(entry.matchType(), 1.0);
+
+                scores.merge(entry.dojangId(), fieldBoost * matchScore * idf, Double::sum);
+            }
         }
+
+        return scores;
     }
 }
