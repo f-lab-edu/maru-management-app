@@ -107,6 +107,7 @@ public class PgPaymentService {
         updatePgDetailToConfirmed(pendingDetail, payment, tossResponse);
         paymentLink.markUsed();
 
+        log.info("PG 결제 승인 완료: paymentKey={}, amount={}", request.paymentKey(), request.amount());
         return PgPaymentConfirmRes.from(pendingDetail);
     }
 
@@ -153,7 +154,7 @@ public class PgPaymentService {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("JSON 직렬화 실패", e);
+            log.warn("JSON 직렬화 실패", e);
             return null;
         }
     }

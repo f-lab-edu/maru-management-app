@@ -455,7 +455,6 @@ public class AttendanceService {
         try {
             attendanceRepository.saveAll(attendances);
         } catch (DataIntegrityViolationException e) {
-            log.error("일괄 출석 체크 중복 발생 - dojangId: {}", dojangId, e);
             throw new BusinessException(AttendanceErrorCode.DUPLICATE);
         }
         return attendances;

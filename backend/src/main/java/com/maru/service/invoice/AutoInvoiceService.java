@@ -66,6 +66,8 @@ public class AutoInvoiceService {
             }
         }
 
+        log.info("자동 청구서 발행 완료: 대상도장={}개, 생성={}건, 스킵={}건, 실패={}건",
+                targets.size(), totalCreated, totalSkipped, failedCount);
         return AutoInvoiceResult.of(targets.size(), totalCreated, totalSkipped, failedCount);
     }
 
@@ -96,6 +98,8 @@ public class AutoInvoiceService {
                 }
 
                 int skipped = eligibleStudentIds.size() - invoices.size();
+                log.info("도장별 청구서 발행: dojangId={}, 생성={}건, 스킵={}건",
+                        target.getDojangId(), invoices.size(), skipped);
                 return new DojangInvoiceResult(invoices.size(), skipped);
             });
         }

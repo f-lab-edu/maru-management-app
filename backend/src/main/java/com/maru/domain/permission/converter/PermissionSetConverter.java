@@ -39,7 +39,7 @@ public class PermissionSetConverter implements AttributeConverter<Set<Permission
                     .collect(Collectors.toList());
             return objectMapper.writeValueAsString(names);
         } catch (JsonProcessingException e) {
-            log.error("권한 Set을 JSON으로 변환 실패: {}", attribute, e);
+            log.warn("권한 Set을 JSON으로 변환 실패: {}", attribute, e);
             return "[]";
         }
     }
@@ -63,14 +63,14 @@ public class PermissionSetConverter implements AttributeConverter<Set<Permission
                         try {
                             return PermissionType.valueOf(name);
                         } catch (IllegalArgumentException e) {
-                            log.error("알 수 없는 권한 타입: {}", name);
+                            log.warn("알 수 없는 권한 타입: {}", name);
                             return null;
                         }
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
         } catch (JsonProcessingException e) {
-            log.error("JSON을 권한 Set으로 변환 실패: {}", dbData, e);
+            log.warn("JSON을 권한 Set으로 변환 실패: {}", dbData, e);
             return new HashSet<>();
         }
     }

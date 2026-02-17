@@ -15,6 +15,7 @@ import com.maru.domain.section.exception.SectionErrorCode;
 import com.maru.repository.section.DivisionRepository;
 import com.maru.repository.section.SectionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -59,6 +61,7 @@ public class DivisionService {
 
         divisionRepository.save(division);
 
+        log.info("수련반 생성: divisionId={}, dojangId={}", division.getId(), dojangId);
         return divisionQueryService.getDivision(dojangId, division.getId());
     }
 
@@ -96,6 +99,7 @@ public class DivisionService {
     public void deleteDivision(String dojangId, String divisionId) {
         Division division = findDivisionByIdAndDojangId(divisionId, dojangId);
         divisionRepository.delete(division);
+        log.info("수련반 삭제: divisionId={}, dojangId={}", divisionId, dojangId);
     }
 
     /**

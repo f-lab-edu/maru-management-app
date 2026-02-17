@@ -43,7 +43,7 @@ public class TossPaymentClient {
                     .retrieve()
                     .body(TossConfirmRes.class);
         } catch (RestClientException e) {
-            log.error("토스 결제 승인 실패: paymentKey={}, orderId={}", paymentKey, orderId, e);
+            log.warn("토스 결제 승인 실패: paymentKey={}, orderId={}", paymentKey, orderId, e);
             throw new BusinessException(PgPaymentErrorCode.TOSS_CONFIRM_FAILED);
         }
     }
@@ -70,7 +70,7 @@ public class TossPaymentClient {
                     .retrieve()
                     .body(TossCancelRes.class);
         } catch (RestClientException e) {
-            log.error("토스 결제 취소 실패: paymentKey={}", paymentKey, e);
+            log.warn("토스 결제 취소 실패: paymentKey={}", paymentKey, e);
             throw new BusinessException(PgPaymentErrorCode.TOSS_CANCEL_FAILED);
         }
     }

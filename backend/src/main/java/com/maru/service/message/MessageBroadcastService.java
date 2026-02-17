@@ -226,7 +226,6 @@ public class MessageBroadcastService {
                 case INDIVIDUAL -> objectMapper.writeValueAsString(Map.of("studentIds", req.studentIds()));
             };
         } catch (JsonProcessingException e) {
-            log.error("수신자 조건 직렬화 실패: recipientType={}", req.recipientType(), e);
             throw new BusinessException(MessageBroadcastErrorCode.INVALID_RECIPIENT_TYPE);
         }
     }

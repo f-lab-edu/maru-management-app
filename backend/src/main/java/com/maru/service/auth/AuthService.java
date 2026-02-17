@@ -68,6 +68,7 @@ public class AuthService {
         String dojangId = employment != null ? employment.getDojangId() : null;
         String role = resolveRole(user, employment, claims.role());
 
+        log.debug("토큰 갱신: userId={}", claims.userId());
         return generateTokenResponse(user, tenantId, dojangId, role);
     }
 
@@ -79,6 +80,7 @@ public class AuthService {
     public TokenRes loginWithOAuth(OAuthProvider provider, String code) {
         OAuthUserInfo userInfo = getOAuthService(provider).authenticate(code);
         User user = createOrUpdateUserFromOAuth(userInfo);
+        log.info("OAuth 로그인: provider={}, userId={}", provider, user.getId());
         return generateTokenResponse(user);
     }
 
@@ -91,13 +93,13 @@ public class AuthService {
         String resolvedDojangId = employment.getDojangId();
         String role = resolveRole(user, employment, null);
 
+        log.info("도장 선택: userId={}, dojangId={}", userId, dojangId);
         return generateTokenResponse(user, tenantId, resolvedDojangId, role);
     }
 
     private OAuthService getOAuthService(OAuthProvider provider) {
         OAuthService service = oauthServices.get(provider);
         if (service == null) {
-            log.error("지원하지 않는 OAuth Provider: {}", provider);
             throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
         return service;
@@ -189,6 +191,7 @@ public class AuthService {
             OAuthAccount newAccount = new OAuthAccount(savedUser, userInfo.provider(), userInfo.providerId());
             oauthAccountRepository.save(newAccount);
 
+            log.info("신규 회원 가입: userId={}, provider={}", savedUser.getId(), userInfo.provider());
             return savedUser;
         }
     }

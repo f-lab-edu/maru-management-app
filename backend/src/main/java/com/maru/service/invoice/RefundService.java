@@ -116,7 +116,7 @@ public class RefundService {
             refund.fail();
             invoice.addPayment(request.amount());
 
-            log.error("PG 환불 실패: paymentId={}, amount={} - paidAmount 복구",
+            log.warn("PG 환불 실패: paymentId={}, amount={} - paidAmount 복구",
                     payment.getId(), request.amount(), e);
             throw e;
         }
@@ -139,7 +139,7 @@ public class RefundService {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("JSON 직렬화 실패", e);
+            log.warn("JSON 직렬화 실패", e);
             return null;
         }
     }

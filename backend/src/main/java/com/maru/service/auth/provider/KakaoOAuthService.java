@@ -92,10 +92,10 @@ public class KakaoOAuthService implements OAuthService {
             );
             return response.getBody();
         } catch (HttpClientErrorException e) {
-            log.error("Kakao 토큰 교환 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            log.warn("Kakao 토큰 교환 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new AuthException(AuthErrorCode.OAUTH_INVALID_CODE);
         } catch (Exception e) {
-            log.error("Kakao 토큰 교환 실패: {}", e.getMessage());
+            log.warn("Kakao 토큰 교환 실패: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.OAUTH_FAILED);
         }
     }
@@ -112,7 +112,7 @@ public class KakaoOAuthService implements OAuthService {
             );
             return response.getBody();
         } catch (Exception e) {
-            log.error("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
+            log.warn("Kakao 사용자 정보 조회 실패: {}", e.getMessage());
             throw new AuthException(AuthErrorCode.OAUTH_USER_INFO_FAILED);
         }
     }
