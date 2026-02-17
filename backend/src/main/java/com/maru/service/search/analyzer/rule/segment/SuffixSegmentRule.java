@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.segment;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 import java.util.Comparator;
 import java.util.List;
@@ -34,7 +35,7 @@ public class SuffixSegmentRule implements AnalyzeRule {
         for (String suffix : SUFFIXES) {
             if (endsWithIgnoreCase(text, suffix)) {
                 String lowerSuffix = suffix.toLowerCase();
-                context.addToken(lowerSuffix);
+                context.addAnalyzedToken(lowerSuffix, MatchType.FULLWORD);
                 context.addSegment(lowerSuffix);
                 context.setRemainingText(text.substring(0, text.length() - suffix.length()));
                 return;

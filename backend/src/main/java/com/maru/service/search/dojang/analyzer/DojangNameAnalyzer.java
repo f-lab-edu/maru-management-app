@@ -1,5 +1,6 @@
 package com.maru.service.search.dojang.analyzer;
 
+import com.maru.service.search.analyzer.AnalyzedToken;
 import com.maru.service.search.analyzer.Analyzer;
 import com.maru.service.search.analyzer.AnalyzerEngine;
 import com.maru.service.search.analyzer.rule.normalize.LowercaseNormalizeRule;
@@ -47,5 +48,10 @@ public class DojangNameAnalyzer implements Analyzer {
     @Override
     public Set<String> analyze(String text) {
         return engine.analyze(text);
+    }
+
+    @Override
+    public Set<AnalyzedToken> analyzeDetailed(String text) {
+        return engine.analyzeDetailed(text);
     }
 }

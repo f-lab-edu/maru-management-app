@@ -2,6 +2,7 @@ package com.maru.service.search.analyzer.rule.tokenize;
 
 import com.maru.service.search.analyzer.AnalyzeContext;
 import com.maru.service.search.analyzer.AnalyzeRule;
+import com.maru.service.search.analyzer.MatchType;
 
 /**
  * 한글 초성을 추출하여 토큰으로 추가하는 룰
@@ -22,7 +23,7 @@ public class ChosungTokenizeRule implements AnalyzeRule {
         for (String segment : context.getSegments()) {
             String chosung = extractChosung(segment);
             if (chosung.length() >= MIN_LENGTH) {
-                context.addToken(chosung);
+                context.addAnalyzedToken(chosung, MatchType.CHOSUNG);
             }
         }
     }
