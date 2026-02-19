@@ -61,7 +61,7 @@ CloudFront를 통한 정적 자산 CDN 배포, EC2 단일 인스턴스 기반 AP
 
 </div>
 
-GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬스체크 후 실패 시 자동 롤백. Schema Drift Check로 Flyway 마이그레이션과 JPA 엔티티 간 스키마 정합성을 CI에서 자동 검증합니다.
+GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬스체크 후 실패 시 자동 롤백.
 
 → [인프라 아키텍처 상세](https://github.com/f-lab-edu/maru-management-app/wiki/인프라-아키텍처) · [CI/CD 전략 상세](https://github.com/f-lab-edu/maru-management-app/wiki/CI-CD-전략)
 
@@ -103,7 +103,7 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 
 **결과**: 피크타임 47건/초 처리, DB 커넥션 풀 1개로 충분, 메시지 유실 0%
 
-→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/메시지큐-전략)
+→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/메시지-디스패치-전략)
 
 ---
 
@@ -153,7 +153,6 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 - S3 + SSM 기반 Pull 배포 (22번 포트 폐쇄)
 - 원자적 교체 (`mv`) 로 다운타임 최소화
 - 60초 헬스체크 후 실패 시 자동 롤백
-- Schema Drift Check CI로 DB 마이그레이션 안전성 확보
 
 **결과**: SSH 무차별 대입 공격 원천 차단, 배포 실패 시 60초 내 자동 복구
 
@@ -192,7 +191,7 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 |------|------|
 | **AWS EC2 + S3 + CloudFront** | 서버 운영 + 정적 자산 CDN 배포 |
 | **AWS SSM** | SSH 없는 Pull 기반 배포 (22번 포트 폐쇄) |
-| **GitHub Actions** | CI/CD 파이프라인, Schema Drift Check |
+| **GitHub Actions** | CI/CD 파이프라인 |
 | **Flyway** | DB 마이그레이션 형상 관리 |
 
 ### 핵심 기술 의사결정
