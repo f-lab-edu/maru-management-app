@@ -114,7 +114,7 @@ public class PgPaymentService {
     private void validateRemainingAmount(Invoice invoice, BigDecimal amount,
                                           PgPaymentDetail pendingDetail) {
         if (invoice.getRemainingAmount().compareTo(amount) < 0) {
-            pgPaymentDetailRepository.delete(pendingDetail);
+            pendingSaver.deletePending(pendingDetail);
             log.warn("PG 결제 거절: 잔액 부족 - paymentKey={}, invoiceId={}, 요청금액={}, 잔액={}",
                     pendingDetail.getPaymentKey(), invoice.getId(), amount, invoice.getRemainingAmount());
             throw new BusinessException(PgPaymentErrorCode.AMOUNT_EXCEEDS_REMAINING);
@@ -126,7 +126,7 @@ public class PgPaymentService {
         try {
             return tossPaymentClient.confirm(request.paymentKey(), request.orderId(), request.amount());
         } catch (BusinessException e) {
-            pgPaymentDetailRepository.delete(pendingDetail);
+            pendingSaver.deletePending(pendingDetail);
             throw e;
         }
     }

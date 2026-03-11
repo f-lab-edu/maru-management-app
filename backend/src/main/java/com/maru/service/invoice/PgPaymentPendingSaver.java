@@ -32,4 +32,14 @@ public class PgPaymentPendingSaver {
                 tenantId, dojangId, paymentKey, orderId, amount);
         return pgPaymentDetailRepository.save(detail);
     }
+
+    /**
+     * PENDING 상태의 PgPaymentDetail 삭제 (독립 트랜잭션)
+     *
+     * @param pendingDetail 삭제할 PgPaymentDetail
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deletePending(PgPaymentDetail pendingDetail) {
+        pgPaymentDetailRepository.delete(pendingDetail);
+    }
 }
