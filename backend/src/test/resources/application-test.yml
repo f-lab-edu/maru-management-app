@@ -1,0 +1,76 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+    baseline-on-migrate: true
+
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktbWluaW11bS0yNTYtYml0cy1sb25n
+  access-token-expiration: 1h
+  refresh-token-expiration: 1d
+
+cookie:
+  secure: false
+  http-only: true
+  path: /
+  max-age: 1h
+  same-site: lax
+
+cors:
+  allowed-origins: http://localhost:3000
+  allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+  allowed-headers: "*"
+  max-age: 1h
+
+sms:
+  solapi:
+    api-key: test-api-key
+    api-secret: test-api-secret
+    sender-number: "01000000000"
+  verification:
+    code-length: 6
+    ttl-minutes: 3
+    resend-limit-seconds: 60
+    max-attempts: 5
+
+toss:
+  payments:
+    secret-key: test_sk_test
+    client-key: test_ck_test
+    base-url: https://api.tosspayments.com/v1
+    encryption-key: test-encryption-key
+    payment-page-base-url: http://localhost:3000/pay/
+
+oauth:
+  google:
+    client-id: test-google-client-id
+    client-secret: test-google-client-secret
+    redirect-uri: http://localhost:3000/oauth/callback/google
+    scope: openid email profile
+    urls:
+      authorization: https://accounts.google.com/o/oauth2/v2/auth
+      token: https://oauth2.googleapis.com/token
+      user-info: https://www.googleapis.com/oauth2/v3/userinfo
+  kakao:
+    client-id: test-kakao-client-id
+    client-secret: test-kakao-client-secret
+    redirect-uri: http://localhost:3000/oauth/callback/kakao
+    scope: profile_nickname
+    urls:
+      authorization: https://kauth.kakao.com/oauth/authorize
+      token: https://kauth.kakao.com/oauth/token
+      user-info: https://kapi.kakao.com/v2/user/me
+
+maru:
+  demo:
+    user-id: 0DEMOUSER001
+
+logging:
+  level:
+    root: WARN
+    com.maru: INFO

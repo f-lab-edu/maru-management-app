@@ -97,6 +97,11 @@ dependencies {
     // ============== Test ==============
     // Spring Boot Test (JUnit 5, Mockito 포함)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Testcontainers
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 // ============== 로그 경로 설정 ==============
