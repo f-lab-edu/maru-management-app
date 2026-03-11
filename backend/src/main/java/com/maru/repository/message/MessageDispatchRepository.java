@@ -19,6 +19,8 @@ import java.util.List;
 
 public interface MessageDispatchRepository extends JpaRepository<MessageDispatch, String> {
 
+    long countByStatus(MessageStatus status);
+
     @Query("""
             SELECT m
             FROM MessageDispatch m

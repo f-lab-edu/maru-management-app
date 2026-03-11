@@ -1,5 +1,6 @@
 package com.maru.domain.message;
 
+import com.maru.common.exception.BusinessException;
 import com.maru.common.exception.DomainAssert;
 import com.maru.domain.common.BaseEntity;
 import com.maru.domain.message.exception.MessageDispatchErrorCode;
@@ -177,11 +178,11 @@ public class MessageDispatch extends BaseEntity {
      * 최종 실패 (렌더링 실패 또는 재시도 초과)
      *
      * @param errorMessage 에러 메시지
-     * @throws IllegalStateException ACCEPTED 상태에서 호출 시
+     * @throws BusinessException ACCEPTED 상태에서 호출 시
      */
     public void markAsDead(String errorMessage) {
         if (this.status == MessageStatus.ACCEPTED) {
-            throw new IllegalStateException("ACCEPTED 상태에서 DEAD 전환 불가: " + getId());
+            throw new BusinessException(MessageDispatchErrorCode.CANNOT_DEAD_FROM_ACCEPTED);
         }
 
         this.status = MessageStatus.DEAD;
@@ -197,11 +198,11 @@ public class MessageDispatch extends BaseEntity {
     /**
      * DEAD 상태 메시지를 재발송 가능 상태로 초기화
      *
-     * @throws IllegalStateException DEAD 상태가 아닌 경우
+     * @throws BusinessException DEAD 상태가 아닌 경우
      */
     public void resetForResend() {
         if (this.status != MessageStatus.DEAD) {
-            throw new IllegalStateException("DEAD 상태에서만 재발송 가능: " + getId());
+            throw new BusinessException(MessageDispatchErrorCode.CANNOT_RESEND_NON_DEAD);
         }
 
         this.status = MessageStatus.PENDING;
@@ -216,11 +217,11 @@ public class MessageDispatch extends BaseEntity {
      * 발송 실패 시 재시도 스케줄링 (backoff 적용)
      *
      * @param errorMessage 에러 메시지
-     * @throws IllegalStateException ACCEPTED/DEAD 상태에서 호출 시
+     * @throws BusinessException ACCEPTED/DEAD 상태에서 호출 시
      */
     public void scheduleRetry(String errorMessage) {
         if (this.status == MessageStatus.ACCEPTED || this.status == MessageStatus.DEAD) {
-            throw new IllegalStateException("ACCEPTED/DEAD 상태에서 재시도 불가: " + getId());
+            throw new BusinessException(MessageDispatchErrorCode.CANNOT_RETRY_TERMINAL_STATUS);
         }
 
         this.status = MessageStatus.PENDING;
