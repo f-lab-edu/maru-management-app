@@ -23,9 +23,8 @@
 
 기존 회원 관리 플랫폼들은 대형 입시 학원을 타겟으로 설계되어, 중소규모 태권도장에는 **불필요한 복잡성**과 **높은 진입 장벽**이 존재했습니다.
 
-이전 직장에서 태권도장 관리 서비스를 운영하며 도메인 전문성을 쌓았고, 레거시 아키텍처의 확장성 한계와 기술 부채를 직접 경험했습니다. **마루**는 해당 경험을 바탕으로 처음부터 새로 설계·구현한 프로젝트로, 현장의 페인포인트를 해결하면서 **신뢰성과 견고함을 갖춘 SaaS 아키텍처**를 목표로 합니다.
-
-<!-- [서비스 메인 대시보드 스크린샷 또는 GIF - 출석/수납 현황이 한눈에 보이는 화면. 프로젝트 소개 바로 아래에 배치하여 "무엇을 하는 서비스인지" 즉시 전달] -->
+이전 직장에서 태권도장 관리 서비스를 운영하며 도메인 전문성을 쌓았고, 레거시 아키텍처의 확장성 한계와 기술 부채를 직접 경험했습니다.<br>
+**마루**는 해당 경험을 바탕으로 처음부터 새로 설계·구현한 프로젝트로, 현장의 페인포인트를 해결하면서 **신뢰성과 견고함을 갖춘 SaaS 아키텍처**를 목표로 합니다.
 
 ### 주요 기능
 
@@ -41,9 +40,64 @@
 | **도장 검색** | 초성/이름/주소 검색 (자체 검색 엔진) |
 | **대시보드** | 출석/수납 현황, 통계 차트 |
 
-<!-- [원생 관리 + 출결 관리 화면 GIF 2개를 나란히 배치 (테이블 형태). 원생 등록/검색 플로우, 일괄 출석 체크 및 SMS 알림 발송 플로우를 보여주면 기능이 실제로 동작하는 것을 증명할 수 있음] -->
 
----
+### 서비스 사진
+
+<details>
+<summary>
+소셜 로그인
+</summary>
+
+![img.png](assets/img.png)
+
+</details>
+
+<details>
+<summary>
+원생 관리
+</summary>
+
+![img.png](assets/img2.png)
+
+</details>
+
+<details>
+<summary>
+출결 관리
+</summary>
+
+![img.png](assets/img3.png)
+
+</details>
+
+<details>
+<summary>
+수납 관리
+</summary>
+
+![img.png](assets/img4.png)
+
+</details>
+
+<details>
+<summary>
+메시지
+</summary>
+
+![img.png](assets/img5.png)
+
+</details>
+
+<details>
+<summary>
+도장 검색
+</summary>
+
+![img.png](assets/img6.png)
+
+</details>
+
+
 
 ## 시스템 아키텍처
 
@@ -53,7 +107,8 @@
 
 </div>
 
-CloudFront를 통한 정적 자산 CDN 배포, EC2 단일 인스턴스 기반 API 서버 구성. SSM을 통한 Pull 배포로 SSH 포트(22번)를 폐쇄하여 무차별 대입 공격을 원천 차단했습니다.
+CloudFront를 통한 정적 자산 CDN 배포, EC2 단일 인스턴스 기반 API 서버 구성. <br>
+SSM을 통한 Pull 배포로 SSH 포트(22번)를 폐쇄하여 무차별 대입 공격을 차단합니다.
 
 <div align="center">
 
@@ -82,9 +137,11 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 - `AnalyzerEngine` 빌더 패턴으로 필드별 분석기 커스터마이징
 - MatchType 가중치 × IndexField 가중치 × IDF 복합 스코어링
 
-**결과**: 도장 1,000개 기준 15~30MB 메모리로 고성능 한글 검색 실현
+**결과**: 전국 도장 9,400건 기준 25MB 메모리, 검색 응답 0.1~0.3ms로 고성능 한글 검색 실현
 
-→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/검색-전략)
+→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/검색-전략) <br>
+→ [회고 및 상세 설명](https://velog.io/@cupcakes33/ES-%EC%97%86%EC%9D%B4-%EB%8F%84%EB%A9%94%EC%9D%B8-%ED%8A%B9%ED%99%94-%EA%B2%80%EC%83%89-%EC%97%94%EC%A7%84-%EA%B5%AC%ED%98%84%ED%95%98%EA%B8%B0)
+
 
 ---
 
@@ -103,7 +160,9 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 
 **결과**: 피크타임 47건/초 처리, DB 커넥션 풀 1개로 충분, 메시지 유실 0%
 
-→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/메시지-디스패치-전략)
+→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/메시지-디스패치-전략)<br>
+→ [회고 및 상세설명](https://velog.io/@cupcakes33/DB-%EA%B8%B0%EB%B0%98-%EB%B9%84%EB%8F%99%EA%B8%B0-%EB%A9%94%EC%8B%9C%EC%A7%80-%EB%94%94%EC%8A%A4%ED%8C%A8%EC%B3%90-%EC%84%A4%EA%B3%84%ED%95%98%EA%B8%B0)
+
 
 ---
 
@@ -122,7 +181,8 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 
 **결과**: 동시 결제 요청 시 중복 승인 0건, 트랜잭션 롤백 시 PG 자동 취소로 고아 결제 방지
 
-→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/pg-payments)
+→ [상세 설계 문서](https://github.com/f-lab-edu/maru-management-app/wiki/pg-payments)<br>
+→ [회고 및 상세설명](https://velog.io/@cupcakes33/%EA%B2%B0%EC%A0%9C-%EC%8B%9C%EC%8A%A4%ED%85%9C%EC%97%90%EC%84%9C-%EC%8B%A4%ED%8C%A8%EB%A5%BC-%EC%84%A4%EA%B3%84%ED%95%9C%EB%8B%A4%EB%8A%94-%EA%B2%83)
 
 ---
 
@@ -170,7 +230,7 @@ GitHub Actions → S3 아티팩트 업로드 → SSM Pull 배포 → 60초 헬�
 | **Spring Security + JWT** | httpOnly Cookie 인증, OAuth 소셜 로그인 (Kakao/Google) |
 | **Spring Data JPA + Flyway** | 형상 관리 수준의 스키마 마이그레이션 |
 | **Caffeine Cache** | 요청당 5회 DB 조회 → 0회 최적화 (인터페이스 추상화로 Redis 교체 가능) |
-| **토스페이먼츠 SDK** | PG 결제 승인, 서브몰, 환불 |
+| **토스페이먼츠 REST API** | PG 결제 승인, 서브몰, 환불 |
 | **Solapi SMS** | 출결/퇴관 알림, 단체 문자 발송 |
 | **SpringDoc OpenAPI** | API 문서 자동화 + JavaDoc 연동 |
 
@@ -230,6 +290,7 @@ backend/src/main/java/com/maru/
 ├── controller/     # REST API + DTO
 ├── domain/         # JPA Entity, Enum
 ├── repository/     # Spring Data JPA
+├── scheduler/      # 스케줄링 작업
 ├── security/       # JWT, TenantContextHolder
 └── service/        # 비즈니스 로직 + DTO
 ```
@@ -237,11 +298,18 @@ backend/src/main/java/com/maru/
 ```
 frontend/src/
 ├── components/     # 공통 컴포넌트
+├── constants/      # 상수 정의
 ├── features/       # 기능별 모듈
 ├── hooks/          # Custom Hooks
+├── layouts/        # 레이아웃 컴포넌트
 ├── lib/            # 유틸리티
 ├── pages/          # 라우트 페이지
-└── stores/         # Zustand 상태
+├── router/         # 라우팅 설정
+├── services/       # API 호출
+├── shared/         # 공유 모듈
+├── stores/         # Zustand 상태
+├── types/          # TypeScript 타입 정의
+└── widgets/        # 위젯 컴포넌트
 ```
 
 </details>
